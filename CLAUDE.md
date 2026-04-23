@@ -50,6 +50,11 @@ GitHubリポジトリ、https://github.com/kazuyoshiAburatani/1968.git
 - 段階Aカテゴリの閲覧のみ、スレッドごとに先頭3返信まで表示
 - 投稿不可、DM不可、プロフィール閲覧不可
 
+### pending（登録済みだが未課金）
+- メール認証と生年月日登録は完了、プロフィールも作成済み
+- 閲覧・投稿の権限はゲスト相当（段階Aの先頭3返信まで）
+- マイページから課金すると associate に昇格
+
 ### 準会員（月額180円／年額1800円）
 - 認証、メアド＋パスワード＋生年月日自己申告＋クレカ課金
 - 閲覧、段階A・Bの6カテゴリ完全閲覧、段階Cはタイトルのみ
@@ -89,13 +94,13 @@ GitHubリポジトリ、https://github.com/kazuyoshiAburatani/1968.git
 ## データベース設計
 
 ### users
-- id（UUID）
-- email
-- password_hash（Supabase Auth管理）
+- id（UUID、auth.users.id と同値）
+- email（auth.users から複製、検索用）
 - created_at
 - status、審査中／有効／停止／退会
-- membership_rank、guest／associate（準会員）／regular（正会員）
+- membership_rank、guest／pending（登録済みだが未課金）／associate（準会員）／regular（正会員）
 - stripe_customer_id
+- 注、password_hash は auth.users 側で管理するため public.users には持たない
 
 ### admins（運営スタッフ）
 - id（UUID、users.id とは別管理）
@@ -330,9 +335,14 @@ GitHubリポジトリ、https://github.com/kazuyoshiAburatani/1968.git
 - Vercelデプロイ、カスタムドメイン（1968.love）設定
 
 ### フェーズ2、認証と会員管理（2週間）
-- メール＋マジックリンク認証
+- メール＋マジックリンク認証（パスワードレス、50代配慮で最もシンプルな方式）
 - ユーザープロフィール作成・編集
-- 会員ランク管理（ゲスト／準会員／正会員）
+- 会員ランク管理（ゲスト／準会員／正会員）、新規登録直後は `pending` 仮状態、フェーズ4でクレカ課金成功時に `associate` へ昇格
+- スキーマは3層構造、`auth.users`（Supabase管理）＋ `public.users`（status/rank/stripe_id）＋ `public.profiles`（個人情報）
+- スキーマ管理は Supabase CLI＋マイグレーションファイル（`supabase/migrations/*.sql`）を git 管理
+- RLS ポリシーを全テーブルに定義（テーブル作成と同時）
+- `proxy.ts`（Next.js 16 仕様、旧 middleware）でセッションリフレッシュ
+- Vitest 導入、主要ロジックのテスト必須
 
 ### フェーズ3、掲示板機能（3週間）
 - カテゴリ表示
