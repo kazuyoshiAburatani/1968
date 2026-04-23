@@ -1,26 +1,51 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* 1968 テーマ（墨・紺・生成り） */
+@theme {
+  --color-background: #f8f4ec;
+  --color-foreground: #1f1f1f;
+  --color-muted: #e8e0ce;
+  --color-border: #c9bfac;
+  --color-primary: #1e3a5f;
+  --color-primary-fg: #f8f4ec;
+  --color-accent: #8b6f3d;
+
+  --font-sans: var(--font-noto-sans-jp), ui-sans-serif, system-ui, sans-serif;
+
+  /* タップ領域の最小サイズ（WCAG 準拠、本仕様では 44px） */
+  --spacing-tap: 2.75rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ベースの可読性設定、本文16px以上・行間1.75倍 */
+html {
+  font-size: 16px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 最低限の見出し行間調整（本文より詰める） */
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.4;
+}
+
+/* 長文折り返し、日本語の読みやすさ向上 */
+p {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* リンク既定、下線は hover 時のみ（落ち着いたトーン） */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
 }
