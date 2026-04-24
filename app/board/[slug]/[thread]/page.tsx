@@ -11,6 +11,8 @@ import {
 } from "@/lib/auth/permissions";
 import { RichText } from "@/components/rich-text";
 import { MediaDisplay } from "@/components/media-display";
+import { LikeButton } from "@/components/like-button";
+import { ReportButton } from "@/components/report-button";
 import type { MediaItem } from "@/lib/media";
 import { createReply } from "./actions";
 
@@ -62,7 +64,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
   }
 
   const supabase = await createSupabaseServerClient();
-  const { rank } = await getCurrentRank(supabase);
+  const { rank, userId: viewerId } = await getCurrentRank(supabase);
 
   const { data: category } = await supabase
     .from("categories")
@@ -117,6 +119,20 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
   }
   const authorName = nickMap.get(thread.user_id) ?? "（匿名）";
 
+  // 現ユーザーの「いいね」一覧、スレッド本文＋閲覧可能な返信分
+  const likedSet = new Set<string>();
+  if (viewerId) {
+    const targetIds = [threadId, ...replyRows.map((r) => r.id)];
+    const { data: myLikes } = await supabase
+      .from("likes")
+      .select("target_type, target_id")
+      .eq("user_id", viewerId)
+      .in("target_id", targetIds);
+    for (const l of myLikes ?? []) {
+      likedSet.add(`${l.target_type}:${l.target_id}`);
+    }
+  }
+
   const canReply =
     !thread.is_locked && canPost(rank, category.access_level_post as PostLevel);
   const shouldShowGuestCta =
@@ -140,14 +156,21 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
             {" ・ "}
             返信{thread.reply_count}
             {" ・ "}
-            いいね{thread.like_count}
-            {" ・ "}
             閲覧{thread.view_count}
           </p>
         </header>
         <div className="mt-6">
           <RichText text={thread.body} />
           <MediaDisplay items={thread.media ?? []} />
+        </div>
+        <div className="mt-6 flex items-center gap-4 flex-wrap">
+          <LikeButton
+            targetType="thread"
+            targetId={thread.id}
+            initialLiked={likedSet.has(`thread:${thread.id}`)}
+            initialCount={thread.like_count}
+          />
+          <ReportButton targetType="thread" targetId={thread.id} />
         </div>
       </article>
 
@@ -190,6 +213,15 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
                   <div className="mt-2">
                     <RichText text={r.body} />
                     <MediaDisplay items={r.media ?? []} />
+                  </div>
+                  <div className="mt-3 flex items-center gap-4 flex-wrap">
+                    <LikeButton
+                      targetType="reply"
+                      targetId={r.id}
+                      initialLiked={likedSet.has(`reply:${r.id}`)}
+                      initialCount={r.like_count}
+                    />
+                    <ReportButton targetType="reply" targetId={r.id} />
                   </div>
                 </li>
               );
