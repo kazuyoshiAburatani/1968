@@ -10,13 +10,30 @@ export const metadata: Metadata = {
 
 type Rank = "guest" | "member" | "regular";
 
+type Subscription = {
+  stripe_subscription_id: string;
+  plan_type: "regular_monthly" | "regular_yearly";
+  status: string;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+};
+
 type Props = {
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{
+    saved?: string;
+    stripe?: string;
+    portal?: string;
+  }>;
+};
+
+const PLAN_LABEL: Record<Subscription["plan_type"], string> = {
+  regular_monthly: "月額 480円",
+  regular_yearly: "年額 4,800円",
 };
 
 export default async function MyPage({ searchParams }: Props) {
   const { supabase, user } = await requireSession();
-  const { saved } = await searchParams;
+  const { saved, stripe, portal } = await searchParams;
 
   const { data: publicUser } = await supabase
     .from("users")
@@ -30,9 +47,18 @@ export default async function MyPage({ searchParams }: Props) {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  // verifications テーブルはフェーズ5で実装、現状は false 固定
-  const verified = false;
+  const { data: subData } = await supabase
+    .from("subscriptions")
+    .select(
+      "stripe_subscription_id, plan_type, status, current_period_end, cancel_at_period_end",
+    )
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const subscription = subData as Subscription | null;
 
+  const verified = false;
   const rank = (publicUser?.membership_rank ?? "guest") as Rank;
 
   return (
@@ -52,15 +78,84 @@ export default async function MyPage({ searchParams }: Props) {
           プロフィールを保存しました。
         </div>
       )}
+      {stripe === "success" && (
+        <div className="mt-4 rounded-lg border border-primary/40 bg-muted/40 p-3 text-sm">
+          正会員への切り替えが完了しました。ご登録ありがとうございます。
+        </div>
+      )}
+      {stripe === "canceled" && (
+        <div className="mt-4 rounded-lg border border-border bg-muted/30 p-3 text-sm">
+          決済をキャンセルしました。気が向いたときにまたどうぞ。
+        </div>
+      )}
+      {portal === "nocustomer" && (
+        <div className="mt-4 rounded-lg border border-border bg-muted/30 p-3 text-sm">
+          まだ決済情報が登録されていません。正会員になると管理画面が利用できます。
+        </div>
+      )}
 
+      {/* 無料会員、正会員へのアップグレード案内 */}
       {rank === "member" && (
-        <section className="mt-8 rounded-lg border border-border bg-muted/30 p-4">
-          <h2 className="font-bold">正会員について</h2>
-          <p className="mt-1 text-sm text-foreground/80">
-            月額480円の正会員にアップグレードすると、介護・夫婦・健康・お金などの全カテゴリに投稿でき、オフ会やメッセージも利用できます。
+        <section className="mt-8 rounded-lg border border-border bg-muted/30 p-5">
+          <h2 className="font-bold">正会員になる</h2>
+          <p className="mt-2 text-sm text-foreground/80">
+            全12カテゴリを自由に閲覧・投稿できます。介護・夫婦・健康・お金などの話題に加え、将来的にオフ会やメッセージも利用できます。
           </p>
-          <p className="mt-3 text-sm text-foreground/60">
-            決済はフェーズ4で追加予定、いましばらくお待ちください。
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <form action="/api/stripe/checkout?plan=monthly" method="post">
+              <SubmitButton className="w-full" pendingText="決済画面へ…">
+                月額 480円で始める
+              </SubmitButton>
+            </form>
+            <form action="/api/stripe/checkout?plan=yearly" method="post">
+              <SubmitButton
+                variant="outline"
+                className="w-full"
+                pendingText="決済画面へ…"
+              >
+                年額 4,800円（2ヶ月分お得）
+              </SubmitButton>
+            </form>
+          </div>
+          <p className="mt-3 text-xs text-foreground/60">
+            解約はいつでもこのページから行えます。期間終了まで引き続きご利用いただけます。
+          </p>
+        </section>
+      )}
+
+      {/* 正会員、サブスク状態と管理ボタン */}
+      {rank === "regular" && subscription && (
+        <section className="mt-8 rounded-lg border border-primary/30 bg-muted/30 p-5">
+          <h2 className="font-bold">正会員プラン</h2>
+          <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
+            <dt className="text-foreground/70">プラン</dt>
+            <dd>{PLAN_LABEL[subscription.plan_type]}</dd>
+            <dt className="text-foreground/70">状態</dt>
+            <dd>
+              {subscription.status === "active"
+                ? subscription.cancel_at_period_end
+                  ? "期間終了で解約予定"
+                  : "有効"
+                : subscription.status}
+            </dd>
+            {subscription.current_period_end && (
+              <>
+                <dt className="text-foreground/70">次回更新</dt>
+                <dd>
+                  {new Date(subscription.current_period_end).toLocaleDateString(
+                    "ja-JP",
+                  )}
+                </dd>
+              </>
+            )}
+          </dl>
+          <form action="/api/stripe/portal" method="post" className="mt-4">
+            <SubmitButton variant="outline" pendingText="移動中…">
+              サブスクリプションを管理する
+            </SubmitButton>
+          </form>
+          <p className="mt-3 text-xs text-foreground/60">
+            Stripe のお客様ポータルで、プラン変更・支払方法変更・解約ができます。
           </p>
         </section>
       )}
@@ -71,7 +166,9 @@ export default async function MyPage({ searchParams }: Props) {
           <dt className="text-foreground/70">ニックネーム</dt>
           <dd>{profile?.nickname ?? "未設定"}</dd>
           <dt className="text-foreground/70">誕生日</dt>
-          <dd>1968年{profile?.birth_month}月{profile?.birth_day}日</dd>
+          <dd>
+            1968年{profile?.birth_month}月{profile?.birth_day}日
+          </dd>
           <dt className="text-foreground/70">都道府県</dt>
           <dd>{profile?.prefecture ?? "未設定"}</dd>
           <dt className="text-foreground/70">公開範囲</dt>
