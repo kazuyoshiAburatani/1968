@@ -15,6 +15,7 @@ import { LikeButton } from "@/components/like-button";
 import { ReportButton } from "@/components/report-button";
 import { RealtimeRepliesWatcher } from "@/components/realtime-replies-watcher";
 import { ViewTracker } from "@/components/view-tracker";
+import { SubmitButton } from "@/components/submit-button";
 import type { MediaItem } from "@/lib/media";
 import { createReply } from "./actions";
 
@@ -316,12 +317,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
                   className="block w-full text-sm"
                 />
               </fieldset>
-              <button
-                type="submit"
-                className="min-h-[var(--spacing-tap)] px-6 rounded-full bg-[color:var(--color-primary)] text-[color:var(--color-primary-fg)] font-medium hover:opacity-90"
-              >
-                返信する
-              </button>
+              <SubmitButton pendingText="送信中…">返信する</SubmitButton>
             </form>
           </>
         )}

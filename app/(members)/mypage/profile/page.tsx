@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { requireSession } from "@/lib/auth/require-session";
 import { PREFECTURES } from "@/lib/prefectures";
+import { SubmitButton } from "@/components/submit-button";
 import { updateProfile } from "./actions";
 
 export const metadata: Metadata = {
@@ -164,12 +165,7 @@ export default async function ProfileEditPage({ searchParams }: Props) {
         </Field>
 
         <div className="flex gap-3">
-          <button
-            type="submit"
-            className="min-h-[var(--spacing-tap)] px-6 rounded-full bg-[color:var(--color-primary)] text-[color:var(--color-primary-fg)] font-medium hover:opacity-90"
-          >
-            保存する
-          </button>
+          <SubmitButton pendingText="保存中…">保存する</SubmitButton>
           <Link
             href="/mypage"
             className="inline-flex items-center min-h-[var(--spacing-tap)] px-6 rounded-full border border-[color:var(--color-border)] no-underline hover:bg-[color:var(--color-muted)]"

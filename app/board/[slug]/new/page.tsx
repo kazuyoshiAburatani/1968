@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentRank } from "@/lib/auth/current-rank";
 import { canPost, type PostLevel } from "@/lib/auth/permissions";
+import { SubmitButton } from "@/components/submit-button";
 import { createThread } from "./actions";
 
 export const metadata: Metadata = {
@@ -130,12 +131,7 @@ export default async function NewThreadPage({ params, searchParams }: Props) {
         </fieldset>
 
         <div className="flex gap-3">
-          <button
-            type="submit"
-            className="min-h-[var(--spacing-tap)] px-6 rounded-full bg-[color:var(--color-primary)] text-[color:var(--color-primary-fg)] font-medium hover:opacity-90"
-          >
-            スレッドを書く
-          </button>
+          <SubmitButton pendingText="投稿中…">スレッドを書く</SubmitButton>
           <Link
             href={`/board/${slug}`}
             className="inline-flex items-center min-h-[var(--spacing-tap)] px-6 rounded-full border border-[color:var(--color-border)] no-underline hover:bg-[color:var(--color-muted)]"

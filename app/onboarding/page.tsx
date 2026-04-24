@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { requireSession } from "@/lib/auth/require-session";
 import { PREFECTURES } from "@/lib/prefectures";
+import { SubmitButton } from "@/components/submit-button";
 import { createProfile } from "./actions";
 
 export const metadata: Metadata = {
@@ -152,12 +153,9 @@ export default async function OnboardingPage({ searchParams }: Props) {
           </div>
         </Field>
 
-        <button
-          type="submit"
-          className="w-full min-h-[var(--spacing-tap)] px-4 rounded-full bg-[color:var(--color-primary)] text-[color:var(--color-primary-fg)] font-medium hover:opacity-90"
-        >
+        <SubmitButton className="w-full" pendingText="保存中…">
           登録を完了する
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );

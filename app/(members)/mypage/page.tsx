@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { requireSession } from "@/lib/auth/require-session";
 import { MembershipBadge } from "@/components/membership-badge";
+import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = {
   title: "マイページ",
@@ -108,12 +109,9 @@ export default async function MyPage({ searchParams }: Props) {
 
       <section className="mt-10 pt-8 border-t border-[color:var(--color-border)]">
         <form action="/auth/signout" method="post">
-          <button
-            type="submit"
-            className="inline-flex items-center min-h-[var(--spacing-tap)] px-4 rounded-full border border-[color:var(--color-border)] text-[color:var(--color-foreground)]/80 hover:bg-[color:var(--color-muted)]"
-          >
+          <SubmitButton variant="outline" pendingText="ログアウト中…">
             ログアウト
-          </button>
+          </SubmitButton>
         </form>
       </section>
     </div>

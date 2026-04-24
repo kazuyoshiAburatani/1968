@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { requestLoginLink } from "./actions";
+import { SubmitButton } from "@/components/submit-button";
 
 function describeLoginError(code: string): string {
   if (code === "invalid") return "メールアドレスの形式をご確認ください。";
@@ -61,12 +62,9 @@ export default async function LoginPage({ searchParams }: Props) {
             placeholder="your@example.com"
           />
         </label>
-        <button
-          type="submit"
-          className="w-full min-h-[var(--spacing-tap)] px-4 rounded-full bg-[color:var(--color-primary)] text-[color:var(--color-primary-fg)] font-medium hover:opacity-90"
-        >
+        <SubmitButton className="w-full" pendingText="送信中…">
           ログインリンクを送る
-        </button>
+        </SubmitButton>
       </form>
 
       <p className="mt-8 text-sm text-center">
