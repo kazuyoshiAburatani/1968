@@ -5,7 +5,7 @@ import { getCurrentRank } from "@/lib/auth/current-rank";
 import { canView, canPost, type Tier, type ViewLevel, type PostLevel } from "@/lib/auth/permissions";
 
 export const metadata: Metadata = {
-  title: "会報",
+  title: "掲示板",
 };
 
 type Category = {
@@ -53,7 +53,7 @@ export default async function BoardPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <header>
-        <h1 className="text-2xl font-bold">会報</h1>
+        <h1 className="text-2xl font-bold">掲示板</h1>
         <p className="mt-2 text-foreground/80">
           同い年の方々の語り合い。
           {rank === "guest" &&

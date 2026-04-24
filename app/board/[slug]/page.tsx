@@ -72,7 +72,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-10">
         <nav className="mb-4 text-sm">
-          <Link href="/board">← 会報一覧</Link>
+          <Link href="/board">← 掲示板一覧</Link>
         </nav>
         <h1 className="text-2xl font-bold">{category.name}</h1>
         {category.description && (
@@ -134,7 +134,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <nav className="mb-4 text-sm">
-        <Link href="/board">← 会報一覧</Link>
+        <Link href="/board">← 掲示板一覧</Link>
       </nav>
 
       <header className="flex items-start justify-between gap-4 flex-wrap">
