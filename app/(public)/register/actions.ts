@@ -32,6 +32,5 @@ export async function requestRegisterLink(formData: FormData) {
     redirect("/register?error=unexpected");
   }
 
-  console.log("[register] signInWithOtp ok for", email);
   redirect("/register?sent=1");
 }
