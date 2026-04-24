@@ -1,6 +1,10 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCurrentRank } from "@/lib/auth/current-rank";
+import { HomeGuest } from "@/components/home/home-guest";
+import { HomePending } from "@/components/home/home-pending";
+import { HomeAssociate } from "@/components/home/home-associate";
+import { HomeRegular } from "@/components/home/home-regular";
 
 type Props = {
   searchParams: Promise<{
@@ -11,25 +15,15 @@ type Props = {
   }>;
 };
 
-// トップ画面に並べるピックアップカテゴリ（slug で指定）。
-// ゲスト閲覧可（A）と会員限定（C）を混ぜて、無料体験と入会訴求の両方を刺激する。
-const PICKUP_SLUGS = [
-  "showa43-memories",
-  "youth-bubble-era",
-  "parents-care",
-  "health",
-] as const;
-
-type PickupCategory = {
-  slug: string;
-  name: string;
-  description: string | null;
-  tier: "A" | "B" | "C" | "D";
-};
-
+// トップページはランクに応じて出し分けする。
+// guest    → HomeGuest、ランディング
+// pending  → HomePending、課金誘導中心
+// associate→ HomeAssociate、段階A・B のダッシュボード
+// regular  → HomeRegular、全カテゴリの本格ダッシュボード
 export default async function HomePage({ searchParams }: Props) {
   const params = await searchParams;
 
+  // Supabase から戻ってきた code / error は /auth/callback や /login に誘導
   if (params.code) {
     redirect(`/auth/callback?code=${encodeURIComponent(params.code)}`);
   }
@@ -38,193 +32,27 @@ export default async function HomePage({ searchParams }: Props) {
     redirect(`/login?error=${encodeURIComponent(reason)}`);
   }
 
-  // ピックアップカテゴリを DB から取得（slug で絞り込み、display_order で並べる）
   const supabase = await createSupabaseServerClient();
-  const { data: categoriesData } = await supabase
-    .from("categories")
-    .select("slug, name, description, tier, display_order")
-    .in("slug", PICKUP_SLUGS as unknown as string[])
-    .order("display_order");
-  const pickup = (categoriesData ?? []) as PickupCategory[];
+  const { rank, userId } = await getCurrentRank(supabase);
 
-  return (
-    <div className="mx-auto max-w-5xl px-4">
-      {/* ヒーロー */}
-      <section className="py-14 md:py-20 text-center">
-        <p className="text-sm tracking-widest text-accent">
-          SHOWA 43 / 1968 ONLY
-        </p>
-        <h1 className="mt-4 text-3xl md:text-5xl font-bold leading-tight">
-          昭和43年生まれだけの、
-          <br className="md:hidden" />
-          語らいの場。
-        </h1>
-        <p className="mt-6 text-base md:text-lg text-foreground/80">
-          1968年（昭和43年）生まれだけが参加できる会員制コミュニティ。
-          <br className="hidden md:inline" />
-          介護、夫婦、健康、お金。人には聞きにくい話題も、同い年となら本音で話せる。
-        </p>
+  if (!userId) {
+    return <HomeGuest />;
+  }
 
-        {/* 最も目立つ掲示板誘導ボタン */}
-        <div className="mt-10">
-          <Link
-            href="/board"
-            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-10 py-4 rounded-full bg-primary text-white text-lg md:text-xl font-bold no-underline hover:opacity-90 shadow-lg"
-          >
-            掲示板をのぞいてみる →
-          </Link>
-          <p className="mt-3 text-sm text-foreground/60">
-            未登録でも一部のカテゴリと投稿をご覧いただけます
-          </p>
-        </div>
-      </section>
+  // ニックネーム取得（ヘッダーで同じ問い合わせがあるが、ページ本体でも使うので再取得）
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("nickname")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const nickname = (profile?.nickname as string | undefined) ?? "会員";
 
-      {/* ピックアップカテゴリ */}
-      {pickup.length > 0 && (
-        <section className="py-6">
-          <h2 className="text-xl font-bold text-center">今月のピックアップ</h2>
-          <p className="mt-2 text-center text-sm text-foreground/70">
-            同い年だからこそ話せる、よく語られているテーマ
-          </p>
-          <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {pickup.map((c) => (
-              <li key={c.slug}>
-                <Link
-                  href={`/board/${c.slug}`}
-                  className="block h-full rounded-lg border border-border bg-background p-5 no-underline hover:bg-muted/40"
-                >
-                  <span
-                    className={
-                      "inline-block text-xs font-bold px-2 py-0.5 rounded-full " +
-                      (c.tier === "A"
-                        ? "bg-muted text-foreground"
-                        : "bg-primary text-white")
-                    }
-                  >
-                    {c.tier === "A" ? "どなたでも" : "会員限定"}
-                  </span>
-                  <p className="mt-3 font-bold text-base">{c.name}</p>
-                  {c.description && (
-                    <p className="mt-1 text-sm text-foreground/70 line-clamp-2">
-                      {c.description}
-                    </p>
-                  )}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* 入会プラン 2ボタン */}
-      <section className="py-12">
-        <h2 className="text-2xl font-bold text-center">入会する</h2>
-        <p className="mt-2 text-center text-sm text-foreground/70">
-          いずれもマイページからいつでも解約できます
-        </p>
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
-          <PlanCtaCard
-            name="準会員"
-            price="月額 180円"
-            yearly="年額 1,800円（2ヶ月分お得）"
-            bullets={[
-              "段階A・Bカテゴリの閲覧",
-              "段階Aカテゴリへの投稿（1日3件まで）",
-              "メアドとクレジットカードで登録",
-            ]}
-            href="/register?plan=associate"
-            cta="準会員に入会する"
-          />
-          <PlanCtaCard
-            name="正会員"
-            price="月額 480円"
-            yearly="年額 4,800円（2ヶ月分お得）"
-            bullets={[
-              "全12カテゴリの閲覧・投稿",
-              "メッセージ・オフ会の参加",
-              "身分証による「本人確認済」バッジ",
-            ]}
-            href="/register?plan=regular"
-            cta="正会員に入会する"
-            highlighted
-          />
-        </div>
-      </section>
-
-      {/* 1968 の特徴 */}
-      <section className="py-12 grid gap-6 md:grid-cols-3">
-        <FeatureCard
-          title="同い年だけの安心感"
-          body="参加できるのは1968年生まれだけ。世代が揃うから、前置きなしで本題に入れる。"
-        />
-        <FeatureCard
-          title="本音で話せる12のカテゴリ"
-          body="青春の思い出から、親の介護、夫婦のこと、お金の話まで。同世代同士だから踏み込める。"
-        />
-        <FeatureCard
-          title="落ち着いた運営"
-          body="派手さや若者向けの演出はなし。身分証確認で正会員を担保し、健全な語らいを守ります。"
-        />
-      </section>
-    </div>
-  );
-}
-
-function FeatureCard({ title, body }: { title: string; body: string }) {
-  return (
-    <article className="rounded-lg border border-border bg-background p-6">
-      <h3 className="font-bold text-lg">{title}</h3>
-      <p className="mt-2 text-foreground/80">{body}</p>
-    </article>
-  );
-}
-
-function PlanCtaCard({
-  name,
-  price,
-  yearly,
-  bullets,
-  href,
-  cta,
-  highlighted,
-}: {
-  name: string;
-  price: string;
-  yearly: string;
-  bullets: string[];
-  href: string;
-  cta: string;
-  highlighted?: boolean;
-}) {
-  return (
-    <article
-      className={
-        "rounded-xl border p-6 flex flex-col " +
-        (highlighted ? "border-primary bg-muted/40" : "border-border bg-background")
-      }
-    >
-      <h3 className="font-bold text-xl">{name}</h3>
-      <p className="mt-2 text-2xl font-bold text-primary">{price}</p>
-      <p className="text-sm text-foreground/70">{yearly}</p>
-      <ul className="mt-4 space-y-2 text-sm flex-1">
-        {bullets.map((b) => (
-          <li key={b} className="flex gap-2">
-            <span aria-hidden>・</span>
-            <span>{b}</span>
-          </li>
-        ))}
-      </ul>
-      <Link
-        href={href}
-        className={
-          "mt-6 inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full font-medium no-underline hover:opacity-90 " +
-          (highlighted
-            ? "bg-primary text-white"
-            : "border border-primary text-primary bg-background")
-        }
-      >
-        {cta}
-      </Link>
-    </article>
-  );
+  if (rank === "regular") {
+    return <HomeRegular nickname={nickname} userId={userId} />;
+  }
+  if (rank === "associate") {
+    return <HomeAssociate nickname={nickname} userId={userId} />;
+  }
+  // pending およびフォールバック
+  return <HomePending nickname={nickname} />;
 }
