@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 type Props = {
   searchParams: Promise<{
+    code?: string;
     error?: string;
     error_code?: string;
     error_description?: string;
@@ -12,8 +13,15 @@ type Props = {
 export default async function HomePage({ searchParams }: Props) {
   const params = await searchParams;
 
-  // Supabase Auth がエラー時に Site URL（ここ）にフォールバックして来るため、
-  // エラーパラメータを検出したら /login に誘導してユーザーに理由を表示する。
+  // Supabase Auth は OTP 検証後、redirect_to が allowlist に入っていない場合や
+  // 古い OTP の場合に Site URL（ここ）へ ?code= 付きで戻してくることがある。
+  // そのまま素通りするとセッションが確立されないので、/auth/callback へ誘導して
+  // exchangeCodeForSession を動かす。
+  if (params.code) {
+    redirect(`/auth/callback?code=${encodeURIComponent(params.code)}`);
+  }
+
+  // エラー時のフォールバックも同様に捕捉して /login に誘導する。
   if (params.error) {
     const reason = params.error_code ?? params.error;
     redirect(`/login?error=${encodeURIComponent(reason)}`);
