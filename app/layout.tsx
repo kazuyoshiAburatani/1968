@@ -60,6 +60,13 @@ export default async function RootLayout({
 
   return (
     <html lang="ja" className={notoSansJp.variable}>
+      <head>
+        {/* Remixicon、ダッシュボード等で使う軽量アイコンフォント */}
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css"
+        />
+      </head>
       <body className="min-h-dvh flex flex-col">
         <SiteHeader rank={rank} userId={userId} nickname={nickname} />
         <main className="flex-1 w-full">{children}</main>

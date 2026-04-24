@@ -4,15 +4,14 @@ import { SunLines } from "@/components/illustrations/sun-lines";
 import { LatestThreadsList } from "@/components/home/latest-threads-list";
 import type { Tier } from "@/lib/auth/permissions";
 
-// 正会員（regular）向けダッシュボード。全12カテゴリにアクセス可。
-// 段階別グリッド、最新スレッド、マイ最近の活動をまとめる。
+// 正会員（regular）向け本格ダッシュボード。Readdy レイアウト採用。
+// 2カラム（左=最新スレッド / 右=カテゴリナビ＋マイ最近）、下にアップデート案内。
 
 type Category = {
   id: number;
   slug: string;
   name: string;
   tier: Tier;
-  description: string | null;
 };
 
 type ThreadLite = {
@@ -23,10 +22,10 @@ type ThreadLite = {
 };
 
 const TIER_LABEL: Record<Tier, string> = {
-  A: "どなたでも",
-  B: "準会員から",
-  C: "正会員のみ",
-  D: "正会員・入会3ヶ月以上",
+  A: "段階A ・ どなたでも",
+  B: "段階B ・ 準会員から",
+  C: "段階C ・ 正会員のみ",
+  D: "段階D ・ 入会3ヶ月以上",
 };
 
 export async function HomeRegular({
@@ -38,10 +37,9 @@ export async function HomeRegular({
 }) {
   const supabase = await createSupabaseServerClient();
 
-  // 全 12 カテゴリを段階別に取得
   const { data: catsData } = await supabase
     .from("categories")
-    .select("id, slug, name, tier, description, display_order")
+    .select("id, slug, name, tier, display_order")
     .order("display_order");
   const cats = (catsData ?? []) as Category[];
   const byTier = new Map<Tier, Category[]>();
@@ -51,7 +49,6 @@ export async function HomeRegular({
     byTier.set(c.tier, list);
   }
 
-  // 自分の直近の投稿 5 件
   const { data: myRecentData } = await supabase
     .from("threads")
     .select("id, title, created_at, categories(slug)")
@@ -61,135 +58,192 @@ export async function HomeRegular({
   const myRecent = (myRecentData ?? []) as unknown as ThreadLite[];
 
   return (
-    <div className="mx-auto max-w-6xl px-4">
+    <>
       {/* あいさつバー */}
-      <section className="relative py-8 md:py-10 overflow-hidden">
-        <div className="absolute top-0 right-0 text-primary/40 pointer-events-none">
-          <SunLines size={200} />
+      <div className="bg-background border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+                {nickname} さんのホーム
+              </h1>
+              <span className="bg-primary text-white px-3 py-1 rounded-full text-sm font-semibold">
+                正会員
+              </span>
+            </div>
+            <div className="hidden lg:block text-accent/40">
+              <SunLines size={120} />
+            </div>
+          </div>
+          <p className="text-foreground/70 mt-2 text-sm">
+            全12カテゴリを自由に語れます。
+          </p>
         </div>
-        <h1 className="text-2xl md:text-3xl font-bold">
-          {nickname} さんのホーム
-        </h1>
-        <p className="mt-1 text-sm text-foreground/70">
-          <span className="inline-block text-xs font-bold px-2 py-0.5 rounded-full bg-primary text-white mr-2">
-            正会員
-          </span>
-          全12カテゴリを自由に語れます。
-        </p>
-      </section>
+      </div>
 
       {/* クイックアクション */}
-      <section className="grid gap-3 grid-cols-2 md:grid-cols-4">
-        <Link
-          href="/board"
-          className="rounded-lg border border-border bg-background p-5 no-underline hover:bg-muted/40"
-        >
-          <p className="text-2xl">📋</p>
-          <p className="mt-1 font-bold">掲示板TOP</p>
-        </Link>
-        <Link
-          href="/board/chitchat/new"
-          className="rounded-lg border border-primary bg-primary text-white p-5 no-underline hover:opacity-90"
-        >
-          <p className="text-2xl">📝</p>
-          <p className="mt-1 font-bold">新しく書く</p>
-        </Link>
-        <Link
-          href="/board/meetups"
-          className="rounded-lg border border-border bg-background p-5 no-underline hover:bg-muted/40"
-        >
-          <p className="text-2xl">🗓</p>
-          <p className="mt-1 font-bold">オフ会</p>
-        </Link>
-        <Link
-          href="/mypage"
-          className="rounded-lg border border-border bg-background p-5 no-underline hover:bg-muted/40"
-        >
-          <p className="text-2xl">👤</p>
-          <p className="mt-1 font-bold">マイページ</p>
-        </Link>
-      </section>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <QuickAction
+            href="/board"
+            icon="ri-clipboard-line"
+            label="掲示板TOP"
+          />
+          <QuickAction
+            href="/board/chitchat/new"
+            icon="ri-edit-line"
+            label="新しく書く"
+            primary
+          />
+          <QuickAction
+            href="/board/meetups"
+            icon="ri-calendar-event-line"
+            label="オフ会"
+          />
+          <QuickAction href="/mypage" icon="ri-user-line" label="マイページ" />
+        </div>
+      </div>
 
-      {/* 2カラムレイアウト、PC で 左=最新、右=カテゴリ */}
-      <div className="mt-10 grid gap-8 lg:grid-cols-3">
-        {/* 最新スレッド（大きめ） */}
-        <section className="lg:col-span-2">
-          <h2 className="text-lg font-bold">最新の話題</h2>
-          <p className="mt-1 text-sm text-foreground/70">
-            全カテゴリから直近20件
-          </p>
-          <div className="mt-4">
-            <LatestThreadsList limit={20} />
+      {/* メインコンテンツ */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="lg:grid lg:grid-cols-3 lg:gap-8">
+          {/* 左、最新の話題 */}
+          <div className="lg:col-span-2">
+            <section className="bg-background rounded-lg border border-border p-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-foreground">最新の話題</h2>
+                <Link
+                  href="/board"
+                  className="text-primary hover:opacity-70 text-sm font-medium no-underline"
+                >
+                  もっと見る →
+                </Link>
+              </div>
+              <p className="mt-1 text-sm text-foreground/70">全カテゴリから直近20件</p>
+              <div className="mt-6">
+                <LatestThreadsList limit={20} />
+              </div>
+            </section>
           </div>
-        </section>
 
-        {/* 右サイド：カテゴリ一覧・マイ活動 */}
-        <aside className="space-y-8">
-          <section>
-            <h2 className="text-lg font-bold">カテゴリ</h2>
-            <div className="mt-3 space-y-4">
-              {(["A", "B", "C", "D"] as Tier[]).map((tier) => {
-                const list = byTier.get(tier) ?? [];
-                if (list.length === 0) return null;
-                return (
-                  <div key={tier}>
-                    <p className="text-xs font-bold text-foreground/60">
-                      段階{tier} ・ {TIER_LABEL[tier]}
-                    </p>
-                    <ul className="mt-2 space-y-1">
-                      {list.map((c) => (
-                        <li key={c.id}>
+          {/* 右、サイドバー */}
+          <aside className="mt-8 lg:mt-0 space-y-6">
+            {/* カテゴリ */}
+            <section className="bg-background rounded-lg border border-border p-6">
+              <h3 className="text-lg font-bold text-foreground mb-4">カテゴリ</h3>
+              <div className="space-y-4">
+                {(["A", "B", "C", "D"] as Tier[]).map((tier) => {
+                  const list = byTier.get(tier) ?? [];
+                  if (list.length === 0) return null;
+                  return (
+                    <div key={tier}>
+                      <h4 className="text-sm font-medium text-foreground/70 mb-2">
+                        {TIER_LABEL[tier]}
+                      </h4>
+                      <div className="space-y-0.5">
+                        {list.map((c) => (
                           <Link
+                            key={c.id}
                             href={`/board/${c.slug}`}
-                            className="block px-3 py-2 rounded hover:bg-muted/40 no-underline text-sm"
+                            className="block text-sm text-foreground/80 hover:text-primary hover:bg-muted/30 no-underline px-2 py-1.5 rounded"
                           >
                             {c.name}
                           </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
 
-          <section>
-            <h2 className="text-lg font-bold">最近のマイ投稿</h2>
-            {myRecent.length === 0 ? (
-              <p className="mt-3 text-sm text-foreground/60">
-                まだ投稿がありません。
-              </p>
-            ) : (
-              <ul className="mt-3 space-y-2 text-sm">
-                {myRecent.map((t) => (
-                  <li key={t.id}>
+            {/* 最近のマイ投稿 */}
+            <section className="bg-background rounded-lg border border-border p-6">
+              <h3 className="text-lg font-bold text-foreground mb-4">
+                最近のマイ投稿
+              </h3>
+              {myRecent.length === 0 ? (
+                <p className="text-sm text-foreground/60">
+                  まだ投稿がありません。
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {myRecent.map((t) => (
                     <Link
+                      key={t.id}
                       href={`/board/${t.categories?.slug}/${t.id}`}
-                      className="block px-3 py-2 rounded hover:bg-muted/40 no-underline"
+                      className="block no-underline hover:bg-muted/30 -mx-2 px-2 py-1.5 rounded"
                     >
-                      <p className="truncate font-medium">{t.title}</p>
-                      <p className="text-xs text-foreground/60">
+                      <h4 className="text-sm font-medium text-foreground truncate">
+                        {t.title}
+                      </h4>
+                      <p className="text-xs text-foreground/60 mt-0.5">
                         {new Date(t.created_at).toLocaleDateString("ja-JP")}
                       </p>
                     </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </aside>
+                  ))}
+                </div>
+              )}
+            </section>
+          </aside>
+        </div>
       </div>
 
-      {/* 将来の機能案内 */}
-      <section className="mt-12 rounded-xl border border-border bg-muted/40 p-6">
-        <h2 className="text-base font-bold">今後のアップデート</h2>
-        <ul className="mt-3 space-y-1 text-sm text-foreground/80">
-          <li>・メッセージ（DM）、ご自身の会員同士で1対1の語らい（開発中）</li>
-          <li>・オフ会の正式申込と開催履歴（入会3ヶ月以上で参加可）</li>
-          <li>・本人確認済バッジ（身分証提出でフェーズ5以降付与）</li>
-        </ul>
-      </section>
-    </div>
+      {/* 今後のアップデート案内 */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="bg-muted/50 rounded-lg p-6">
+          <h3 className="text-lg font-bold text-foreground mb-4">
+            今後のアップデート予定
+          </h3>
+          <ul className="space-y-2 text-sm text-foreground/80">
+            <UpdateItem>DM（ダイレクトメッセージ）機能の実装</UpdateItem>
+            <UpdateItem>オフ会申込システム、入会3ヶ月以上で参加可</UpdateItem>
+            <UpdateItem>本人確認済バッジの表示（身分証確認フロー）</UpdateItem>
+            <UpdateItem>運営からのお知らせ・今週のお題の配信</UpdateItem>
+          </ul>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function QuickAction({
+  href,
+  icon,
+  label,
+  primary,
+}: {
+  href: string;
+  icon: string;
+  label: string;
+  primary?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={
+        "block rounded-lg p-6 text-center no-underline transition-colors " +
+        (primary
+          ? "bg-primary text-white hover:opacity-90"
+          : "bg-background border border-border hover:bg-muted/40 text-foreground")
+      }
+    >
+      <div className="w-8 h-8 flex items-center justify-center mx-auto mb-3">
+        <i className={`${icon} text-2xl`} aria-hidden />
+      </div>
+      <span className="text-sm font-medium">{label}</span>
+    </Link>
+  );
+}
+
+function UpdateItem({ children }: { children: React.ReactNode }) {
+  return (
+    <li className="flex items-center gap-2">
+      <span
+        className="inline-block w-2 h-2 bg-accent rounded-full shrink-0"
+        aria-hidden
+      />
+      <span>{children}</span>
+    </li>
   );
 }

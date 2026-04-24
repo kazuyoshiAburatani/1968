@@ -16,11 +16,19 @@ type ThreadRow = {
   categories: { slug: string; name: string; tier: Tier } | null;
 };
 
-const TIER_COLORS: Record<Tier, string> = {
+// 段階別にバッジの色を変える、段階が上がるほど紺寄りに濃くなる階調
+const TIER_BADGE: Record<Tier, string> = {
   A: "bg-muted text-foreground",
   B: "bg-accent/20 text-accent",
-  C: "bg-primary/20 text-primary",
+  C: "bg-primary/15 text-primary",
   D: "bg-primary text-white",
+};
+
+const TIER_LABEL: Record<Tier, string> = {
+  A: "段階A",
+  B: "段階B",
+  C: "段階C",
+  D: "段階D",
 };
 
 export async function LatestThreadsList({ limit = 10 }: { limit?: number }) {
@@ -35,7 +43,6 @@ export async function LatestThreadsList({ limit = 10 }: { limit?: number }) {
 
   const rows = (threads ?? []) as unknown as ThreadRow[];
 
-  // 作者ニックネーム
   const userIds = [...new Set(rows.map((r) => r.user_id))];
   const nickMap = new Map<string, string>();
   if (userIds.length > 0) {
@@ -50,7 +57,7 @@ export async function LatestThreadsList({ limit = 10 }: { limit?: number }) {
 
   if (rows.length === 0) {
     return (
-      <p className="text-sm text-foreground/60">
+      <p className="py-6 text-sm text-foreground/60 text-center">
         まだ投稿がありません。最初の一歩を書いてみませんか？
       </p>
     );
@@ -62,26 +69,38 @@ export async function LatestThreadsList({ limit = 10 }: { limit?: number }) {
         const nickname = nickMap.get(t.user_id) ?? "（匿名）";
         const tier = t.categories?.tier ?? "A";
         return (
-          <li key={t.id} className="py-3">
+          <li key={t.id} className="py-4 first:pt-0 last:pb-0">
             <Link
               href={`/board/${t.categories?.slug}/${t.id}`}
-              className="block no-underline hover:bg-muted/40 -mx-2 px-2 py-1 rounded"
+              className="block no-underline hover:bg-muted/30 -mx-3 px-3 py-1 rounded"
             >
               <div className="flex items-center gap-2 flex-wrap">
                 <span
                   className={
-                    "text-xs font-bold px-2 py-0.5 rounded-full " +
-                    TIER_COLORS[tier]
+                    "text-xs font-bold px-2 py-0.5 rounded " + TIER_BADGE[tier]
                   }
                 >
+                  {TIER_LABEL[tier]}
+                </span>
+                <span className="text-xs text-foreground/60">
                   {t.categories?.name}
                 </span>
               </div>
-              <p className="mt-1 font-bold">{t.title}</p>
-              <p className="mt-0.5 text-xs text-foreground/60">
-                {nickname} ・ {new Date(t.created_at).toLocaleDateString("ja-JP")} ・
-                返信{t.reply_count} ・ いいね{t.like_count}
-              </p>
+              <h3 className="mt-1.5 font-bold text-foreground leading-snug">
+                {t.title}
+              </h3>
+              <div className="mt-1.5 flex items-center gap-4 text-xs text-foreground/60">
+                <span>{nickname}</span>
+                <span>{new Date(t.created_at).toLocaleString("ja-JP", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                <span className="inline-flex items-center gap-1">
+                  <i className="ri-message-2-line" aria-hidden />
+                  {t.reply_count}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <i className="ri-heart-line" aria-hidden />
+                  {t.like_count}
+                </span>
+              </div>
             </Link>
           </li>
         );
