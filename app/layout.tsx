@@ -94,6 +94,13 @@ function SiteHeader({
           </span>
         </Link>
         <nav className="flex items-center gap-3">
+          <Link
+            href="/board"
+            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-3 rounded-full border border-border bg-background hover:bg-muted/40 no-underline text-sm font-medium text-foreground"
+            aria-label="掲示板トップへ"
+          >
+            掲示板TOP
+          </Link>
           {userId ? (
             <Link
               href="/mypage"
