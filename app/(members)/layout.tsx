@@ -1,10 +1,23 @@
-// 会員画面（準会員・正会員共通）のレイアウト枠。現時点ではパススルー。
-// TODO フェーズ2で以下を実装する。
-//   1. Supabase Auth でセッション取得、未ログインなら /login へリダイレクト
-//   2. users.membership_rank を参照し、guest なら /register へ誘導
-//   3. サイドナビ（ホーム／掲示板／マイページ等）の共通表示
-export default function MembersLayout({
+import { redirect } from "next/navigation";
+import { requireSession } from "@/lib/auth/require-session";
+
+// 会員画面（準会員・正会員・pending 共通）のレイアウト。
+// 未ログイン → /login、プロフィール未作成 → /onboarding にリダイレクト。
+// ランク別の投稿権限はフェーズ3の掲示板機能で個別に制御する。
+export default async function MembersLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const { supabase, user } = await requireSession();
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!profile) {
+    redirect("/onboarding");
+  }
+
   return <>{children}</>;
 }
