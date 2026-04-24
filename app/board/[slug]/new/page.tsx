@@ -53,7 +53,7 @@ export default async function NewThreadPage({ params, searchParams }: Props) {
         <p className="mt-6">
           <Link
             href="/mypage"
-            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full bg-[color:var(--color-primary)] text-[color:var(--color-primary-fg)] font-medium no-underline hover:opacity-90"
+            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full bg-[color:var(--color-primary)] text-white font-medium no-underline hover:opacity-90"
           >
             マイページへ
           </Link>

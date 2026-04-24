@@ -23,7 +23,7 @@ export function SubmitButton({
     "inline-flex items-center justify-center gap-2 min-h-[var(--spacing-tap)] px-6 rounded-full font-medium transition-opacity disabled:cursor-wait disabled:opacity-70";
   const variantClass =
     variant === "primary"
-      ? "bg-[color:var(--color-primary)] text-[color:var(--color-primary-fg)] hover:opacity-90"
+      ? "bg-[color:var(--color-primary)] text-white hover:opacity-90"
       : "border border-[color:var(--color-border)] text-[color:var(--color-foreground)]/80 hover:bg-[color:var(--color-muted)]";
 
   return (

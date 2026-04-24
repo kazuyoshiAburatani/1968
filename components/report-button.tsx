@@ -71,7 +71,7 @@ export function ReportButton({ targetType, targetId }: Props) {
             <button
               type="submit"
               disabled={pending || !reason.trim()}
-              className="min-h-[var(--spacing-tap)] px-4 rounded-full bg-[color:var(--color-primary)] text-[color:var(--color-primary-fg)] text-sm font-medium hover:opacity-90 disabled:opacity-50"
+              className="min-h-[var(--spacing-tap)] px-4 rounded-full bg-[color:var(--color-primary)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
             >
               送信
             </button>

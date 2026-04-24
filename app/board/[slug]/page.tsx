@@ -90,7 +90,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           <p className="mt-6">
             <Link
               href={rank === "guest" ? "/register" : "/mypage"}
-              className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full bg-[color:var(--color-primary)] text-[color:var(--color-primary-fg)] font-medium no-underline hover:opacity-90"
+              className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full bg-[color:var(--color-primary)] text-white font-medium no-underline hover:opacity-90"
             >
               {rank === "guest" ? "新規登録する" : "マイページへ"}
             </Link>
@@ -149,7 +149,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         {canPostHere && (
           <Link
             href={`/board/${category.slug}/new`}
-            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-4 rounded-full bg-[color:var(--color-primary)] text-[color:var(--color-primary-fg)] font-medium no-underline hover:opacity-90"
+            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-4 rounded-full bg-[color:var(--color-primary)] text-white font-medium no-underline hover:opacity-90"
           >
             新しいスレッドを書く
           </Link>
