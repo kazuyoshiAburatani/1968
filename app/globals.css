@@ -16,36 +16,39 @@
   --spacing-tap: 2.75rem;
 }
 
-/* ベースの可読性設定、本文16px以上・行間1.75倍 */
-html {
-  font-size: 16px;
-}
+/* base レイヤーに置くことで Tailwind のユーティリティクラス（text-white など）が
+   常に上書きできるようにする。直接 html/body/a {} だと Tailwind utilities より
+   優先度が高くなり、ボタンのテキスト色が潰れる問題が出ていた。 */
+@layer base {
+  html {
+    font-size: 16px;
+  }
 
-body {
-  background: var(--color-background);
-  color: var(--color-foreground);
-  font-family: var(--font-sans);
-  line-height: 1.75;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-/* 最低限の見出し行間調整（本文より詰める） */
-h1, h2, h3, h4, h5, h6 {
-  line-height: 1.4;
-}
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.4;
+  }
 
-/* 長文折り返し、日本語の読みやすさ向上 */
-p {
-  word-break: break-word;
-  overflow-wrap: anywhere;
-}
+  p {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
 
-/* リンク既定、下線は hover 時のみ（落ち着いたトーン） */
-a {
-  color: var(--color-primary);
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
+  /* リンク既定、ただし class が付いた要素（ボタン化されたリンク等）は Tailwind 指定に任せる。
+     :where() で特異度を 0 に抑え、Tailwind のユーティリティが容易に上書きできるようにする。 */
+  :where(a) {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+  :where(a):hover {
+    text-decoration: underline;
+  }
 }
