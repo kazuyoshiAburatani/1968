@@ -2,8 +2,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentRank } from "@/lib/auth/current-rank";
 import { HomeGuest } from "@/components/home/home-guest";
-import { HomePending } from "@/components/home/home-pending";
-import { HomeAssociate } from "@/components/home/home-associate";
+import { HomeMember } from "@/components/home/home-member";
 import { HomeRegular } from "@/components/home/home-regular";
 
 type Props = {
@@ -16,14 +15,12 @@ type Props = {
 };
 
 // トップページはランクに応じて出し分けする。
-// guest    → HomeGuest、ランディング
-// pending  → HomePending、課金誘導中心
-// associate→ HomeAssociate、段階A・B のダッシュボード
-// regular  → HomeRegular、全カテゴリの本格ダッシュボード
+// guest   → HomeGuest、ランディング、段階A 4 カテゴリのみ閲覧可
+// member  → HomeMember、無料会員ダッシュボード、段階A+B 閲覧可
+// regular → HomeRegular、正会員ダッシュボード、全カテゴリ
 export default async function HomePage({ searchParams }: Props) {
   const params = await searchParams;
 
-  // Supabase から戻ってきた code / error は /auth/callback や /login に誘導
   if (params.code) {
     redirect(`/auth/callback?code=${encodeURIComponent(params.code)}`);
   }
@@ -39,7 +36,6 @@ export default async function HomePage({ searchParams }: Props) {
     return <HomeGuest />;
   }
 
-  // ニックネーム取得（ヘッダーで同じ問い合わせがあるが、ページ本体でも使うので再取得）
   const { data: profile } = await supabase
     .from("profiles")
     .select("nickname")
@@ -50,9 +46,5 @@ export default async function HomePage({ searchParams }: Props) {
   if (rank === "regular") {
     return <HomeRegular nickname={nickname} userId={userId} />;
   }
-  if (rank === "associate") {
-    return <HomeAssociate nickname={nickname} userId={userId} />;
-  }
-  // pending およびフォールバック
-  return <HomePending nickname={nickname} />;
+  return <HomeMember nickname={nickname} userId={userId} />;
 }

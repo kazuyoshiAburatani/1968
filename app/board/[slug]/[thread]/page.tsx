@@ -283,7 +283,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
           <div className="mt-2 text-sm">
             <p>
               このカテゴリへの返信は
-              {category.access_level_post === "associate" ? "準会員以上" : "正会員"}
+              {category.access_level_post === "member" ? "会員登録" : "正会員"}
               の方にお願いしています。
             </p>
             <p className="mt-4">

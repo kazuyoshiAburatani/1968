@@ -47,7 +47,7 @@ export default async function NewThreadPage({ params, searchParams }: Props) {
         <h1 className="text-2xl font-bold">投稿できません</h1>
         <p className="mt-2 text-sm">
           このカテゴリへの投稿は
-          {category.access_level_post === "associate" ? "準会員以上" : "正会員"}
+          {category.access_level_post === "member" ? "会員登録" : "正会員"}
           の方にお願いしています。
         </p>
         <p className="mt-6">

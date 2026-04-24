@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Rank } from "@/lib/auth/permissions";
 
 // 現在の閲覧ユーザーのランクを取得するユーティリティ。
-// 未ログインは guest、public.users が無ければ pending として扱う。
+// 未ログインは guest、public.users が無ければ member（既定値）として扱う。
 export async function getCurrentRank(
   supabase: SupabaseClient,
 ): Promise<{ rank: Rank; userId: string | null }> {
@@ -21,6 +21,6 @@ export async function getCurrentRank(
     .maybeSingle();
 
   const rank = ((publicUser?.membership_rank as Rank | undefined) ??
-    "pending") as Rank;
+    "member") as Rank;
   return { rank, userId: user.id };
 }

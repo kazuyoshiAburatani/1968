@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: "マイページ",
 };
 
-type Rank = "guest" | "pending" | "associate" | "regular";
+type Rank = "guest" | "member" | "regular";
 
 type Props = {
   searchParams: Promise<{ saved?: string }>;
@@ -53,14 +53,14 @@ export default async function MyPage({ searchParams }: Props) {
         </div>
       )}
 
-      {rank === "pending" && (
-        <section className="mt-8 rounded-lg border border-accent/40 bg-muted/40 p-4">
-          <h2 className="font-bold">準会員へのご案内</h2>
-          <p className="mt-1 text-sm">
-            現在は登録のみが完了している状態です。月額180円のお支払いを完了すると、段階A・Bカテゴリの閲覧と投稿が可能になります。
+      {rank === "member" && (
+        <section className="mt-8 rounded-lg border border-border bg-muted/30 p-4">
+          <h2 className="font-bold">正会員について</h2>
+          <p className="mt-1 text-sm text-foreground/80">
+            月額480円の正会員にアップグレードすると、介護・夫婦・健康・お金などの全カテゴリに投稿でき、オフ会やメッセージも利用できます。
           </p>
           <p className="mt-3 text-sm text-foreground/60">
-            決済機能はフェーズ4で追加予定、しばらくお待ちください。
+            決済はフェーズ4で追加予定、いましばらくお待ちください。
           </p>
         </section>
       )}

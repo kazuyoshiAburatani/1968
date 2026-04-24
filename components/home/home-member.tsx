@@ -4,8 +4,9 @@ import { RisingSun } from "@/components/illustrations/rising-sun";
 import { LatestThreadsList } from "@/components/home/latest-threads-list";
 import type { Tier } from "@/lib/auth/permissions";
 
-// 準会員（associate）向けダッシュボード。Readdy デザイン準拠。
-// あいさつバー／クイックアクション／投稿可能カテゴリ（進捗付き）／最新話題／正会員アップグレード。
+// 無料会員（member）向けダッシュボード。
+// ・段階A（4）を「投稿できるカテゴリ」、段階B（4）を「閲覧できるカテゴリ」、C/D（4）はグレーアウト
+// ・課金アピールを控えめに、ページ下部に「正会員について」のリンクだけ置く
 
 type Category = {
   id: number;
@@ -16,7 +17,7 @@ type Category = {
   posting_limit_per_day: number | null;
 };
 
-export async function HomeAssociate({
+export async function HomeMember({
   nickname,
   userId,
 }: {
@@ -25,21 +26,15 @@ export async function HomeAssociate({
 }) {
   const supabase = await createSupabaseServerClient();
 
-  // 投稿可能な段階A カテゴリ
-  const { data: postableData } = await supabase
+  const { data: catsData } = await supabase
     .from("categories")
-    .select("id, slug, name, description, tier, posting_limit_per_day")
-    .eq("tier", "A")
+    .select("id, slug, name, description, tier, posting_limit_per_day, display_order")
     .order("display_order");
-  const postable = (postableData ?? []) as Category[];
+  const cats = (catsData ?? []) as Category[];
 
-  // 正会員限定（C/D）カテゴリ
-  const { data: lockedData } = await supabase
-    .from("categories")
-    .select("id, slug, name, tier")
-    .in("tier", ["C", "D"])
-    .order("display_order");
-  const locked = (lockedData ?? []) as Category[];
+  const tierA = cats.filter((c) => c.tier === "A");
+  const tierB = cats.filter((c) => c.tier === "B");
+  const locked = cats.filter((c) => c.tier === "C" || c.tier === "D");
 
   // 自分の今日の投稿を category_id で集計
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -54,7 +49,7 @@ export async function HomeAssociate({
     todayCountByCat.set(cid, (todayCountByCat.get(cid) ?? 0) + 1);
   }
 
-  const firstPostableSlug = postable[0]?.slug ?? "chitchat";
+  const firstA = tierA[0]?.slug ?? "chitchat";
 
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-8">
@@ -66,15 +61,15 @@ export async function HomeAssociate({
               <h1 className="text-2xl font-bold text-foreground">
                 {nickname} さんのホーム
               </h1>
-              <span className="bg-accent text-white px-3 py-1 rounded-full text-sm font-medium shadow-sm">
-                準会員
+              <span className="bg-muted text-foreground/80 border border-border px-3 py-1 rounded-full text-sm font-medium">
+                会員
               </span>
             </div>
-            <p className="text-foreground/70">
-              段階A・Bを読んで、段階Aに投稿できます。
+            <p className="text-foreground/70 text-sm">
+              段階A・B の 8 カテゴリを閲覧、段階A に 1日3件まで投稿できます。
             </p>
           </div>
-          <div className="hidden md:block text-accent/30">
+          <div className="hidden md:block text-accent/25">
             <RisingSun size={96} />
           </div>
         </div>
@@ -82,34 +77,24 @@ export async function HomeAssociate({
 
       {/* クイックアクション */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <QuickAction href="/board" icon="ri-clipboard-line" title="掲示板TOP" sub="12 カテゴリ一覧へ" />
         <QuickAction
-          href="/board"
-          icon="ri-clipboard-line"
-          title="掲示板TOP"
-          sub="12 カテゴリ一覧へ"
-        />
-        <QuickAction
-          href={`/board/${firstPostableSlug}/new`}
+          href={`/board/${firstA}/new`}
           icon="ri-edit-line"
           title="新しく書く"
-          sub="段階Aに投稿できます"
+          sub="段階A に投稿できます"
           primary
         />
-        <QuickAction
-          href="/mypage"
-          icon="ri-user-line"
-          title="マイページ"
-          sub="プロフィール・課金"
-        />
+        <QuickAction href="/mypage" icon="ri-user-line" title="マイページ" sub="プロフィール・設定" />
       </section>
 
-      {/* 投稿できるカテゴリ */}
+      {/* 投稿できるカテゴリ（段階A） */}
       <section>
         <h2 className="text-xl font-bold text-foreground mb-4">
           投稿できるカテゴリ（段階A）
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {postable.map((c) => {
+          {tierA.map((c) => {
             const todayCount = todayCountByCat.get(c.id) ?? 0;
             const limit = c.posting_limit_per_day ?? 0;
             return (
@@ -143,7 +128,35 @@ export async function HomeAssociate({
         </div>
       </section>
 
-      {/* 最新の話題（段階A・B） */}
+      {/* 閲覧できるカテゴリ（段階B） */}
+      <section>
+        <h2 className="text-xl font-bold text-foreground mb-4">
+          閲覧できるカテゴリ（段階B）
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {tierB.map((c) => (
+            <Link
+              key={c.id}
+              href={`/board/${c.slug}`}
+              className="bg-background rounded-lg p-4 shadow-sm border border-border hover:shadow-md transition-shadow min-h-[44px] group no-underline"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                  {c.name}
+                </h3>
+                <span className="text-xs bg-muted text-foreground/80 px-2 py-1 rounded-full">
+                  段階B
+                </span>
+              </div>
+              {c.description && (
+                <p className="text-sm text-foreground/60">{c.description}</p>
+              )}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* 最新の話題 */}
       <section>
         <h2 className="text-xl font-bold text-foreground mb-4">
           最新の話題（段階A・B）
@@ -153,39 +166,33 @@ export async function HomeAssociate({
         </div>
       </section>
 
-      {/* 正会員アップグレード案内 */}
-      <section className="bg-background rounded-lg p-6 shadow-sm border-2 border-accent">
-        <div className="flex items-center gap-2 mb-4 flex-wrap">
-          <span className="bg-accent text-white px-3 py-1 rounded-full text-sm font-bold">
-            UPGRADE
-          </span>
-          <h2 className="text-xl font-bold text-foreground">
-            正会員になると、もっと深い話ができます
-          </h2>
-        </div>
-        <p className="text-foreground/70 mb-4 text-sm">
-          身分証で本人確認した同い年の方々と、介護・夫婦・健康・お金などの話題を本音で語り合えます。
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+      {/* グレーアウトカテゴリ（C/D） */}
+      <section>
+        <h2 className="text-xl font-bold text-foreground/70 mb-4">
+          正会員で語られているテーマ
+        </h2>
+        <ul className="grid grid-cols-2 md:grid-cols-4 gap-3 opacity-60">
           {locked.map((c) => (
-            <div
+            <li
               key={c.id}
-              className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg"
+              className="bg-muted/50 border border-border rounded-lg p-3 flex items-center gap-2 cursor-not-allowed"
+              aria-disabled="true"
             >
               <i
-                className="ri-lock-line text-foreground/40"
+                className="ri-lock-line text-foreground/40 shrink-0"
                 aria-hidden
               />
-              <span className="text-foreground/70 text-sm">{c.name}</span>
-            </div>
+              <span className="text-foreground/70 text-sm truncate">{c.name}</span>
+            </li>
           ))}
-        </div>
-        <Link
-          href="/mypage"
-          className="block w-full text-center bg-primary text-white py-3 px-6 rounded-full font-semibold hover:opacity-90 transition-opacity min-h-[44px] no-underline"
-        >
-          正会員へのアップグレードを検討する
-        </Link>
+        </ul>
+        <p className="mt-4 text-sm text-center text-foreground/70">
+          詳しくは{" "}
+          <Link href="/mypage" className="font-medium">
+            マイページ
+          </Link>
+          をご覧ください。
+        </p>
       </section>
     </div>
   );
@@ -217,7 +224,9 @@ function QuickAction({
       <div
         className={
           "w-12 h-12 flex items-center justify-center rounded-lg mb-3 transition-colors " +
-          (primary ? "bg-white/20 group-hover:bg-white/30" : "bg-muted group-hover:bg-muted/70")
+          (primary
+            ? "bg-white/20 group-hover:bg-white/30"
+            : "bg-muted group-hover:bg-muted/70")
         }
       >
         <i

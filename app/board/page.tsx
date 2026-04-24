@@ -2,7 +2,13 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentRank } from "@/lib/auth/current-rank";
-import { canView, canPost, type Tier, type ViewLevel, type PostLevel } from "@/lib/auth/permissions";
+import {
+  canView,
+  canPost,
+  type Tier,
+  type ViewLevel,
+  type PostLevel,
+} from "@/lib/auth/permissions";
 
 export const metadata: Metadata = {
   title: "掲示板",
@@ -22,7 +28,7 @@ type Category = {
 
 const TIER_TITLES: Record<Tier, string> = {
   A: "どなたでも",
-  B: "準会員から",
+  B: "会員から",
   C: "正会員のみ",
   D: "正会員・入会3ヶ月以上",
 };
@@ -37,14 +43,10 @@ export default async function BoardPage() {
       "id, slug, name, description, display_order, tier, access_level_view, access_level_post, posting_limit_per_day",
     )
     .order("display_order");
-
   const all = (categories ?? []) as Category[];
-  const viewable = all.filter((c) => canView(rank, c.access_level_view));
-  const locked = all.filter((c) => !canView(rank, c.access_level_view));
 
-  // tier ごとにグルーピング
   const byTier = new Map<Tier, Category[]>();
-  for (const c of viewable) {
+  for (const c of all) {
     const list = byTier.get(c.tier) ?? [];
     list.push(c);
     byTier.set(c.tier, list);
@@ -55,11 +57,11 @@ export default async function BoardPage() {
       <header>
         <h1 className="text-2xl font-bold">掲示板</h1>
         <p className="mt-2 text-foreground/80">
-          同い年の方々の語り合い。
+          12 のカテゴリで、同い年の方々と語り合えます。
           {rank === "guest" &&
-            "今は体験閲覧中です、気になるカテゴリが見えたら入会をご検討ください。"}
-          {rank === "pending" && "まずは一部のカテゴリをご覧いただけます。"}
-          {(rank === "associate" || rank === "regular") && "お気に入りのカテゴリからどうぞ。"}
+            "今は 4 カテゴリをご覧いただけます、会員登録で 8 カテゴリに広がります。"}
+          {rank === "member" && "8 カテゴリを閲覧、段階A に投稿できます。"}
+          {rank === "regular" && "全カテゴリを自由に語れます。"}
         </p>
       </header>
 
@@ -75,55 +77,71 @@ export default async function BoardPage() {
               </span>
             </div>
             <ul className="mt-4 grid gap-3 md:grid-cols-2">
-              {list.map((c) => (
-                <li key={c.id}>
-                  <Link
-                    href={`/board/${c.slug}`}
-                    className="block rounded-lg border border-border bg-background p-4 no-underline hover:bg-muted/40"
-                  >
-                    <p className="font-bold">{c.name}</p>
-                    {c.description && (
-                      <p className="mt-1 text-sm text-foreground/70">
-                        {c.description}
-                      </p>
+              {list.map((c) => {
+                const viewable = canView(rank, c.access_level_view);
+                const postable = canPost(rank, c.access_level_post);
+                return (
+                  <li key={c.id}>
+                    {viewable ? (
+                      <Link
+                        href={`/board/${c.slug}`}
+                        className="block rounded-lg border border-border bg-background p-4 no-underline hover:bg-muted/40"
+                      >
+                        <p className="font-bold">{c.name}</p>
+                        {c.description && (
+                          <p className="mt-1 text-sm text-foreground/70">
+                            {c.description}
+                          </p>
+                        )}
+                        <p className="mt-2 text-xs text-foreground/60">
+                          {postable
+                            ? c.posting_limit_per_day
+                              ? `投稿可（1日${c.posting_limit_per_day}件まで）`
+                              : "投稿可"
+                            : "閲覧のみ"}
+                        </p>
+                      </Link>
+                    ) : (
+                      <div
+                        className="rounded-lg border border-border bg-muted/40 p-4 opacity-60 cursor-not-allowed"
+                        aria-disabled="true"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-bold">{c.name}</p>
+                          <i
+                            className="ri-lock-line text-foreground/50"
+                            aria-hidden
+                          />
+                        </div>
+                        {c.description && (
+                          <p className="mt-1 text-sm text-foreground/60">
+                            {c.description}
+                          </p>
+                        )}
+                        <p className="mt-2 text-xs text-foreground/50">
+                          {rank === "guest"
+                            ? "会員登録するとご覧いただけます"
+                            : "正会員でご覧いただけます"}
+                        </p>
+                      </div>
                     )}
-                    <p className="mt-2 text-xs text-foreground/60">
-                      {canPost(rank, c.access_level_post)
-                        ? c.posting_limit_per_day
-                          ? `投稿可（1日${c.posting_limit_per_day}件まで）`
-                          : "投稿可"
-                        : "投稿権なし（閲覧のみ）"}
-                    </p>
-                  </Link>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           </section>
         );
       })}
 
-      {locked.length > 0 && (
-        <section className="mt-12 rounded-lg border border-border bg-muted/40 p-6">
-          <h2 className="font-bold">
-            会員限定のカテゴリが{locked.length}件あります
-          </h2>
-          <p className="mt-2 text-sm text-foreground/80">
-            介護・夫婦・健康・お金など、同い年だからこそ本音で話せる場は、会員限定で開かれています。
-          </p>
-          <ul className="mt-4 space-y-1 text-sm text-foreground/70">
-            {locked.map((c) => (
-              <li key={c.id}>・{c.name}</li>
-            ))}
-          </ul>
-          <p className="mt-6">
-            <Link
-              href="/register"
-              className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full bg-primary text-white font-medium no-underline hover:opacity-90"
-            >
-              {rank === "guest" ? "新規登録する" : "マイページで課金する"}
-            </Link>
-          </p>
-        </section>
+      {rank === "guest" && (
+        <p className="mt-12 text-center">
+          <Link
+            href="/register"
+            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-lg border border-primary text-primary bg-background hover:bg-muted no-underline font-medium"
+          >
+            会員登録（無料）でもっと見る
+          </Link>
+        </p>
       )}
     </div>
   );

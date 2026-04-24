@@ -2,22 +2,18 @@ import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Enso } from "@/components/illustrations/enso";
 import { WashiTexture } from "@/components/illustrations/washi-texture";
+import type { Tier } from "@/lib/auth/permissions";
 
-// 未ログイン／ゲスト向けのランディング。Readdy デザイン準拠。
-// ヒーロー（大画面）、ピックアップ4、入会2プラン（正会員に「おすすめ」バッジ）、特徴3枚。
+// 未ログインのランディング。
+// ・段階A 4 カテゴリは通常表示、B〜D の 8 カテゴリはグレーアウト
+// ・課金訴求を控えめに、主 CTA は「会員登録」と「掲示板をのぞく」
 
-const PICKUP_SLUGS = [
-  "showa43-memories",
-  "youth-bubble-era",
-  "parents-care",
-  "health",
-] as const;
-
-type PickupCategory = {
+type Category = {
   slug: string;
   name: string;
   description: string | null;
-  tier: "A" | "B" | "C" | "D";
+  tier: Tier;
+  display_order: number;
 };
 
 export async function HomeGuest() {
@@ -25,22 +21,19 @@ export async function HomeGuest() {
   const { data } = await supabase
     .from("categories")
     .select("slug, name, description, tier, display_order")
-    .in("slug", PICKUP_SLUGS as unknown as string[])
     .order("display_order");
-  const pickup = (data ?? []) as PickupCategory[];
+  const all = (data ?? []) as Category[];
+  const openCats = all.filter((c) => c.tier === "A");
+  const lockedCats = all.filter((c) => c.tier !== "A");
 
   return (
     <>
-      {/* ヒーローセクション */}
-      <section className="relative min-h-[70vh] flex items-center justify-center px-4 py-16 overflow-hidden">
-        {/* 和紙パターン背景 */}
+      {/* ヒーロー */}
+      <section className="relative min-h-[60vh] flex items-center justify-center px-4 py-16 overflow-hidden">
         <WashiTexture className="absolute inset-0 w-full h-full opacity-50 text-accent" />
-
-        {/* 円相装飾 */}
         <div className="absolute top-8 right-8 opacity-20 text-foreground pointer-events-none">
           <Enso size={120} />
         </div>
-
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <p className="text-sm text-accent mb-4 font-medium tracking-wider">
             SHOWA 43 / 1968 ONLY
@@ -51,173 +44,118 @@ export async function HomeGuest() {
             語らいの場。
           </h1>
           <p className="text-lg md:text-xl mb-12 leading-[1.75] max-w-3xl mx-auto px-4">
-            1968年（昭和43年）生まれだけが参加できる会員制コミュニティ。
+            1968年（昭和43年）生まれだけが集まる、同い年のコミュニティ。
             <br />
-            介護、夫婦、健康、お金。人には聞きにくい話題も、
-            <br />
-            同い年となら本音で話せる。
+            介護、夫婦、健康、お金。同じ時代を生きた者同士だから、本音で語り合える。
           </p>
-          <Link
-            href="/board"
-            className="inline-flex items-center justify-center bg-primary text-white px-12 py-4 rounded-lg text-xl font-medium hover:opacity-90 transition-opacity min-h-[56px] min-w-[280px] no-underline"
-            aria-label="掲示板をのぞいてみる"
-          >
-            掲示板をのぞいてみる →
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+            <Link
+              href="/board"
+              className="inline-flex items-center justify-center bg-primary text-white px-10 py-4 rounded-lg text-lg font-medium hover:opacity-90 transition-opacity min-h-[56px] min-w-[240px] no-underline"
+            >
+              掲示板をのぞいてみる →
+            </Link>
+            <Link
+              href="/register"
+              className="inline-flex items-center justify-center border border-primary text-primary bg-background px-10 py-4 rounded-lg text-lg font-medium hover:bg-muted transition-colors min-h-[56px] min-w-[240px] no-underline"
+            >
+              会員登録（無料）
+            </Link>
+          </div>
           <p className="mt-4 text-sm text-foreground/60">
-            未登録でも一部のカテゴリと投稿をご覧いただけます
+            4 カテゴリは未登録でもご覧いただけます
           </p>
         </div>
       </section>
 
-      {/* 今月のピックアップセクション */}
-      {pickup.length > 0 && (
-        <section className="py-16 px-4">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12 text-primary leading-[1.4]">
-              今月のピックアップ
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              {pickup.map((c) => (
-                <Link
-                  key={c.slug}
-                  href={`/board/${c.slug}`}
-                  className="bg-muted border border-border rounded-lg p-6 hover:shadow-md transition-shadow no-underline block"
-                >
-                  <div className="flex justify-between items-start gap-3 mb-3">
-                    <h3 className="text-xl font-bold text-primary leading-[1.4]">
-                      {c.name}
-                    </h3>
-                    <span
-                      className={
-                        "px-3 py-1 rounded-full text-sm font-medium shrink-0 " +
-                        (c.tier === "A"
-                          ? "bg-accent text-white"
-                          : "bg-primary text-white")
-                      }
-                    >
-                      {c.tier === "A" ? "どなたでも" : "会員限定"}
-                    </span>
-                  </div>
-                  <p className="text-base leading-[1.75] text-foreground/80">
-                    {c.description}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 入会セクション */}
-      <section className="py-16 px-4 bg-muted">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4 text-primary leading-[1.4]">
-            入会する
-          </h2>
-          <p className="text-center mb-12 text-accent font-medium">
-            いずれもマイページからいつでも解約できます
-          </p>
-
-          <div className="grid lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* 準会員 */}
-            <article className="bg-background border-2 border-border rounded-lg p-8">
-              <h3 className="text-2xl font-bold mb-4 text-primary leading-[1.4]">
-                準会員
-              </h3>
-              <div className="mb-6">
-                <span className="text-3xl font-bold">月額180円</span>
-                <span className="text-lg text-accent ml-2">/ 年額1,800円</span>
-              </div>
-              <ul className="space-y-3 mb-8 text-base leading-[1.75]">
-                <li className="flex items-start">
-                  <span className="text-accent mr-2">•</span>
-                  段階A・Bカテゴリの閲覧
-                </li>
-                <li className="flex items-start">
-                  <span className="text-accent mr-2">•</span>
-                  段階Aカテゴリへの投稿（1日3件まで）
-                </li>
-                <li className="flex items-start">
-                  <span className="text-accent mr-2">•</span>
-                  メールアドレスとクレジットカードで登録
-                </li>
-              </ul>
-              <Link
-                href="/register?plan=associate"
-                className="block w-full text-center bg-accent text-white py-4 rounded-lg font-medium hover:opacity-90 transition-opacity min-h-[56px] no-underline"
-                aria-label="準会員に入会する"
-              >
-                準会員に入会する
-              </Link>
-            </article>
-
-            {/* 正会員（おすすめ） */}
-            <article className="bg-background border-4 border-primary rounded-lg p-8 relative">
-              <span className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-white px-4 py-1 rounded-full text-sm font-medium whitespace-nowrap">
-                おすすめ
-              </span>
-              <h3 className="text-2xl font-bold mb-4 text-primary leading-[1.4]">
-                正会員
-              </h3>
-              <div className="mb-6">
-                <span className="text-3xl font-bold">月額480円</span>
-                <span className="text-lg text-accent ml-2">/ 年額4,800円</span>
-              </div>
-              <ul className="space-y-3 mb-8 text-base leading-[1.75]">
-                <li className="flex items-start">
-                  <span className="text-accent mr-2">•</span>
-                  全12カテゴリの閲覧・投稿
-                </li>
-                <li className="flex items-start">
-                  <span className="text-accent mr-2">•</span>
-                  メッセージ・オフ会の参加
-                </li>
-                <li className="flex items-start">
-                  <span className="text-accent mr-2">•</span>
-                  身分証による本人確認済バッジ
-                </li>
-              </ul>
-              <Link
-                href="/register?plan=regular"
-                className="block w-full text-center bg-primary text-white py-4 rounded-lg font-medium hover:opacity-90 transition-opacity min-h-[56px] no-underline"
-                aria-label="正会員に入会する"
-              >
-                正会員に入会する
-              </Link>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      {/* 特徴セクション */}
+      {/* カテゴリ一覧、A は通常、B〜D はグレーアウト */}
       <section className="py-16 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <h3 className="text-xl font-bold mb-4 text-primary leading-[1.4]">
-                同い年だけの安心感
-              </h3>
-              <p className="text-base leading-[1.75]">
-                1968年生まれだけが参加できるからこそ生まれる、特別な絆と理解。世代を超えた議論ではなく、同じ時代を生きた仲間との深い対話。
-              </p>
-            </div>
-            <div className="text-center">
-              <h3 className="text-xl font-bold mb-4 text-primary leading-[1.4]">
-                本音で話せる12のカテゴリ
-              </h3>
-              <p className="text-base leading-[1.75]">
-                夫婦関係、親の介護、健康不安、お金の悩み。人には相談しにくい話題も、同世代の仲間となら安心して語り合える。
-              </p>
-            </div>
-            <div className="text-center">
-              <h3 className="text-xl font-bold mb-4 text-primary leading-[1.4]">
-                落ち着いた運営
-              </h3>
-              <p className="text-base leading-[1.75]">
-                荒らしや不適切な投稿は厳格に管理。大人の品格を保った、質の高いコミュニケーションを維持いたします。
-              </p>
-            </div>
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl font-bold text-center mb-3 text-primary leading-[1.4]">
+            12 のカテゴリ
+          </h2>
+          <p className="text-center text-foreground/70 mb-10 text-sm">
+            同い年だからこそ話せる、12 のテーマ
+          </p>
+
+          <h3 className="text-lg font-bold mb-4 text-foreground">
+            どなたでもご覧いただけます
+          </h3>
+          <ul className="grid gap-4 sm:grid-cols-2 mb-10">
+            {openCats.map((c) => (
+              <li key={c.slug}>
+                <Link
+                  href={`/board/${c.slug}`}
+                  className="block h-full bg-muted border border-border rounded-lg p-5 no-underline hover:shadow-md transition-shadow"
+                >
+                  <h4 className="font-bold text-lg text-primary">{c.name}</h4>
+                  {c.description && (
+                    <p className="mt-2 text-sm text-foreground/70 leading-relaxed">
+                      {c.description}
+                    </p>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          <h3 className="text-lg font-bold mb-4 text-foreground/60">
+            会員登録で広がるテーマ
+          </h3>
+          <ul className="grid gap-3 sm:grid-cols-2 md:grid-cols-4 opacity-60">
+            {lockedCats.map((c) => (
+              <li
+                key={c.slug}
+                className="bg-muted/50 border border-border rounded-lg p-4 cursor-not-allowed"
+                aria-disabled="true"
+              >
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <h4 className="font-medium text-sm truncate">{c.name}</h4>
+                  <span
+                    aria-hidden
+                    className="text-foreground/40 shrink-0"
+                    title="会員登録で閲覧可"
+                  >
+                    <i className="ri-lock-line text-base" />
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-6 text-center text-sm">
+            <Link href="/register" className="font-medium">
+              会員登録（無料）するとこちらも読めます
+            </Link>
+          </p>
+        </div>
+      </section>
+
+      {/* 特徴、控えめに */}
+      <section className="py-16 px-4 bg-muted/40">
+        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-8">
+          <div className="text-center">
+            <h3 className="text-lg font-bold mb-3 text-primary leading-[1.4]">
+              同い年だけの安心感
+            </h3>
+            <p className="text-sm leading-[1.75]">
+              1968 年生まれだけが参加できるからこそ生まれる、特別な絆と理解。
+            </p>
+          </div>
+          <div className="text-center">
+            <h3 className="text-lg font-bold mb-3 text-primary leading-[1.4]">
+              本音で話せる 12 のカテゴリ
+            </h3>
+            <p className="text-sm leading-[1.75]">
+              夫婦、親の介護、健康、お金。同世代同士だから、踏み込んで話せる。
+            </p>
+          </div>
+          <div className="text-center">
+            <h3 className="text-lg font-bold mb-3 text-primary leading-[1.4]">
+              落ち着いた運営
+            </h3>
+            <p className="text-sm leading-[1.75]">
+              派手な演出はなし。大人の品格を保った、質の高い語らいを維持します。
+            </p>
           </div>
         </div>
       </section>

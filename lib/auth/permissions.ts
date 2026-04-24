@@ -1,33 +1,32 @@
 // 掲示板の閲覧・投稿権限を判定するピュアヘルパー。
-// categories テーブルの access_level_view / access_level_post に直接対応する。
+// 2026-04-24 の方針変更で会員モデルが 2 ランク（member／regular）に簡略化された。
+// guest は未ログインを表す論理値で、DB には保存しない。
 
-export type Rank = "guest" | "pending" | "associate" | "regular";
+export type Rank = "guest" | "member" | "regular";
 export type Tier = "A" | "B" | "C" | "D";
-export type ViewLevel = "guest" | "associate" | "regular";
-export type PostLevel = "associate" | "regular";
+export type ViewLevel = "guest" | "member" | "regular";
+export type PostLevel = "member" | "regular";
 
-// 閲覧権限、access_level_view に対する rank の適合を判定。
-// guest = 誰でも、associate = 準会員以上、regular = 正会員のみ。
+// 閲覧可否、access_level_view と rank を突き合わせる
 export function canView(rank: Rank, level: ViewLevel): boolean {
   if (level === "guest") return true;
-  if (level === "associate") return rank === "associate" || rank === "regular";
+  if (level === "member") return rank === "member" || rank === "regular";
   return rank === "regular";
 }
 
-// 投稿権限、access_level_post に対する rank の適合を判定。
+// 投稿可否、access_level_post と rank を突き合わせる
 export function canPost(rank: Rank, level: PostLevel): boolean {
-  if (level === "associate") return rank === "associate" || rank === "regular";
+  if (level === "member") return rank === "member" || rank === "regular";
   return rank === "regular";
-}
-
-// ゲスト／未課金 pending はスレッドごとに先頭3返信までしか閲覧できない。
-export function shouldLimitGuestReplies(rank: Rank): boolean {
-  return rank === "guest" || rank === "pending";
 }
 
 export const GUEST_REPLY_LIMIT = 3;
 
-// スレッド作成可否、ランク＋1日投稿数の複合判定。
+// 旧 API との互換、guest は 3 件制限の対象外になったためいずれも false
+export function shouldLimitGuestReplies(_rank: Rank): boolean {
+  return false;
+}
+
 type CreateCheckInput = {
   rank: Rank;
   accessLevelPost: PostLevel;

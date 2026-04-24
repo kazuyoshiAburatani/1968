@@ -83,9 +83,9 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         <div className="mt-8 rounded-lg border border-border bg-muted/40 p-6 text-sm">
           <p className="font-bold">このカテゴリは会員限定です。</p>
           <p className="mt-2 text-foreground/80">
-            {category.access_level_view === "associate"
-              ? "準会員以上の方にご覧いただけます。"
-              : "正会員の方にご覧いただけます。"}
+            {category.access_level_view === "member"
+              ? "会員登録すればご覧いただけます。"
+              : "正会員でご覧いただけます。"}
           </p>
           <p className="mt-6">
             <Link

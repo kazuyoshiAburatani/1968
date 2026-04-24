@@ -8,77 +8,90 @@ import {
 
 describe("canView", () => {
   it("guest level のカテゴリは誰でも閲覧可", () => {
-    for (const r of ["guest", "pending", "associate", "regular"] as const) {
+    for (const r of ["guest", "member", "regular"] as const) {
       expect(canView(r, "guest")).toBe(true);
     }
   });
 
-  it("associate level は associate 以上のみ", () => {
-    expect(canView("guest", "associate")).toBe(false);
-    expect(canView("pending", "associate")).toBe(false);
-    expect(canView("associate", "associate")).toBe(true);
-    expect(canView("regular", "associate")).toBe(true);
+  it("member level は member 以上のみ（guest は不可）", () => {
+    expect(canView("guest", "member")).toBe(false);
+    expect(canView("member", "member")).toBe(true);
+    expect(canView("regular", "member")).toBe(true);
   });
 
   it("regular level は regular のみ", () => {
     expect(canView("guest", "regular")).toBe(false);
-    expect(canView("pending", "regular")).toBe(false);
-    expect(canView("associate", "regular")).toBe(false);
+    expect(canView("member", "regular")).toBe(false);
     expect(canView("regular", "regular")).toBe(true);
   });
 });
 
 describe("canPost", () => {
-  it("associate level は associate 以上のみ投稿可", () => {
-    expect(canPost("guest", "associate")).toBe(false);
-    expect(canPost("pending", "associate")).toBe(false);
-    expect(canPost("associate", "associate")).toBe(true);
-    expect(canPost("regular", "associate")).toBe(true);
+  it("member level は member 以上のみ投稿可（guest は不可）", () => {
+    expect(canPost("guest", "member")).toBe(false);
+    expect(canPost("member", "member")).toBe(true);
+    expect(canPost("regular", "member")).toBe(true);
   });
 
   it("regular level は regular のみ", () => {
-    expect(canPost("associate", "regular")).toBe(false);
+    expect(canPost("member", "regular")).toBe(false);
     expect(canPost("regular", "regular")).toBe(true);
   });
 });
 
 describe("shouldLimitGuestReplies", () => {
-  it("guest と pending は返信3件制限対象", () => {
-    expect(shouldLimitGuestReplies("guest")).toBe(true);
-    expect(shouldLimitGuestReplies("pending")).toBe(true);
-  });
-
-  it("associate と regular は全返信閲覧可", () => {
-    expect(shouldLimitGuestReplies("associate")).toBe(false);
+  it("新モデルでは誰も先頭3件制限対象ではない", () => {
+    expect(shouldLimitGuestReplies("guest")).toBe(false);
+    expect(shouldLimitGuestReplies("member")).toBe(false);
     expect(shouldLimitGuestReplies("regular")).toBe(false);
   });
 });
 
 describe("canCreateThread", () => {
-  it("投稿権限がないと拒否", () => {
+  it("投稿権限がないと拒否（guest で member カテゴリ）", () => {
     const result = canCreateThread({
-      rank: "pending",
-      accessLevelPost: "associate",
+      rank: "guest",
+      accessLevelPost: "member",
       postingLimitPerDay: null,
       threadCountToday: 0,
     });
     expect(result.ok).toBe(false);
   });
 
+  it("member は member level カテゴリに投稿可", () => {
+    const result = canCreateThread({
+      rank: "member",
+      accessLevelPost: "member",
+      postingLimitPerDay: 3,
+      threadCountToday: 0,
+    });
+    expect(result.ok).toBe(true);
+  });
+
   it("1日上限に達したら拒否", () => {
     const result = canCreateThread({
-      rank: "associate",
-      accessLevelPost: "associate",
-      postingLimitPerDay: 1,
-      threadCountToday: 1,
+      rank: "member",
+      accessLevelPost: "member",
+      postingLimitPerDay: 3,
+      threadCountToday: 3,
     });
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.reason).toContain("1日1件");
+      expect(result.reason).toContain("1日3件");
     }
   });
 
-  it("無制限カテゴリでは投稿済み数に関わらず許可", () => {
+  it("上限未満なら許可", () => {
+    const result = canCreateThread({
+      rank: "member",
+      accessLevelPost: "member",
+      postingLimitPerDay: 3,
+      threadCountToday: 2,
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("regular は regular カテゴリに投稿可（制限なし）", () => {
     const result = canCreateThread({
       rank: "regular",
       accessLevelPost: "regular",
@@ -88,13 +101,13 @@ describe("canCreateThread", () => {
     expect(result.ok).toBe(true);
   });
 
-  it("上限未満なら許可", () => {
+  it("member は regular カテゴリに投稿不可", () => {
     const result = canCreateThread({
-      rank: "associate",
-      accessLevelPost: "associate",
-      postingLimitPerDay: 1,
+      rank: "member",
+      accessLevelPost: "regular",
+      postingLimitPerDay: null,
       threadCountToday: 0,
     });
-    expect(result.ok).toBe(true);
+    expect(result.ok).toBe(false);
   });
 });

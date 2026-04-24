@@ -40,7 +40,7 @@ export default async function UserProfilePage({
     }
     if (
       profile.bio_visible === "members_only" &&
-      rank !== "associate" &&
+      rank !== "member" &&
       rank !== "regular"
     ) {
       notFound();

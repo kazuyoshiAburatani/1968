@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { fetchAuthorInfo } from "@/lib/author-info";
 import type { Tier } from "@/lib/auth/permissions";
 
 // ダッシュボード共通の「最新スレッド」リスト。
@@ -42,18 +43,10 @@ export async function LatestThreadsList({ limit = 10 }: { limit?: number }) {
     .limit(limit);
 
   const rows = (threads ?? []) as unknown as ThreadRow[];
-
-  const userIds = [...new Set(rows.map((r) => r.user_id))];
-  const nickMap = new Map<string, string>();
-  if (userIds.length > 0) {
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, nickname")
-      .in("user_id", userIds);
-    for (const p of profiles ?? []) {
-      nickMap.set(p.user_id as string, p.nickname as string);
-    }
-  }
+  const authorMap = await fetchAuthorInfo(
+    supabase,
+    rows.map((r) => r.user_id),
+  );
 
   if (rows.length === 0) {
     return (
@@ -66,7 +59,9 @@ export async function LatestThreadsList({ limit = 10 }: { limit?: number }) {
   return (
     <ul className="divide-y divide-border">
       {rows.map((t) => {
-        const nickname = nickMap.get(t.user_id) ?? "（匿名）";
+        const author = authorMap.get(t.user_id);
+        const nickname = author?.nickname ?? "（匿名）";
+        const rank = author?.rank ?? "member";
         const tier = t.categories?.tier ?? "A";
         return (
           <li key={t.id} className="py-4 first:pt-0 last:pb-0">
@@ -89,8 +84,20 @@ export async function LatestThreadsList({ limit = 10 }: { limit?: number }) {
               <h3 className="mt-1.5 font-bold text-foreground leading-snug">
                 {t.title}
               </h3>
-              <div className="mt-1.5 flex items-center gap-4 text-xs text-foreground/60">
-                <span>{nickname}</span>
+              <div className="mt-1.5 flex items-center gap-3 text-xs text-foreground/60 flex-wrap">
+                <span className="flex items-center gap-1.5">
+                  {nickname}
+                  {rank === "regular" && (
+                    <span className="inline-block px-1.5 py-px rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/30">
+                      正会員
+                    </span>
+                  )}
+                  {rank === "member" && (
+                    <span className="inline-block px-1.5 py-px rounded text-[10px] font-medium bg-muted text-foreground/70 border border-border">
+                      会員
+                    </span>
+                  )}
+                </span>
                 <span>{new Date(t.created_at).toLocaleString("ja-JP", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                 <span className="inline-flex items-center gap-1">
                   <i className="ri-message-2-line" aria-hidden />
