@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCurrentRank } from "@/lib/auth/current-rank";
 
 // 他会員のプロフィール表示。
-// RLS により、profiles の bio_visible と閲覧者のランクで取得可否が制御される。
-// TODO フェーズ3以降、会員ランクバッジ表示のため public.users の rank を取得する仕組みを追加する。
+// profiles テーブルのニックネームはフォーラム機能の都合で広く読み取り可だが、
+// プロフィール詳細ページの開示制御はこの層で bio_visible を見て行う。
 export default async function UserProfilePage({
   params,
 }: {
@@ -12,12 +13,13 @@ export default async function UserProfilePage({
 }) {
   const { id } = await params;
 
-  // UUID 形式でない場合は 404
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
     notFound();
   }
 
   const supabase = await createSupabaseServerClient();
+  const { rank, userId: viewerId } = await getCurrentRank(supabase);
+
   const { data: profile } = await supabase
     .from("profiles")
     .select(
@@ -27,8 +29,22 @@ export default async function UserProfilePage({
     .maybeSingle();
 
   if (!profile) {
-    // 存在しないユーザー、もしくは RLS で閲覧不可
     notFound();
+  }
+
+  const isSelf = viewerId === id;
+  if (!isSelf) {
+    // bio_visible による開示制御
+    if (profile.bio_visible === "private") {
+      notFound();
+    }
+    if (
+      profile.bio_visible === "members_only" &&
+      rank !== "associate" &&
+      rank !== "regular"
+    ) {
+      notFound();
+    }
   }
 
   return (
