@@ -17,6 +17,7 @@ import { RealtimeRepliesWatcher } from "@/components/realtime-replies-watcher";
 import { ViewTracker } from "@/components/view-tracker";
 import { SubmitButton } from "@/components/submit-button";
 import { MediaPicker } from "@/components/media-picker";
+import { ReplyBodyEditor } from "@/components/reply-body-editor";
 import type { MediaItem } from "@/lib/media";
 import { createReply } from "./actions";
 
@@ -176,6 +177,14 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
             initialCount={thread.like_count}
           />
           <ReportButton targetType="thread" targetId={thread.id} />
+          {viewerId === thread.user_id && (
+            <Link
+              href={`/board/${slug}/${threadId}/edit`}
+              className="text-xs text-foreground/50 hover:text-foreground/80 underline"
+            >
+              編集
+            </Link>
+          )}
         </div>
       </article>
 
@@ -217,7 +226,15 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
                     )}
                   </p>
                   <div className="mt-2">
-                    <RichText text={r.body} />
+                    {viewerId === r.user_id ? (
+                      <ReplyBodyEditor
+                        replyId={r.id}
+                        initialBody={r.body}
+                        pathToRevalidate={`/board/${slug}/${threadId}`}
+                      />
+                    ) : (
+                      <RichText text={r.body} />
+                    )}
                     <MediaDisplay items={r.media ?? []} />
                   </div>
                   <div className="mt-3 flex items-center gap-4 flex-wrap">
