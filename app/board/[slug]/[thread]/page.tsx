@@ -16,6 +16,7 @@ import { ReportButton } from "@/components/report-button";
 import { RealtimeRepliesWatcher } from "@/components/realtime-replies-watcher";
 import { ViewTracker } from "@/components/view-tracker";
 import { SubmitButton } from "@/components/submit-button";
+import { MediaPicker } from "@/components/media-picker";
 import type { MediaItem } from "@/lib/media";
 import { createReply } from "./actions";
 
@@ -299,24 +300,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
                 placeholder="本文（3000文字以内）"
                 className="w-full px-3 py-2 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
               />
-              <fieldset className="space-y-2 text-sm">
-                <legend className="text-[color:var(--color-foreground)]/70">
-                  添付（任意、画像最大4枚 または 動画1本）
-                </legend>
-                <input
-                  type="file"
-                  name="images"
-                  multiple
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  className="block w-full text-sm"
-                />
-                <input
-                  type="file"
-                  name="video"
-                  accept="video/mp4,video/quicktime"
-                  className="block w-full text-sm"
-                />
-              </fieldset>
+              <MediaPicker />
               <SubmitButton pendingText="送信中…">返信する</SubmitButton>
             </form>
           </>

@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentRank } from "@/lib/auth/current-rank";
 import { canPost, type PostLevel } from "@/lib/auth/permissions";
 import { SubmitButton } from "@/components/submit-button";
+import { MediaPicker } from "@/components/media-picker";
 import { createThread } from "./actions";
 
 export const metadata: Metadata = {
@@ -74,7 +75,17 @@ export default async function NewThreadPage({ params, searchParams }: Props) {
 
       {error && (
         <div className="mt-4 rounded-lg border border-red-700/50 bg-red-50 p-4 text-red-900 text-sm">
-          {decodeURIComponent(error)}
+          <p>{decodeURIComponent(error)}</p>
+          {/^このカテゴリは1日\d+件までです$/.test(decodeURIComponent(error)) && (
+            <p className="mt-2">
+              正会員にアップグレードすると、このカテゴリの制限が解除され、段階B以降のカテゴリにも投稿できます。
+              詳しくは{" "}
+              <Link href="/mypage" className="underline font-medium">
+                マイページ
+              </Link>
+              をご覧ください。
+            </p>
+          )}
         </div>
       )}
 
@@ -103,32 +114,7 @@ export default async function NewThreadPage({ params, searchParams }: Props) {
           />
         </label>
 
-        <fieldset className="space-y-2">
-          <legend className="font-medium">添付（画像は最大4枚、または動画1本）</legend>
-          <label className="block text-sm">
-            <span className="block mb-1 text-[color:var(--color-foreground)]/70">
-              画像（JPEG/PNG/WebP/GIF、1枚あたり5MB以下、最大4枚）
-            </span>
-            <input
-              type="file"
-              name="images"
-              multiple
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              className="block w-full text-sm"
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="block mb-1 text-[color:var(--color-foreground)]/70">
-              または動画1本（MP4/MOV、50MB以下）
-            </span>
-            <input
-              type="file"
-              name="video"
-              accept="video/mp4,video/quicktime"
-              className="block w-full text-sm"
-            />
-          </label>
-        </fieldset>
+        <MediaPicker />
 
         <div className="flex gap-3">
           <SubmitButton pendingText="投稿中…">スレッドを書く</SubmitButton>
