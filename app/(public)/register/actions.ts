@@ -27,9 +27,14 @@ export async function requestRegisterLink(formData: FormData) {
     },
   });
 
+  // Supabase のエラーはユーザーに直接見せず、
+  // 送信結果の画面は常に sent=1 を返す（メール列挙攻撃対策と UX 一貫性）。
+  // 例外：429 スロットルは案内を変える。
   if (error) {
     console.error("[register] signInWithOtp failed:", error.message);
-    redirect("/register?error=unexpected");
+    if (error.status === 429 || /security purposes|after \d+ seconds/i.test(error.message)) {
+      redirect("/register?error=throttled");
+    }
   }
 
   redirect("/register?sent=1");

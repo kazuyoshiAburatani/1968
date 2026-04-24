@@ -29,6 +29,10 @@ export async function requestLoginLink(formData: FormData) {
   // ただしレート制限や設定不備などの技術的エラーはサーバーログに残す。
   if (error && !/not found|invalid/i.test(error.message)) {
     console.error("[login] signInWithOtp failed:", error.message);
+    // 429 スロットルだけは明示的に案内
+    if (error.status === 429 || /security purposes|after \d+ seconds/i.test(error.message)) {
+      redirect("/login?error=throttled");
+    }
   }
 
   redirect("/login?sent=1");

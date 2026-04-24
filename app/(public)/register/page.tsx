@@ -34,6 +34,8 @@ export default async function RegisterPage({ searchParams }: Props) {
         <div className="mt-6 rounded-lg border border-red-700/50 bg-red-50 p-4 text-red-900 text-sm">
           {error === "terms" && "利用規約への同意が必要です。"}
           {error === "invalid_email" && "メールアドレスの形式をご確認ください。"}
+          {error === "throttled" &&
+            "短時間に送信を繰り返したため一時的にお待ちください。1分ほど時間を空けて再度お試しください。"}
           {error === "unexpected" && "登録メールの送信に失敗しました。時間をおいて再度お試しください。"}
         </div>
       )}

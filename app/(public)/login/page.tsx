@@ -4,6 +4,7 @@ import { requestLoginLink } from "./actions";
 
 function describeLoginError(code: string): string {
   if (code === "invalid") return "メールアドレスの形式をご確認ください。";
+  if (code === "throttled") return "短時間に送信を繰り返したため一時的にお待ちください。1分ほど時間を空けて再度お試しください。";
   if (code === "missing_code") return "ログインリンクが不完全でした。メールを再度確認してください。";
   if (code === "no_session") return "セッションを確立できませんでした。再度お試しください。";
   if (code === "otp_expired") return "ログインリンクの有効期限が切れています。もう一度お送りします。";
