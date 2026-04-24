@@ -8,7 +8,7 @@ export default function HomePage() {
           SHOWA 43 / 1968 ONLY
         </p>
         <h1 className="mt-4 text-3xl md:text-5xl font-bold leading-tight">
-          同い年だけの、
+          昭和43年生まれだけの、
           <br className="md:hidden" />
           語らいの場。
         </h1>
