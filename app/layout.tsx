@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Noto_Sans_JP } from "next/font/google";
 import Link from "next/link";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCurrentRank } from "@/lib/auth/current-rank";
+import { MembershipBadge } from "@/components/membership-badge";
+import type { Rank } from "@/lib/auth/permissions";
 import "./globals.css";
 
 // 和文UIの可読性重視、weight は 400/500/700 を使用
@@ -34,15 +38,30 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // 全ページのヘッダーにログイン状態を反映させるため、layout で認証情報を取得する。
+  // 未ログイン時でも Supabase への軽い問い合わせが入るが、proxy.ts のセッションリフレッシュと
+  // 同じ getUser を共有するため重複は最小限。
+  const supabase = await createSupabaseServerClient();
+  const { rank, userId } = await getCurrentRank(supabase);
+  let nickname: string | null = null;
+  if (userId) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("nickname")
+      .eq("user_id", userId)
+      .maybeSingle();
+    nickname = (profile?.nickname as string | undefined) ?? null;
+  }
+
   return (
     <html lang="ja" className={notoSansJp.variable}>
       <body className="min-h-dvh flex flex-col">
-        <SiteHeader />
+        <SiteHeader rank={rank} userId={userId} nickname={nickname} />
         <main className="flex-1 w-full">{children}</main>
         <SiteFooter />
       </body>
@@ -50,35 +69,58 @@ export default function RootLayout({
   );
 }
 
-function SiteHeader() {
+function SiteHeader({
+  rank,
+  userId,
+  nickname,
+}: {
+  rank: Rank;
+  userId: string | null;
+  nickname: string | null;
+}) {
   return (
     <header className="border-b border-[color:var(--color-border)] bg-[color:var(--color-background)]">
-      <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
+      <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between gap-3">
         <Link
           href="/"
-          className="flex flex-col leading-tight no-underline"
+          className="flex flex-col leading-tight no-underline shrink-0"
           aria-label="1968 トップへ"
         >
           <span className="text-2xl font-bold tracking-wider text-[color:var(--color-primary)]">
             1968
           </span>
-          <span className="text-sm text-[color:var(--color-foreground)]/70">
+          <span className="text-sm text-[color:var(--color-foreground)]/70 hidden sm:block">
             1968年生まれ限定コミュニティ
           </span>
         </Link>
-        <nav className="flex items-center gap-4">
-          <Link
-            href="/login"
-            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-3 text-sm"
-          >
-            ログイン
-          </Link>
-          <Link
-            href="/register"
-            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-4 rounded-full bg-[color:var(--color-primary)] text-[color:var(--color-primary-fg)] text-sm font-medium hover:opacity-90 no-underline"
-          >
-            入会する
-          </Link>
+        <nav className="flex items-center gap-3">
+          {userId ? (
+            <Link
+              href="/mypage"
+              className="inline-flex items-center gap-2 min-h-[var(--spacing-tap)] px-3 rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-background)] hover:bg-[color:var(--color-muted)]/40 no-underline text-sm"
+              aria-label="マイページへ"
+            >
+              <MembershipBadge rank={rank} />
+              <span className="font-medium text-[color:var(--color-foreground)] max-w-[8rem] truncate">
+                {nickname ?? "マイページ"}
+              </span>
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-3 text-sm"
+              >
+                ログイン
+              </Link>
+              <Link
+                href="/register"
+                className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-4 rounded-full bg-[color:var(--color-primary)] text-white text-sm font-medium hover:opacity-90 no-underline"
+              >
+                入会する
+              </Link>
+            </>
+          )}
         </nav>
       </div>
     </header>
