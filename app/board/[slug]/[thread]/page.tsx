@@ -13,6 +13,7 @@ import { RichText } from "@/components/rich-text";
 import { MediaDisplay } from "@/components/media-display";
 import { LikeButton } from "@/components/like-button";
 import { ReportButton } from "@/components/report-button";
+import { RealtimeRepliesWatcher } from "@/components/realtime-replies-watcher";
 import type { MediaItem } from "@/lib/media";
 import { createReply } from "./actions";
 
@@ -178,6 +179,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
 
       <section>
         <h2 className="font-bold">返信 {thread.reply_count > 0 && `(${thread.reply_count})`}</h2>
+        <RealtimeRepliesWatcher threadId={threadId} currentUserId={viewerId} />
         {replyRows.length === 0 ? (
           <p className="mt-4 text-sm text-[color:var(--color-foreground)]/60">
             まだ返信はありません。
