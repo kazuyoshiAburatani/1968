@@ -1,6 +1,24 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default function HomePage() {
+type Props = {
+  searchParams: Promise<{
+    error?: string;
+    error_code?: string;
+    error_description?: string;
+  }>;
+};
+
+export default async function HomePage({ searchParams }: Props) {
+  const params = await searchParams;
+
+  // Supabase Auth がエラー時に Site URL（ここ）にフォールバックして来るため、
+  // エラーパラメータを検出したら /login に誘導してユーザーに理由を表示する。
+  if (params.error) {
+    const reason = params.error_code ?? params.error;
+    redirect(`/login?error=${encodeURIComponent(reason)}`);
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-4">
       <section className="py-16 md:py-24 text-center">
