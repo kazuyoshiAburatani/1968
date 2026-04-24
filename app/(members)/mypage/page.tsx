@@ -9,8 +9,13 @@ export const metadata: Metadata = {
 
 type Rank = "guest" | "pending" | "associate" | "regular";
 
-export default async function MyPage() {
+type Props = {
+  searchParams: Promise<{ saved?: string }>;
+};
+
+export default async function MyPage({ searchParams }: Props) {
   const { supabase, user } = await requireSession();
+  const { saved } = await searchParams;
 
   const { data: publicUser } = await supabase
     .from("users")
@@ -40,6 +45,12 @@ export default async function MyPage() {
         </div>
         <MembershipBadge rank={rank} verified={verified} />
       </header>
+
+      {saved && (
+        <div className="mt-4 rounded-lg border border-[color:var(--color-primary)]/40 bg-[color:var(--color-muted)]/40 p-3 text-sm">
+          プロフィールを保存しました。
+        </div>
+      )}
 
       {rank === "pending" && (
         <section className="mt-8 rounded-lg border border-[color:var(--color-accent)]/40 bg-[color:var(--color-muted)]/40 p-4">

@@ -28,5 +28,5 @@ export async function updateProfile(formData: FormData) {
 
   revalidatePath("/mypage");
   revalidatePath("/mypage/profile");
-  redirect("/mypage/profile?saved=1");
+  redirect("/mypage?saved=1");
 }
