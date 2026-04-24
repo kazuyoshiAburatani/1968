@@ -2,6 +2,16 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { requestLoginLink } from "./actions";
 
+function describeLoginError(code: string): string {
+  if (code === "invalid") return "メールアドレスの形式をご確認ください。";
+  if (code === "missing_code") return "ログインリンクが不完全でした。メールを再度確認してください。";
+  if (code === "no_session") return "セッションを確立できませんでした。再度お試しください。";
+  if (code === "otp_expired") return "ログインリンクの有効期限が切れています。もう一度お送りします。";
+  if (code === "access_denied") return "ログインリンクが無効です。新しくログインリンクを取得してください。";
+  if (code.startsWith("exchange_")) return "認証の照合に失敗しました。最新のメールからリンクをクリックしてください。";
+  return `エラーが発生しました（${code}）。もう一度お試しください。`;
+}
+
 export const metadata: Metadata = {
   title: "ログイン",
 };
@@ -31,8 +41,9 @@ export default async function LoginPage({ searchParams }: Props) {
       )}
 
       {error && (
-        <div className="mt-6 rounded-lg border border-red-700/50 bg-red-50 p-4 text-red-900">
-          <p>メールアドレスの形式をご確認ください。</p>
+        <div className="mt-6 rounded-lg border border-red-700/50 bg-red-50 p-4 text-red-900 text-sm space-y-1">
+          <p className="font-bold">ログインに失敗しました。</p>
+          <p>{describeLoginError(error)}</p>
         </div>
       )}
 

@@ -3,22 +3,44 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site-url";
 
 // マジックリンクのクリック時に呼ばれる Route Handler。
-// 1. URL 内の code をセッションに交換
-// 2. public.profiles の有無で /onboarding または /mypage へ分岐
+// 成功時はプロフィール有無で /onboarding または /mypage へ分岐。
+// Supabase 側で失敗した場合（期限切れなど）はエラー理由を /login にパススルーする。
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
-  const code = url.searchParams.get("code");
   const site = getSiteUrl();
 
+  // Supabase から error 付きで返ってきた場合（トークン期限切れなど）
+  const supabaseError = url.searchParams.get("error");
+  const supabaseErrorCode = url.searchParams.get("error_code");
+  if (supabaseError) {
+    console.error(
+      "[auth/callback] Supabase reported error:",
+      supabaseError,
+      supabaseErrorCode,
+    );
+    const reason = supabaseErrorCode ?? supabaseError;
+    return NextResponse.redirect(
+      new URL(`/login?error=${encodeURIComponent(reason)}`, site),
+    );
+  }
+
+  const code = url.searchParams.get("code");
   if (!code) {
+    console.error("[auth/callback] missing code param", { search: url.search });
     return NextResponse.redirect(new URL("/login?error=missing_code", site));
   }
 
   const supabase = await createSupabaseServerClient();
   const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
   if (exchangeError) {
-    console.error("[auth/callback] exchangeCodeForSession failed:", exchangeError.message);
-    return NextResponse.redirect(new URL("/login?error=callback", site));
+    console.error(
+      "[auth/callback] exchangeCodeForSession failed:",
+      exchangeError.name,
+      exchangeError.message,
+    );
+    return NextResponse.redirect(
+      new URL(`/login?error=exchange_${encodeURIComponent(exchangeError.name)}`, site),
+    );
   }
 
   const {
@@ -26,11 +48,9 @@ export async function GET(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    // セッション取得に失敗した、極めて例外的な状態
     return NextResponse.redirect(new URL("/login?error=no_session", site));
   }
 
-  // プロフィール未作成なら /onboarding、作成済みなら /mypage へ
   const { data: profile } = await supabase
     .from("profiles")
     .select("user_id")
