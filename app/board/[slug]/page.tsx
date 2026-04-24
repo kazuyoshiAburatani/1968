@@ -76,13 +76,13 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         </nav>
         <h1 className="text-2xl font-bold">{category.name}</h1>
         {category.description && (
-          <p className="mt-2 text-[color:var(--color-foreground)]/80">
+          <p className="mt-2 text-foreground/80">
             {category.description}
           </p>
         )}
-        <div className="mt-8 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-muted)]/40 p-6 text-sm">
+        <div className="mt-8 rounded-lg border border-border bg-muted/40 p-6 text-sm">
           <p className="font-bold">このカテゴリは会員限定です。</p>
-          <p className="mt-2 text-[color:var(--color-foreground)]/80">
+          <p className="mt-2 text-foreground/80">
             {category.access_level_view === "associate"
               ? "準会員以上の方にご覧いただけます。"
               : "正会員の方にご覧いただけます。"}
@@ -90,7 +90,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           <p className="mt-6">
             <Link
               href={rank === "guest" ? "/register" : "/mypage"}
-              className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full bg-[color:var(--color-primary)] text-white font-medium no-underline hover:opacity-90"
+              className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full bg-primary text-white font-medium no-underline hover:opacity-90"
             >
               {rank === "guest" ? "新規登録する" : "マイページへ"}
             </Link>
@@ -141,7 +141,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         <div>
           <h1 className="text-2xl font-bold">{category.name}</h1>
           {category.description && (
-            <p className="mt-1 text-[color:var(--color-foreground)]/80">
+            <p className="mt-1 text-foreground/80">
               {category.description}
             </p>
           )}
@@ -149,7 +149,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         {canPostHere && (
           <Link
             href={`/board/${category.slug}/new`}
-            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-4 rounded-full bg-[color:var(--color-primary)] text-white font-medium no-underline hover:opacity-90"
+            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-4 rounded-full bg-primary text-white font-medium no-underline hover:opacity-90"
           >
             新しいスレッドを書く
           </Link>
@@ -157,12 +157,12 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       </header>
 
       {threadRows.length === 0 ? (
-        <div className="mt-12 text-center text-[color:var(--color-foreground)]/70">
+        <div className="mt-12 text-center text-foreground/70">
           まだスレッドはありません。
           {canPostHere && "最初の一歩を書いてみませんか？"}
         </div>
       ) : (
-        <ul className="mt-8 divide-y divide-[color:var(--color-border)]">
+        <ul className="mt-8 divide-y divide-border">
           {threadRows.map((t) => {
             const nickname = authorMap.get(t.user_id) ?? "（匿名）";
             const excerpt = t.body.slice(0, 80);
@@ -170,13 +170,13 @@ export default async function CategoryPage({ params, searchParams }: Props) {
               <li key={t.id} className="py-4">
                 <Link
                   href={`/board/${category.slug}/${t.id}`}
-                  className="block no-underline hover:bg-[color:var(--color-muted)]/40 -mx-2 px-2 py-1 rounded"
+                  className="block no-underline hover:bg-muted/40 -mx-2 px-2 py-1 rounded"
                 >
                   <p className="font-bold text-base">{t.title}</p>
-                  <p className="mt-1 text-sm text-[color:var(--color-foreground)]/70 line-clamp-2">
+                  <p className="mt-1 text-sm text-foreground/70 line-clamp-2">
                     {excerpt}
                   </p>
-                  <p className="mt-2 text-xs text-[color:var(--color-foreground)]/60">
+                  <p className="mt-2 text-xs text-foreground/60">
                     {nickname} ・ {new Date(t.created_at).toLocaleDateString("ja-JP")} ・
                     返信{t.reply_count} ・ いいね{t.like_count}
                   </p>
@@ -192,20 +192,20 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           {page > 1 ? (
             <Link
               href={`/board/${category.slug}?page=${page - 1}`}
-              className="inline-flex items-center min-h-[var(--spacing-tap)] px-4 rounded-full border border-[color:var(--color-border)] no-underline"
+              className="inline-flex items-center min-h-[var(--spacing-tap)] px-4 rounded-full border border-border no-underline"
             >
               ← 前のページ
             </Link>
           ) : (
             <span />
           )}
-          <span className="text-[color:var(--color-foreground)]/60">
+          <span className="text-foreground/60">
             {page} / {totalPages}
           </span>
           {page < totalPages ? (
             <Link
               href={`/board/${category.slug}?page=${page + 1}`}
-              className="inline-flex items-center min-h-[var(--spacing-tap)] px-4 rounded-full border border-[color:var(--color-border)] no-underline"
+              className="inline-flex items-center min-h-[var(--spacing-tap)] px-4 rounded-full border border-border no-underline"
             >
               次のページ →
             </Link>

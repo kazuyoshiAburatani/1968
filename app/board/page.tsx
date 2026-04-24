@@ -54,7 +54,7 @@ export default async function BoardPage() {
     <div className="mx-auto max-w-3xl px-4 py-10">
       <header>
         <h1 className="text-2xl font-bold">会報</h1>
-        <p className="mt-2 text-[color:var(--color-foreground)]/80">
+        <p className="mt-2 text-foreground/80">
           同い年の方々の語り合い。
           {rank === "guest" &&
             "今は体験閲覧中です、気になるカテゴリが見えたら入会をご検討ください。"}
@@ -70,7 +70,7 @@ export default async function BoardPage() {
           <section key={tier} className="mt-10">
             <div className="flex items-baseline gap-3">
               <h2 className="text-lg font-bold">段階{tier}</h2>
-              <span className="text-sm text-[color:var(--color-foreground)]/60">
+              <span className="text-sm text-foreground/60">
                 {TIER_TITLES[tier]}
               </span>
             </div>
@@ -79,15 +79,15 @@ export default async function BoardPage() {
                 <li key={c.id}>
                   <Link
                     href={`/board/${c.slug}`}
-                    className="block rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-background)] p-4 no-underline hover:bg-[color:var(--color-muted)]/40"
+                    className="block rounded-lg border border-border bg-background p-4 no-underline hover:bg-muted/40"
                   >
                     <p className="font-bold">{c.name}</p>
                     {c.description && (
-                      <p className="mt-1 text-sm text-[color:var(--color-foreground)]/70">
+                      <p className="mt-1 text-sm text-foreground/70">
                         {c.description}
                       </p>
                     )}
-                    <p className="mt-2 text-xs text-[color:var(--color-foreground)]/60">
+                    <p className="mt-2 text-xs text-foreground/60">
                       {canPost(rank, c.access_level_post)
                         ? c.posting_limit_per_day
                           ? `投稿可（1日${c.posting_limit_per_day}件まで）`
@@ -103,14 +103,14 @@ export default async function BoardPage() {
       })}
 
       {locked.length > 0 && (
-        <section className="mt-12 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-muted)]/40 p-6">
+        <section className="mt-12 rounded-lg border border-border bg-muted/40 p-6">
           <h2 className="font-bold">
             会員限定のカテゴリが{locked.length}件あります
           </h2>
-          <p className="mt-2 text-sm text-[color:var(--color-foreground)]/80">
+          <p className="mt-2 text-sm text-foreground/80">
             介護・夫婦・健康・お金など、同い年だからこそ本音で話せる場は、会員限定で開かれています。
           </p>
-          <ul className="mt-4 space-y-1 text-sm text-[color:var(--color-foreground)]/70">
+          <ul className="mt-4 space-y-1 text-sm text-foreground/70">
             {locked.map((c) => (
               <li key={c.id}>・{c.name}</li>
             ))}
@@ -118,7 +118,7 @@ export default async function BoardPage() {
           <p className="mt-6">
             <Link
               href="/register"
-              className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full bg-[color:var(--color-primary)] text-white font-medium no-underline hover:opacity-90"
+              className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full bg-primary text-white font-medium no-underline hover:opacity-90"
             >
               {rank === "guest" ? "新規登録する" : "マイページで課金する"}
             </Link>

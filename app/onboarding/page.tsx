@@ -31,11 +31,11 @@ export default async function OnboardingPage({ searchParams }: Props) {
   return (
     <div className="mx-auto max-w-xl px-4 py-12">
       <h1 className="text-2xl font-bold">プロフィール作成</h1>
-      <p className="mt-2 text-[color:var(--color-foreground)]/80">
+      <p className="mt-2 text-foreground/80">
         1968 へようこそ。最後にプロフィールをご記入ください。
         あとで変更できますので、お気軽にご記入ください。
       </p>
-      <p className="mt-1 text-sm text-[color:var(--color-foreground)]/60">
+      <p className="mt-1 text-sm text-foreground/60">
         登録メール、{user.email}
       </p>
 
@@ -52,17 +52,17 @@ export default async function OnboardingPage({ searchParams }: Props) {
             name="nickname"
             required
             maxLength={30}
-            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
           />
         </Field>
 
         <Field label="生年月日" required hint="1968年（昭和43年）生まれ限定のため、生年は 1968 で固定されています">
           <div className="flex gap-2 items-center">
-            <span className="text-[color:var(--color-foreground)]/60">1968 年</span>
+            <span className="text-foreground/60">1968 年</span>
             <select
               name="birth_month"
               required
-              className="min-h-[var(--spacing-tap)] px-3 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+              className="min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
             >
               <option value="">月</option>
               {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -73,7 +73,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
             <select
               name="birth_day"
               required
-              className="min-h-[var(--spacing-tap)] px-3 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+              className="min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
             >
               <option value="">日</option>
               {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
@@ -87,7 +87,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
         <Field label="性別" hint="任意項目、公開範囲は bio の設定に従います">
           <select
             name="gender"
-            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
           >
             <option value="">選択しない</option>
             <option value="male">男性</option>
@@ -100,7 +100,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
         <Field label="お住まいの都道府県" hint="任意項目">
           <select
             name="prefecture"
-            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
           >
             <option value="">選択しない</option>
             {PREFECTURES.map((p) => (
@@ -114,7 +114,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
             type="text"
             name="hometown"
             maxLength={100}
-            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
           />
         </Field>
 
@@ -123,7 +123,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
             type="text"
             name="school"
             maxLength={100}
-            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
           />
         </Field>
 
@@ -132,7 +132,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
             type="text"
             name="occupation"
             maxLength={50}
-            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
           />
         </Field>
 
@@ -141,7 +141,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
             name="introduction"
             maxLength={200}
             rows={4}
-            className="w-full px-3 py-2 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+            className="w-full px-3 py-2 rounded border border-border bg-background"
           />
         </Field>
 
@@ -179,7 +179,7 @@ function Field({
         {required && <span className="ml-1 text-sm text-red-700">*</span>}
       </span>
       {hint && (
-        <span className="block text-xs text-[color:var(--color-foreground)]/60 mb-2 mt-0.5">
+        <span className="block text-xs text-foreground/60 mb-2 mt-0.5">
           {hint}
         </span>
       )}

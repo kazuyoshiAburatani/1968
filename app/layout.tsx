@@ -79,17 +79,17 @@ function SiteHeader({
   nickname: string | null;
 }) {
   return (
-    <header className="border-b border-[color:var(--color-border)] bg-[color:var(--color-background)]">
+    <header className="border-b border-border bg-background">
       <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between gap-3">
         <Link
           href="/"
           className="flex flex-col leading-tight no-underline shrink-0"
           aria-label="1968 トップへ"
         >
-          <span className="text-2xl font-bold tracking-wider text-[color:var(--color-primary)]">
+          <span className="text-2xl font-bold tracking-wider text-primary">
             1968
           </span>
-          <span className="text-sm text-[color:var(--color-foreground)]/70 hidden sm:block">
+          <span className="text-sm text-foreground/70 hidden sm:block">
             1968年生まれ限定コミュニティ
           </span>
         </Link>
@@ -97,11 +97,11 @@ function SiteHeader({
           {userId ? (
             <Link
               href="/mypage"
-              className="inline-flex items-center gap-2 min-h-[var(--spacing-tap)] px-3 rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-background)] hover:bg-[color:var(--color-muted)]/40 no-underline text-sm"
+              className="inline-flex items-center gap-2 min-h-[var(--spacing-tap)] px-3 rounded-full border border-border bg-background hover:bg-muted/40 no-underline text-sm"
               aria-label="マイページへ"
             >
               <MembershipBadge rank={rank} />
-              <span className="font-medium text-[color:var(--color-foreground)] max-w-[8rem] truncate">
+              <span className="font-medium text-foreground max-w-[8rem] truncate">
                 {nickname ?? "マイページ"}
               </span>
             </Link>
@@ -115,7 +115,7 @@ function SiteHeader({
               </Link>
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-4 rounded-full bg-[color:var(--color-primary)] text-white text-sm font-medium hover:opacity-90 no-underline"
+                className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-4 rounded-full bg-primary text-white text-sm font-medium hover:opacity-90 no-underline"
               >
                 入会する
               </Link>
@@ -129,12 +129,12 @@ function SiteHeader({
 
 function SiteFooter() {
   return (
-    <footer className="mt-16 border-t border-[color:var(--color-border)] bg-[color:var(--color-muted)]/40">
+    <footer className="mt-16 border-t border-border bg-muted/40">
       <div className="mx-auto max-w-5xl px-4 py-10 text-sm">
         <div className="grid gap-8 md:grid-cols-3">
           <div>
             <p className="font-bold text-base mb-2">1968</p>
-            <p className="text-[color:var(--color-foreground)]/80">
+            <p className="text-foreground/80">
               1968年生まれ限定コミュニティ
             </p>
           </div>
@@ -157,12 +157,12 @@ function SiteFooter() {
             <p>
               <a href="mailto:support@1968.love">support@1968.love</a>
             </p>
-            <p className="mt-2 text-[color:var(--color-foreground)]/70">
+            <p className="mt-2 text-foreground/70">
               運営、油谷和好
             </p>
           </div>
         </div>
-        <p className="mt-8 text-xs text-[color:var(--color-foreground)]/60">
+        <p className="mt-8 text-xs text-foreground/60">
           © 1968
         </p>
       </div>

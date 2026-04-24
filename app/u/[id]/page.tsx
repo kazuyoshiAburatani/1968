@@ -55,7 +55,7 @@ export default async function UserProfilePage({
 
       <header>
         <h1 className="text-2xl font-bold">{profile.nickname}</h1>
-        <p className="mt-1 text-sm text-[color:var(--color-foreground)]/60">
+        <p className="mt-1 text-sm text-foreground/60">
           1968年{profile.birth_month}月{profile.birth_day}日生まれ
         </p>
       </header>
@@ -72,31 +72,31 @@ export default async function UserProfilePage({
         <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
           {profile.gender && (
             <>
-              <dt className="text-[color:var(--color-foreground)]/70">性別</dt>
+              <dt className="text-foreground/70">性別</dt>
               <dd>{renderGender(profile.gender)}</dd>
             </>
           )}
           {profile.prefecture && (
             <>
-              <dt className="text-[color:var(--color-foreground)]/70">お住まい</dt>
+              <dt className="text-foreground/70">お住まい</dt>
               <dd>{profile.prefecture}</dd>
             </>
           )}
           {profile.hometown && (
             <>
-              <dt className="text-[color:var(--color-foreground)]/70">出身地</dt>
+              <dt className="text-foreground/70">出身地</dt>
               <dd>{profile.hometown}</dd>
             </>
           )}
           {profile.school && (
             <>
-              <dt className="text-[color:var(--color-foreground)]/70">学校</dt>
+              <dt className="text-foreground/70">学校</dt>
               <dd>{profile.school}</dd>
             </>
           )}
           {profile.occupation && (
             <>
-              <dt className="text-[color:var(--color-foreground)]/70">職業</dt>
+              <dt className="text-foreground/70">職業</dt>
               <dd>{profile.occupation}</dd>
             </>
           )}

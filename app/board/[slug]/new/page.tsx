@@ -53,7 +53,7 @@ export default async function NewThreadPage({ params, searchParams }: Props) {
         <p className="mt-6">
           <Link
             href="/mypage"
-            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full bg-[color:var(--color-primary)] text-white font-medium no-underline hover:opacity-90"
+            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full bg-primary text-white font-medium no-underline hover:opacity-90"
           >
             マイページへ
           </Link>
@@ -69,7 +69,7 @@ export default async function NewThreadPage({ params, searchParams }: Props) {
       </nav>
 
       <h1 className="text-2xl font-bold">新しいスレッド</h1>
-      <p className="mt-1 text-sm text-[color:var(--color-foreground)]/70">
+      <p className="mt-1 text-sm text-foreground/70">
         カテゴリ、{category.name}
       </p>
 
@@ -99,7 +99,7 @@ export default async function NewThreadPage({ params, searchParams }: Props) {
             name="title"
             required
             maxLength={100}
-            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
           />
         </label>
 
@@ -110,7 +110,7 @@ export default async function NewThreadPage({ params, searchParams }: Props) {
             required
             maxLength={5000}
             rows={10}
-            className="w-full px-3 py-2 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+            className="w-full px-3 py-2 rounded border border-border bg-background"
           />
         </label>
 
@@ -120,14 +120,14 @@ export default async function NewThreadPage({ params, searchParams }: Props) {
           <SubmitButton pendingText="投稿中…">スレッドを書く</SubmitButton>
           <Link
             href={`/board/${slug}`}
-            className="inline-flex items-center min-h-[var(--spacing-tap)] px-6 rounded-full border border-[color:var(--color-border)] no-underline hover:bg-[color:var(--color-muted)]"
+            className="inline-flex items-center min-h-[var(--spacing-tap)] px-6 rounded-full border border-border no-underline hover:bg-muted"
           >
             キャンセル
           </Link>
         </div>
 
         {category.posting_limit_per_day && (
-          <p className="text-xs text-[color:var(--color-foreground)]/60">
+          <p className="text-xs text-foreground/60">
             このカテゴリは1日{category.posting_limit_per_day}件まで投稿できます。
           </p>
         )}

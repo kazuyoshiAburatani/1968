@@ -13,7 +13,7 @@ export function MediaDisplay({ items }: { items: MediaItem[] }) {
           src={getMediaUrl(video.path)}
           controls
           preload="metadata"
-          className="w-full max-h-[480px] rounded border border-[color:var(--color-border)] bg-black"
+          className="w-full max-h-[480px] rounded border border-border bg-black"
         />
       </div>
     );
@@ -42,7 +42,7 @@ export function MediaDisplay({ items }: { items: MediaItem[] }) {
           <img
             src={getMediaUrl(img.path)}
             alt=""
-            className="w-full h-auto rounded border border-[color:var(--color-border)] object-cover aspect-square"
+            className="w-full h-auto rounded border border-border object-cover aspect-square"
             loading="lazy"
           />
         </a>

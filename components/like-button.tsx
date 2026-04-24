@@ -56,8 +56,8 @@ export function LikeButton({
       className={
         "inline-flex items-center gap-1.5 min-h-[var(--spacing-tap)] px-3 rounded-full border text-sm transition-colors " +
         (liked
-          ? "border-[color:var(--color-accent)] bg-[color:var(--color-muted)]/40 text-[color:var(--color-accent)]"
-          : "border-[color:var(--color-border)] text-[color:var(--color-foreground)]/70 hover:bg-[color:var(--color-muted)]/40")
+          ? "border-accent bg-muted/40 text-accent"
+          : "border-border text-foreground/70 hover:bg-muted/40")
       }
     >
       <span aria-hidden>{liked ? "♥" : "♡"}</span>

@@ -101,7 +101,7 @@ export function MediaPicker() {
     <fieldset className="space-y-2">
       <legend className="font-medium">添付（画像最大4枚 または 動画1本）</legend>
       <label className="block text-sm">
-        <span className="block mb-1 text-[color:var(--color-foreground)]/70">
+        <span className="block mb-1 text-foreground/70">
           画像（JPEG / PNG / WebP / GIF、1枚あたり 5MB 以下、最大 4 枚）
         </span>
         <input
@@ -113,13 +113,13 @@ export function MediaPicker() {
           className="block w-full text-sm"
         />
         {imageCount > 0 && (
-          <span className="block mt-1 text-xs text-[color:var(--color-foreground)]/60">
+          <span className="block mt-1 text-xs text-foreground/60">
             {imageCount} 枚を添付します
           </span>
         )}
       </label>
       <label className="block text-sm">
-        <span className="block mb-1 text-[color:var(--color-foreground)]/70">
+        <span className="block mb-1 text-foreground/70">
           または動画 1 本（MP4 / MOV、50MB 以下）
         </span>
         <input
@@ -130,7 +130,7 @@ export function MediaPicker() {
           className="block w-full text-sm"
         />
         {videoName && (
-          <span className="block mt-1 text-xs text-[color:var(--color-foreground)]/60">
+          <span className="block mt-1 text-xs text-foreground/60">
             {videoName} を添付します
           </span>
         )}

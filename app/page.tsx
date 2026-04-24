@@ -30,7 +30,7 @@ export default async function HomePage({ searchParams }: Props) {
   return (
     <div className="mx-auto max-w-5xl px-4">
       <section className="py-16 md:py-24 text-center">
-        <p className="text-sm tracking-widest text-[color:var(--color-accent)]">
+        <p className="text-sm tracking-widest text-accent">
           SHOWA 43 / 1968 ONLY
         </p>
         <h1 className="mt-4 text-3xl md:text-5xl font-bold leading-tight">
@@ -38,7 +38,7 @@ export default async function HomePage({ searchParams }: Props) {
           <br className="md:hidden" />
           語らいの場。
         </h1>
-        <p className="mt-6 text-lg text-[color:var(--color-foreground)]/80">
+        <p className="mt-6 text-lg text-foreground/80">
           1968年（昭和43年）生まれだけが参加できる会員制コミュニティ。
           <br className="hidden md:inline" />
           介護、夫婦、健康、お金。人には聞きにくい話題も、同い年となら本音で話せる。
@@ -46,13 +46,13 @@ export default async function HomePage({ searchParams }: Props) {
         <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href="/register"
-            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full bg-[color:var(--color-primary)] text-white font-medium no-underline hover:opacity-90"
+            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full bg-primary text-white font-medium no-underline hover:opacity-90"
           >
             入会する（月額180円〜）
           </Link>
           <Link
             href="/board"
-            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full border border-[color:var(--color-border)] no-underline hover:bg-[color:var(--color-muted)]"
+            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full border border-border no-underline hover:bg-muted"
           >
             会報を覗いてみる
           </Link>
@@ -99,7 +99,7 @@ export default async function HomePage({ searchParams }: Props) {
             highlighted
           />
         </div>
-        <p className="mt-6 text-center text-sm text-[color:var(--color-foreground)]/70">
+        <p className="mt-6 text-center text-sm text-foreground/70">
           いずれもマイページからいつでも解約できます。
         </p>
       </section>
@@ -109,9 +109,9 @@ export default async function HomePage({ searchParams }: Props) {
 
 function FeatureCard({ title, body }: { title: string; body: string }) {
   return (
-    <article className="rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-background)] p-6">
+    <article className="rounded-lg border border-border bg-background p-6">
       <h3 className="font-bold text-lg">{title}</h3>
-      <p className="mt-2 text-[color:var(--color-foreground)]/80">{body}</p>
+      <p className="mt-2 text-foreground/80">{body}</p>
     </article>
   );
 }
@@ -134,15 +134,15 @@ function PlanCard({
       className={
         "rounded-xl border p-6 " +
         (highlighted
-          ? "border-[color:var(--color-primary)] bg-[color:var(--color-muted)]/40"
-          : "border-[color:var(--color-border)]")
+          ? "border-primary bg-muted/40"
+          : "border-border")
       }
     >
       <h3 className="font-bold text-xl">{name}</h3>
-      <p className="mt-2 text-2xl font-bold text-[color:var(--color-primary)]">
+      <p className="mt-2 text-2xl font-bold text-primary">
         {price}
       </p>
-      <p className="text-sm text-[color:var(--color-foreground)]/70">
+      <p className="text-sm text-foreground/70">
         {yearly}
       </p>
       <ul className="mt-4 space-y-2 text-sm">

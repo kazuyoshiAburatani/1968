@@ -46,7 +46,7 @@ export default async function ProfileEditPage({ searchParams }: Props) {
       <h1 className="text-2xl font-bold">プロフィール編集</h1>
 
       {saved && (
-        <div className="mt-4 rounded-lg border border-[color:var(--color-primary)]/40 bg-[color:var(--color-muted)]/40 p-4 text-sm">
+        <div className="mt-4 rounded-lg border border-primary/40 bg-muted/40 p-4 text-sm">
           保存しました。
         </div>
       )}
@@ -64,7 +64,7 @@ export default async function ProfileEditPage({ searchParams }: Props) {
             defaultValue={profile.nickname}
             required
             maxLength={30}
-            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
           />
         </Field>
 
@@ -78,7 +78,7 @@ export default async function ProfileEditPage({ searchParams }: Props) {
           <select
             name="gender"
             defaultValue={profile.gender ?? ""}
-            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
           >
             <option value="">選択しない</option>
             <option value="male">男性</option>
@@ -92,7 +92,7 @@ export default async function ProfileEditPage({ searchParams }: Props) {
           <select
             name="prefecture"
             defaultValue={profile.prefecture ?? ""}
-            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
           >
             <option value="">選択しない</option>
             {PREFECTURES.map((p) => (
@@ -107,7 +107,7 @@ export default async function ProfileEditPage({ searchParams }: Props) {
             name="hometown"
             defaultValue={profile.hometown ?? ""}
             maxLength={100}
-            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
           />
         </Field>
 
@@ -117,7 +117,7 @@ export default async function ProfileEditPage({ searchParams }: Props) {
             name="school"
             defaultValue={profile.school ?? ""}
             maxLength={100}
-            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
           />
         </Field>
 
@@ -127,7 +127,7 @@ export default async function ProfileEditPage({ searchParams }: Props) {
             name="occupation"
             defaultValue={profile.occupation ?? ""}
             maxLength={50}
-            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
           />
         </Field>
 
@@ -137,7 +137,7 @@ export default async function ProfileEditPage({ searchParams }: Props) {
             defaultValue={profile.introduction ?? ""}
             maxLength={200}
             rows={4}
-            className="w-full px-3 py-2 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+            className="w-full px-3 py-2 rounded border border-border bg-background"
           />
         </Field>
 
@@ -168,7 +168,7 @@ export default async function ProfileEditPage({ searchParams }: Props) {
           <SubmitButton pendingText="保存中…">保存する</SubmitButton>
           <Link
             href="/mypage"
-            className="inline-flex items-center min-h-[var(--spacing-tap)] px-6 rounded-full border border-[color:var(--color-border)] no-underline hover:bg-[color:var(--color-muted)]"
+            className="inline-flex items-center min-h-[var(--spacing-tap)] px-6 rounded-full border border-border no-underline hover:bg-muted"
           >
             キャンセル
           </Link>
@@ -196,7 +196,7 @@ function Field({
         {required && <span className="ml-1 text-sm text-red-700">*</span>}
       </span>
       {hint && (
-        <span className="block text-xs text-[color:var(--color-foreground)]/60 mb-2 mt-0.5">
+        <span className="block text-xs text-foreground/60 mb-2 mt-0.5">
           {hint}
         </span>
       )}

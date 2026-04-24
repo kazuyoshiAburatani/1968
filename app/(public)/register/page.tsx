@@ -17,13 +17,13 @@ export default async function RegisterPage({ searchParams }: Props) {
   return (
     <div className="mx-auto max-w-lg px-4 py-12 md:py-20">
       <h1 className="text-2xl font-bold">新規登録</h1>
-      <p className="mt-2 text-[color:var(--color-foreground)]/80">
+      <p className="mt-2 text-foreground/80">
         1968年（昭和43年）生まれの方のみご登録いただけます。
         メールアドレスをご入力いただくと、ご登録用のリンクをお送りします。
       </p>
 
       {sent && (
-        <div className="mt-6 rounded-lg border border-[color:var(--color-primary)]/40 bg-[color:var(--color-muted)]/40 p-4">
+        <div className="mt-6 rounded-lg border border-primary/40 bg-muted/40 p-4">
           <p className="font-bold">メールをお送りしました。</p>
           <p className="mt-1 text-sm">
             数分以内にリンク付きのメールが届きます。リンクをクリックして登録を続けてください。
@@ -50,7 +50,7 @@ export default async function RegisterPage({ searchParams }: Props) {
             required
             autoComplete="email"
             inputMode="email"
-            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+            className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
             placeholder="your@example.com"
           />
         </label>

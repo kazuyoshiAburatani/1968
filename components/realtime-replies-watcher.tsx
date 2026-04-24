@@ -52,7 +52,7 @@ export function RealtimeRepliesWatcher({
   if (newCount === 0) return null;
 
   return (
-    <div className="mt-6 flex items-center gap-3 rounded-full border border-[color:var(--color-primary)]/40 bg-[color:var(--color-muted)]/60 px-4 py-2 text-sm">
+    <div className="mt-6 flex items-center gap-3 rounded-full border border-primary/40 bg-muted/60 px-4 py-2 text-sm">
       <span>新しい返信が{newCount}件あります。</span>
       <button
         type="button"
@@ -60,7 +60,7 @@ export function RealtimeRepliesWatcher({
           setNewCount(0);
           router.refresh();
         }}
-        className="underline font-medium text-[color:var(--color-primary)]"
+        className="underline font-medium text-primary"
       >
         再読み込み
       </button>

@@ -29,13 +29,13 @@ export default async function HealthPage() {
       <h1 className="text-2xl font-bold">診断</h1>
       <dl className="mt-6 space-y-3 text-base">
         <div className="flex gap-4">
-          <dt className="w-40 text-[color:var(--color-foreground)]/70">
+          <dt className="w-40 text-foreground/70">
             Supabase 接続
           </dt>
           <dd
             className={
               status === "ok"
-                ? "font-bold text-[color:var(--color-primary)]"
+                ? "font-bold text-primary"
                 : "font-bold text-red-700"
             }
           >
@@ -43,21 +43,21 @@ export default async function HealthPage() {
           </dd>
         </div>
         <div className="flex gap-4">
-          <dt className="w-40 text-[color:var(--color-foreground)]/70">
+          <dt className="w-40 text-foreground/70">
             セッション
           </dt>
           <dd>{userPresent ? "ログイン中" : "未ログイン"}</dd>
         </div>
         {detail && (
           <div className="flex gap-4">
-            <dt className="w-40 text-[color:var(--color-foreground)]/70">
+            <dt className="w-40 text-foreground/70">
               詳細
             </dt>
             <dd className="font-mono text-sm">{detail}</dd>
           </div>
         )}
       </dl>
-      <p className="mt-8 text-sm text-[color:var(--color-foreground)]/60">
+      <p className="mt-8 text-sm text-foreground/60">
         この画面はフェーズ1の疎通確認用です。正式公開前に削除または保護予定。
       </p>
     </div>

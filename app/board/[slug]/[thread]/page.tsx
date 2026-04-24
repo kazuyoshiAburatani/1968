@@ -152,7 +152,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
       <article>
         <header>
           <h1 className="text-2xl font-bold leading-snug">{thread.title}</h1>
-          <p className="mt-2 text-sm text-[color:var(--color-foreground)]/60">
+          <p className="mt-2 text-sm text-foreground/60">
             <Link href={`/u/${thread.user_id}`} className="underline">
               {authorName}
             </Link>
@@ -179,13 +179,13 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
         </div>
       </article>
 
-      <hr className="my-10 border-[color:var(--color-border)]" />
+      <hr className="my-10 border-border" />
 
       <section>
         <h2 className="font-bold">返信 {thread.reply_count > 0 && `(${thread.reply_count})`}</h2>
         <RealtimeRepliesWatcher threadId={threadId} currentUserId={viewerId} />
         {replyRows.length === 0 ? (
-          <p className="mt-4 text-sm text-[color:var(--color-foreground)]/60">
+          <p className="mt-4 text-sm text-foreground/60">
             まだ返信はありません。
           </p>
         ) : (
@@ -202,10 +202,10 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
                 <li
                   key={r.id}
                   id={`reply-${r.id}`}
-                  className="border-l-2 border-[color:var(--color-border)] pl-4"
+                  className="border-l-2 border-border pl-4"
                 >
-                  <p className="text-sm text-[color:var(--color-foreground)]/70">
-                    <span className="font-bold text-[color:var(--color-foreground)]">
+                  <p className="text-sm text-foreground/70">
+                    <span className="font-bold text-foreground">
                       #{i + 1} {name}
                     </span>
                     {" ・ "}
@@ -236,16 +236,16 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
         )}
 
         {shouldShowGuestCta && (
-          <div className="mt-8 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-muted)]/40 p-6 text-sm">
+          <div className="mt-8 rounded-lg border border-border bg-muted/40 p-6 text-sm">
             <p className="font-bold">続きは会員の方にご覧いただけます。</p>
-            <p className="mt-2 text-[color:var(--color-foreground)]/80">
+            <p className="mt-2 text-foreground/80">
               {thread.reply_count - GUEST_REPLY_LIMIT} 件の返信が隠れています。
               月額180円から、本音の語らいに加わってみませんか。
             </p>
             <p className="mt-4">
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full bg-[color:var(--color-primary)] text-white font-medium no-underline hover:opacity-90"
+                className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full bg-primary text-white font-medium no-underline hover:opacity-90"
               >
                 新規登録する
               </Link>
@@ -254,12 +254,12 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
         )}
       </section>
 
-      <hr className="my-10 border-[color:var(--color-border)]" />
+      <hr className="my-10 border-border" />
 
       <section>
         <h2 className="font-bold">返信を書く</h2>
         {thread.is_locked ? (
-          <p className="mt-2 text-sm text-[color:var(--color-foreground)]/60">
+          <p className="mt-2 text-sm text-foreground/60">
             このスレッドはロックされているため返信できません。
           </p>
         ) : !canReply ? (
@@ -272,7 +272,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
             <p className="mt-4">
               <Link
                 href={rank === "guest" ? "/register" : "/mypage"}
-                className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full bg-[color:var(--color-primary)] text-white font-medium no-underline hover:opacity-90"
+                className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-6 rounded-full bg-primary text-white font-medium no-underline hover:opacity-90"
               >
                 {rank === "guest" ? "新規登録する" : "マイページへ"}
               </Link>
@@ -298,7 +298,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
                 maxLength={3000}
                 rows={6}
                 placeholder="本文（3000文字以内）"
-                className="w-full px-3 py-2 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)]"
+                className="w-full px-3 py-2 rounded border border-border bg-background"
               />
               <MediaPicker />
               <SubmitButton pendingText="送信中…">返信する</SubmitButton>
