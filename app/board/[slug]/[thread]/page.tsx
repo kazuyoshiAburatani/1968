@@ -14,6 +14,7 @@ import { MediaDisplay } from "@/components/media-display";
 import { LikeButton } from "@/components/like-button";
 import { ReportButton } from "@/components/report-button";
 import { RealtimeRepliesWatcher } from "@/components/realtime-replies-watcher";
+import { ViewTracker } from "@/components/view-tracker";
 import type { MediaItem } from "@/lib/media";
 import { createReply } from "./actions";
 
@@ -141,6 +142,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
+      <ViewTracker threadId={threadId} />
       <nav className="mb-4 text-sm">
         <Link href={`/board/${slug}`}>← {category.name} へ戻る</Link>
       </nav>
