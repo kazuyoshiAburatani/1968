@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { requireSession } from "@/lib/auth/require-session";
 import { MembershipBadge } from "@/components/membership-badge";
 import { SubmitButton } from "@/components/submit-button";
+import { DOCUMENT_TYPE_LABELS } from "@/lib/validation/verification";
 
 export const metadata: Metadata = {
   title: "マイページ",
@@ -18,6 +19,14 @@ type Subscription = {
   cancel_at_period_end: boolean;
 };
 
+type Verification = {
+  document_type: keyof typeof DOCUMENT_TYPE_LABELS;
+  status: "pending" | "approved" | "rejected";
+  rejection_reason: string | null;
+  submitted_at: string;
+  verified_at: string | null;
+};
+
 type Props = {
   searchParams: Promise<{
     saved?: string;
@@ -31,13 +40,15 @@ const PLAN_LABEL: Record<Subscription["plan_type"], string> = {
   regular_yearly: "年額 4,800円",
 };
 
+const ACTIVE_SUB_STATUSES = new Set(["active", "trialing"]);
+
 export default async function MyPage({ searchParams }: Props) {
   const { supabase, user } = await requireSession();
   const { saved, stripe, portal } = await searchParams;
 
   const { data: publicUser } = await supabase
     .from("users")
-    .select("email, membership_rank, status, stripe_customer_id, created_at")
+    .select("email, membership_rank, status, stripe_customer_id, verified, created_at")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -58,8 +69,20 @@ export default async function MyPage({ searchParams }: Props) {
     .maybeSingle();
   const subscription = subData as Subscription | null;
 
-  const verified = false;
+  const { data: verData } = await supabase
+    .from("verifications")
+    .select(
+      "document_type, status, rejection_reason, submitted_at, verified_at",
+    )
+    .eq("user_id", user.id)
+    .order("submitted_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const verification = verData as Verification | null;
+
+  const verified = publicUser?.verified === true;
   const rank = (publicUser?.membership_rank ?? "guest") as Rank;
+  const hasActiveSub = !!subscription && ACTIVE_SUB_STATUSES.has(subscription.status);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -80,7 +103,7 @@ export default async function MyPage({ searchParams }: Props) {
       )}
       {stripe === "success" && (
         <div className="mt-4 rounded-lg border border-primary/40 bg-muted/40 p-3 text-sm">
-          正会員への切り替えが完了しました。ご登録ありがとうございます。
+          ご決済を受け付けました。あとは身分証の確認が完了次第、正会員機能が利用できるようになります。
         </div>
       )}
       {stripe === "canceled" && (
@@ -94,31 +117,112 @@ export default async function MyPage({ searchParams }: Props) {
         </div>
       )}
 
-      {/* 無料会員、正会員へのアップグレード案内 */}
-      {rank === "member" && (
+      {/* 正会員に必要なステップ案内、片方でも未完了の場合に表示 */}
+      {(rank !== "regular") && (
         <section className="mt-8 rounded-lg border border-border bg-muted/30 p-5">
-          <h2 className="font-bold">正会員になる</h2>
+          <h2 className="font-bold">正会員になるまでのステップ</h2>
           <p className="mt-2 text-sm text-foreground/80">
-            全12カテゴリを自由に閲覧・投稿できます。介護・夫婦・健康・お金などの話題に加え、将来的にオフ会やメッセージも利用できます。
+            「お支払い」と「ご本人確認」の両方が完了すると、全12カテゴリを自由に閲覧・投稿できます。
           </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <form action="/api/stripe/checkout?plan=monthly" method="post">
-              <SubmitButton className="w-full" pendingText="決済画面へ…">
-                月額 480円で始める
-              </SubmitButton>
-            </form>
-            <form action="/api/stripe/checkout?plan=yearly" method="post">
-              <SubmitButton
-                variant="outline"
-                className="w-full"
-                pendingText="決済画面へ…"
+
+          <ol className="mt-4 space-y-4">
+            {/* ステップ 1、お支払い */}
+            <li className="flex items-start gap-3">
+              <span
+                className={`mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                  hasActiveSub
+                    ? "bg-primary/20 text-primary"
+                    : "bg-muted text-foreground/60"
+                }`}
+                aria-hidden
               >
-                年額 4,800円（2ヶ月分お得）
-              </SubmitButton>
-            </form>
-          </div>
-          <p className="mt-3 text-xs text-foreground/60">
-            解約はいつでもこのページから行えます。期間終了まで引き続きご利用いただけます。
+                {hasActiveSub ? "✓" : "1"}
+              </span>
+              <div className="flex-1">
+                <p className="font-medium">月額または年額のお支払い</p>
+                {hasActiveSub ? (
+                  <p className="mt-1 text-xs text-foreground/70">
+                    {subscription && PLAN_LABEL[subscription.plan_type]} で登録済み
+                  </p>
+                ) : (
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <form action="/api/stripe/checkout?plan=monthly" method="post">
+                      <SubmitButton className="w-full" pendingText="決済画面へ…">
+                        月額 480円で始める
+                      </SubmitButton>
+                    </form>
+                    <form action="/api/stripe/checkout?plan=yearly" method="post">
+                      <SubmitButton
+                        variant="outline"
+                        className="w-full"
+                        pendingText="決済画面へ…"
+                      >
+                        年額 4,800円（2ヶ月分お得）
+                      </SubmitButton>
+                    </form>
+                  </div>
+                )}
+              </div>
+            </li>
+
+            {/* ステップ 2、ご本人確認 */}
+            <li className="flex items-start gap-3">
+              <span
+                className={`mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                  verified
+                    ? "bg-primary/20 text-primary"
+                    : verification?.status === "pending"
+                      ? "bg-amber-100 text-amber-900"
+                      : "bg-muted text-foreground/60"
+                }`}
+                aria-hidden
+              >
+                {verified ? "✓" : "2"}
+              </span>
+              <div className="flex-1">
+                <p className="font-medium">ご本人確認の書類提出</p>
+                {verified ? (
+                  <p className="mt-1 text-xs text-foreground/70">
+                    本人確認済み（{verification?.verified_at &&
+                      new Date(verification.verified_at).toLocaleDateString("ja-JP")}）
+                  </p>
+                ) : verification?.status === "pending" ? (
+                  <p className="mt-1 text-xs text-foreground/70">
+                    審査中、結果が出るまでしばらくお待ちください。
+                  </p>
+                ) : verification?.status === "rejected" ? (
+                  <div className="mt-1 text-xs">
+                    <p className="text-red-900">
+                      却下されました
+                      {verification.rejection_reason
+                        ? `、${verification.rejection_reason}`
+                        : ""}
+                    </p>
+                    <p className="mt-2">
+                      <Link
+                        href="/mypage/verification"
+                        className="inline-flex items-center min-h-[var(--spacing-tap)] px-4 rounded-full border border-border no-underline hover:bg-muted text-sm"
+                      >
+                        再提出する
+                      </Link>
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-2">
+                    <Link
+                      href="/mypage/verification"
+                      className="inline-flex items-center min-h-[var(--spacing-tap)] px-5 rounded-full border border-border no-underline hover:bg-muted text-sm"
+                    >
+                      身分証を提出する
+                    </Link>
+                  </p>
+                )}
+              </div>
+            </li>
+          </ol>
+
+          <p className="mt-5 text-xs text-foreground/60">
+            身分証は運営の確認担当者のみが閲覧します。承認・却下から30日後に自動で削除されます。
           </p>
         </section>
       )}
@@ -140,7 +244,9 @@ export default async function MyPage({ searchParams }: Props) {
             </dd>
             {subscription.current_period_end && (
               <>
-                <dt className="text-foreground/70">次回更新</dt>
+                <dt className="text-foreground/70">
+                  {subscription.cancel_at_period_end ? "ご利用終了日" : "次回更新"}
+                </dt>
                 <dd>
                   {new Date(subscription.current_period_end).toLocaleDateString(
                     "ja-JP",

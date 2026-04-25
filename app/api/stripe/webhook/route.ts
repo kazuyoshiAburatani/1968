@@ -150,29 +150,16 @@ async function upsertSubscription(
     return;
   }
 
-  // 有効なサブスクなら users.membership_rank を regular に昇格、そうでなければ member に戻す
-  const activeStatuses = new Set(["active", "trialing"]);
-  if (activeStatuses.has(sub.status)) {
-    await admin
-      .from("users")
-      .update({ membership_rank: "regular" })
-      .eq("id", userId);
-  } else {
-    await admin
-      .from("users")
-      .update({ membership_rank: "member" })
-      .eq("id", userId);
-  }
+  // membership_rank の更新は subscriptions_refresh_rank トリガが行う、
+  // subscriptions 行が変化すれば compute_membership_rank で再評価される。
+  // 案 A、支払い AND 身分証承認 の両方で regular になる。
 }
 
-// subscription 削除、regular から member に降格
+// subscription 削除、subscriptions 側を canceled にすればトリガで member に降格される
 async function handleSubscriptionDeleted(
   admin: ReturnType<typeof getSupabaseAdminClient>,
   sub: Stripe.Subscription,
 ) {
-  const userId = (sub.metadata?.user_id ?? "") as string;
-  if (!userId) return;
-
   await admin
     .from("subscriptions")
     .update({
@@ -180,9 +167,4 @@ async function handleSubscriptionDeleted(
       canceled_at: new Date().toISOString(),
     })
     .eq("stripe_subscription_id", sub.id);
-
-  await admin
-    .from("users")
-    .update({ membership_rank: "member" })
-    .eq("id", userId);
 }
