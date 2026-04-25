@@ -9,6 +9,11 @@ export default function TokushohoPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-2xl font-bold">特定商取引法に基づく表示</h1>
+
+      <p className="mt-4 text-sm text-foreground/70">
+        最終更新日、2026年4月25日
+      </p>
+
       <dl className="mt-8 grid grid-cols-[8rem_1fr] gap-y-4 gap-x-6 text-sm">
         <dt className="font-bold text-foreground/70">販売事業者</dt>
         <dd>油谷和好</dd>
@@ -63,9 +68,23 @@ export default function TokushohoPage() {
         <dd>
           原則として返金は行っておりません。虚偽申告が発覚した場合は返金なく退会処分となります。
         </dd>
+
+        <dt className="font-bold text-foreground/70">動作環境</dt>
+        <dd>
+          最新版のブラウザ（Chrome、Safari、Firefox、Edge）でのご利用を推奨します。スマートフォン・タブレット・パソコンに対応しています。
+        </dd>
+
+        <dt className="font-bold text-foreground/70">特別条件</dt>
+        <dd>
+          本サービスは1968年生まれの方に限定して提供しております。生年月日に関する虚偽の申告が判明した場合、会費の返金なく退会処分となります。
+        </dd>
       </dl>
 
       <p className="mt-10 text-sm">
+        ご不明な点は{" "}
+        <a href="mailto:support@1968.love">support@1968.love</a> までお問い合わせください。
+      </p>
+      <p className="mt-4 text-sm">
         <Link href="/">← トップへ戻る</Link>
       </p>
     </div>

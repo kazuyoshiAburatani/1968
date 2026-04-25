@@ -5,44 +5,302 @@ export const metadata: Metadata = {
   title: "プライバシーポリシー",
 };
 
+// プライバシーポリシーのドラフト、弁護士による最終レビュー前。フェーズ9（法務対応）で確定版に置き換える。
 export default function PrivacyPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="text-2xl font-bold">プライバシーポリシー</h1>
-      <p className="mt-4 text-foreground/80">
-        現在、弁護士の確認を経た正式なプライバシーポリシーを準備中です。2026年の正式公開までにこちらに掲載します。
+
+      <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+        <p className="font-bold">本文書はドラフトです</p>
+        <p className="mt-1">
+          現在、弁護士による正式な確認を経た最終版を準備中です。2026年の正式公開までに本ページを更新します。
+        </p>
+      </div>
+
+      <p className="mt-6 text-sm text-foreground/70">
+        最終更新日、2026年4月25日（ドラフト）
       </p>
 
-      <section className="mt-10 space-y-4 text-sm text-foreground/80">
-        <h2 className="font-bold text-base">取得する情報</h2>
-        <ul className="space-y-1 list-disc pl-5">
-          <li>メールアドレス、ニックネーム、生年月日、お住まいの都道府県など会員登録時に入力いただく情報</li>
-          <li>正会員の方は、身分証画像（本人確認用、確認後30日以内に完全削除）</li>
-          <li>クレジットカード情報（Stripe が保持、当サイトは保存しません）</li>
-          <li>アクセスログ、IPアドレス、UserAgent などの技術情報</li>
-        </ul>
+      <Section title="1. 事業者情報">
+        <dl className="grid grid-cols-[8rem_1fr] gap-y-2 gap-x-4">
+          <dt className="text-foreground/70">事業者</dt>
+          <dd>油谷和好</dd>
+          <dt className="text-foreground/70">所在地</dt>
+          <dd>
+            〒542-0081
+            <br />
+            大阪府大阪市中央区南船場3丁目2番22号
+            <br />
+            おおきに南船場ビル205
+          </dd>
+          <dt className="text-foreground/70">連絡先</dt>
+          <dd>
+            <a href="mailto:support@1968.love">support@1968.love</a>
+          </dd>
+        </dl>
+      </Section>
 
-        <h2 className="font-bold text-base mt-6">利用目的</h2>
-        <ul className="space-y-1 list-disc pl-5">
-          <li>本サービスの提供および運営</li>
-          <li>本人確認および年齢確認</li>
-          <li>不正利用の防止</li>
-          <li>サポート対応</li>
-        </ul>
-
-        <h2 className="font-bold text-base mt-6">第三者提供</h2>
+      <Section title="2. 取得する個人情報の項目">
         <p>
-          法令に基づく場合や本人の同意がある場合を除き、取得した個人情報を第三者に提供することはありません。
+          当方は、本サービスの提供にあたり、以下の個人情報を取得します。
         </p>
-      </section>
+        <ul className="list-disc pl-5 mt-2 space-y-1">
+          <li>
+            <span className="font-medium">登録時に取得する情報</span>、メールアドレス、パスワード（暗号化保管）、ニックネーム、生年月日、性別（任意）、お住まいの都道府県（任意）
+          </li>
+          <li>
+            <span className="font-medium">プロフィール情報</span>、出身地、卒業校、職業、自己紹介文、プロフィール画像など、会員ご自身が入力された情報
+          </li>
+          <li>
+            <span className="font-medium">本人確認書類</span>、マイナンバーカード、健康保険証、運転免許証のいずれかの画像（正会員になる方のみ）
+          </li>
+          <li>
+            <span className="font-medium">決済関連情報</span>、決済代行事業者（Stripe Inc.）のお客様ID等。クレジットカード番号、有効期限、セキュリティコード等のカード情報は当方のサーバには一切保存されず、Stripe側で管理されます
+          </li>
+          <li>
+            <span className="font-medium">投稿コンテンツ</span>、掲示板への投稿、返信、いいね履歴、ダイレクトメッセージの内容、添付した画像・動画
+          </li>
+          <li>
+            <span className="font-medium">アクセス情報</span>、IPアドレス、ブラウザの種類、UserAgent、アクセス日時、リファラ、ログインの試行履歴
+          </li>
+          <li>
+            <span className="font-medium">問い合わせ情報</span>、お問い合わせ時にご記入いただいたお名前、内容
+          </li>
+        </ul>
+      </Section>
+
+      <Section title="3. 取得方法">
+        <ul className="list-disc pl-5 space-y-1">
+          <li>
+            会員登録、プロフィール登録、身分証アップロード、投稿等、会員ご自身による入力または送信により取得します。
+          </li>
+          <li>
+            アクセス情報は、ブラウザから自動的に当方のサーバに送信される技術情報として取得します。
+          </li>
+          <li>
+            決済情報は、決済代行事業者を経由して、当方が取り扱える範囲（顧客ID、サブスクリプション状態等）で取得します。
+          </li>
+        </ul>
+      </Section>
+
+      <Section title="4. 利用目的">
+        <p>取得した個人情報は、以下の目的で利用します。</p>
+        <ul className="list-disc pl-5 mt-2 space-y-1">
+          <li>本サービスの提供、運営、維持</li>
+          <li>会員資格（生年月日要件）の確認、本人確認</li>
+          <li>会員間のコミュニケーション機能の提供</li>
+          <li>
+            会員ランクに応じた利用権限の管理、料金の請求、決済処理
+          </li>
+          <li>不正利用、なりすまし、規約違反行為の検知および対応</li>
+          <li>サポート対応、お問い合わせへの回答</li>
+          <li>
+            重要なお知らせ、サービス変更通知、利用規約変更通知などの送信
+          </li>
+          <li>
+            サービス改善、新機能の検討のための統計分析（個人を特定できない形に加工）
+          </li>
+          <li>法令に基づく対応、当方の権利または財産の保護</li>
+        </ul>
+      </Section>
+
+      <Section title="5. 本人確認書類の特別な取り扱い">
+        <p>
+          身分証画像は、要配慮性が高いため、他の個人情報と区別して以下のとおり厳重に取り扱います。
+        </p>
+        <ul className="list-disc pl-5 mt-2 space-y-1">
+          <li>
+            アクセス可能なのは、当方が指名した本人確認の担当者のみです。
+          </li>
+          <li>
+            画像はアップロード時にサーバ側で暗号化し、暗号化された状態で保存します。
+          </li>
+          <li>
+            位置情報（Exif/GPS情報）は保存時に削除されます。
+          </li>
+          <li>
+            本人確認の承認または却下から30日以内に、画像本体および参照情報を完全に削除します（審査結果のメタデータのみ、監査記録として保持します）。
+          </li>
+          <li>
+            本人確認以外の目的では一切利用せず、第三者に提供することもありません。
+          </li>
+        </ul>
+      </Section>
+
+      <Section title="6. 第三者提供">
+        <p>
+          当方は、以下のいずれかに該当する場合を除き、取得した個人情報を第三者に提供しません。
+        </p>
+        <ul className="list-disc pl-5 mt-2 space-y-1">
+          <li>会員ご本人の同意がある場合</li>
+          <li>法令に基づく場合（裁判所の令状、捜査機関からの照会等）</li>
+          <li>
+            人の生命、身体または財産の保護のために必要があり、本人の同意を得ることが困難な場合
+          </li>
+          <li>
+            公衆衛生の向上または児童の健全育成の推進のため特に必要があり、本人の同意を得ることが困難な場合
+          </li>
+          <li>
+            国の機関または地方公共団体が法令の定める事務を遂行することに対し協力する必要がある場合
+          </li>
+        </ul>
+      </Section>
+
+      <Section title="7. 業務委託">
+        <p>
+          当方は、本サービスの提供および運営にあたり、以下のとおり個人情報の取り扱いを外部の事業者に委託することがあります。委託先には、本ポリシーと同等以上の安全管理措置を講じることを契約上義務づけます。
+        </p>
+        <ul className="list-disc pl-5 mt-2 space-y-1">
+          <li>
+            <span className="font-medium">Supabase（米国）</span>、データベース、認証、ファイルストレージ
+          </li>
+          <li>
+            <span className="font-medium">Vercel（米国）</span>、Webサイトのホスティングおよび配信
+          </li>
+          <li>
+            <span className="font-medium">Stripe（米国）</span>、決済処理
+          </li>
+          <li>
+            <span className="font-medium">Resend（米国）</span>、メール配信
+          </li>
+          <li>
+            <span className="font-medium">Cloudflare（米国）</span>、コンテンツ配信ネットワーク、セキュリティ
+          </li>
+          <li>
+            <span className="font-medium">Sentry（米国）</span>、エラー監視
+          </li>
+        </ul>
+        <p className="mt-2">
+          上記の委託先は外国にある第三者にあたるため、個人情報保護法第28条に基づき、必要な情報を以下のとおり提供します。各国における個人情報保護に関する制度等の詳細は、個人情報保護委員会のウェブサイト（
+          <a
+            href="https://www.ppc.go.jp/personalinfo/legal/kaiseihogohou/#gaikoku"
+            className="underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            外国における個人情報の保護に関する制度等の調査
+          </a>
+          ）をご参照ください。委託先各社は、適切な安全管理措置を講じています。
+        </p>
+      </Section>
+
+      <Section title="8. 共同利用">
+        <p>
+          現時点では、個人情報の共同利用は行っていません。今後共同利用を行う場合は、改めて本ポリシーに記載するか、会員に通知のうえ実施します。
+        </p>
+      </Section>
+
+      <Section title="9. 安全管理措置">
+        <p>
+          当方は、取得した個人情報の漏洩、滅失、毀損を防止するため、以下の安全管理措置を講じます。
+        </p>
+        <ul className="list-disc pl-5 mt-2 space-y-1">
+          <li>
+            <span className="font-medium">組織的</span>、個人情報取扱責任者の設置、取扱権限を持つ担当者の限定、アクセスログの記録
+          </li>
+          <li>
+            <span className="font-medium">人的</span>、業務委託先を含む取扱担当者への教育、機密保持義務
+          </li>
+          <li>
+            <span className="font-medium">物理的</span>、サーバ機器が設置される場所への物理アクセス制限（クラウド事業者の責任範囲）
+          </li>
+          <li>
+            <span className="font-medium">技術的</span>、通信のTLS暗号化、データベースのアクセス権限制御（行レベルセキュリティ）、パスワードのハッシュ保存、機密データの追加暗号化、ログイン試行回数制限、不正アクセス監視、定期的なバックアップ
+          </li>
+        </ul>
+      </Section>
+
+      <Section title="10. 個人情報の保有期間">
+        <ul className="list-disc pl-5 space-y-1">
+          <li>
+            会員に関する個人情報は、原則として会員資格が継続する期間および退会後の必要な期間（紛争対応、法令上の保管義務等）保有します。
+          </li>
+          <li>
+            身分証画像は、本条第5項に従い、本人確認の承認または却下から30日以内に削除します。
+          </li>
+          <li>
+            アクセスログは、不正利用の調査および統計分析の目的で、最大1年間保有します。
+          </li>
+          <li>
+            退会された会員の投稿コンテンツについては、利用規約第9条第4項に従い、本サービス上に残存することがあります。
+          </li>
+        </ul>
+      </Section>
+
+      <Section title="11. 開示、訂正、削除等のご請求">
+        <ol className="list-decimal pl-5 space-y-1">
+          <li>
+            会員は、当方に対し、ご自身の個人情報の開示、訂正、追加、削除、利用停止、第三者提供の停止を請求することができます。
+          </li>
+          <li>
+            登録メールアドレス、ニックネーム、プロフィール、公開範囲設定等は、マイページから会員ご自身で確認・変更ができます。
+          </li>
+          <li>
+            上記以外のご請求は、本ポリシー末尾のお問い合わせ窓口までご連絡ください。当方は、ご請求がご本人によるものであることを確認のうえ、合理的な期間内に対応します。
+          </li>
+        </ol>
+      </Section>
+
+      <Section title="12. クッキー（Cookie）の使用">
+        <ol className="list-decimal pl-5 space-y-1">
+          <li>
+            本サービスは、ログイン状態の維持、利便性の向上、サービスの利用状況の把握のためにクッキーを使用します。
+          </li>
+          <li>
+            会員は、ブラウザの設定によりクッキーの受け入れを制限することができますが、その場合本サービスの一部機能が正常に動作しないことがあります。
+          </li>
+        </ol>
+      </Section>
+
+      <Section title="13. 漏洩等が発生した場合の対応">
+        <p>
+          個人情報の漏洩、滅失、毀損その他のセキュリティ事故が発生した場合、当方は速やかに事実関係および再発防止策の調査を行い、関係する会員への通知、個人情報保護委員会への報告（要件に該当する場合は72時間以内）、公表など、法令に基づく対応を行います。
+        </p>
+      </Section>
+
+      <Section title="14. 本ポリシーの変更">
+        <p>
+          当方は、法令の改正、本サービスの内容変更、その他の事由により、本ポリシーを改定することがあります。改定後の内容は、本サービス上に掲載した時点から効力を生じます。重要な変更の場合は、メール等により会員に通知します。
+        </p>
+      </Section>
+
+      <Section title="15. お問い合わせ窓口">
+        <p>
+          個人情報の取り扱いに関するご質問、開示等のご請求、その他のお問い合わせは、以下の窓口までご連絡ください。
+        </p>
+        <div className="mt-3 rounded-lg border border-border bg-muted/30 p-4">
+          <p>1968 個人情報お問い合わせ窓口</p>
+          <p className="mt-1">
+            メール、
+            <a href="mailto:support@1968.love" className="underline">
+              support@1968.love
+            </a>
+          </p>
+          <p className="mt-1 text-xs text-foreground/60">
+            お問い合わせはメールにてお願いいたします。電話でのお問い合わせには対応いたしかねます。
+          </p>
+        </div>
+      </Section>
 
       <p className="mt-10 text-sm">
-        お問い合わせは{" "}
-        <a href="mailto:support@1968.love">support@1968.love</a> まで。
-      </p>
-      <p className="mt-4 text-sm">
         <Link href="/">← トップへ戻る</Link>
       </p>
     </div>
+  );
+}
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="mt-8 text-sm leading-7 text-foreground/85">
+      <h2 className="font-bold text-base text-foreground mb-2">{title}</h2>
+      {children}
+    </section>
   );
 }
