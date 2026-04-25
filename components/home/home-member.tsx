@@ -49,7 +49,7 @@ export async function HomeMember({
     todayCountByCat.set(cid, (todayCountByCat.get(cid) ?? 0) + 1);
   }
 
-  const firstA = tierA[0]?.slug ?? "chitchat";
+  const firstA = tierA[0]?.slug ?? "nostalgia-anime";
 
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-8">

@@ -90,7 +90,7 @@ export async function HomeRegular({
             label="掲示板TOP"
           />
           <QuickAction
-            href="/board/chitchat/new"
+            href="/board/nostalgia-anime/new"
             icon="ri-edit-line"
             label="新しく書く"
             primary
