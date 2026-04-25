@@ -68,6 +68,31 @@ export async function HomeGuest() {
         </div>
       </section>
 
+      {/* ベータテスター募集バナー */}
+      <section className="px-4 py-10">
+        <div className="max-w-3xl mx-auto rounded-2xl border border-primary/30 bg-muted/40 p-6 sm:p-8 text-center">
+          <p className="text-xs tracking-widest text-foreground/60 uppercase">
+            Beta Testers Wanted
+          </p>
+          <h2 className="mt-2 text-xl sm:text-2xl font-bold leading-snug">
+            ベータテスターを募集中、{" "}
+            <br className="sm:hidden" />
+            正会員プラン1年無料の特典付き
+          </h2>
+          <p className="mt-3 text-sm text-foreground/80 leading-7">
+            正式公開に向けて、一緒にサービスを育てていただける同年代の方を募集しています。
+          </p>
+          <div className="mt-5">
+            <Link
+              href="/beta"
+              className="inline-flex items-center justify-center bg-primary text-white px-8 py-3 rounded-full text-base font-medium hover:opacity-90 transition-opacity min-h-[var(--spacing-tap)] no-underline"
+            >
+              ベータ募集の詳細を見る →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* カテゴリ一覧、A は通常、B〜D はグレーアウト */}
       <section className="py-16 px-4">
         <div className="max-w-5xl mx-auto">

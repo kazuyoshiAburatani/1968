@@ -156,6 +156,9 @@ function SiteFooter() {
             <p className="font-bold mb-2">案内</p>
             <ul className="space-y-1">
               <li>
+                <Link href="/beta">ベータテスター募集中</Link>
+              </li>
+              <li>
                 <Link href="/terms">利用規約</Link>
               </li>
               <li>
