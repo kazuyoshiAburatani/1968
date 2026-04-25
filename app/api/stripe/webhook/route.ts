@@ -118,6 +118,12 @@ async function upsertSubscription(
   const periodStart = firstItem?.current_period_start ?? null;
   const periodEnd = firstItem?.current_period_end ?? null;
 
+  // 柔軟請求モード（billing_mode.type === "flexible"）では cancel_at_period_end は常に false で、
+  // 代わりに cancel_at に解約予定 unix timestamp が入る。両モードに対応するため OR で判定する。
+  const cancelScheduled =
+    sub.cancel_at_period_end === true ||
+    (sub.cancel_at !== null && sub.cancel_at !== undefined);
+
   const { error } = await admin.from("subscriptions").upsert(
     {
       user_id: userId,
@@ -131,7 +137,7 @@ async function upsertSubscription(
       current_period_end: periodEnd
         ? new Date(periodEnd * 1000).toISOString()
         : null,
-      cancel_at_period_end: sub.cancel_at_period_end,
+      cancel_at_period_end: cancelScheduled,
       canceled_at: sub.canceled_at
         ? new Date(sub.canceled_at * 1000).toISOString()
         : null,
