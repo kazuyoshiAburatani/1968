@@ -19,10 +19,30 @@ const VARIANTS: Record<Rank, { bg: string; fg: string; border: string }> = {
 export function MembershipBadge({
   rank,
   verified,
+  isAi,
 }: {
   rank: Rank;
   verified?: boolean;
+  isAi?: boolean;
 }) {
+  // 運営 AI は会員ランクの代わりに「運営AI」バッジを単独表示する
+  if (isAi) {
+    return (
+      <span className="inline-flex items-center gap-1">
+        <span
+          className="inline-flex items-center px-2 py-0.5 rounded-full border text-xs font-medium"
+          style={{
+            backgroundColor: "#eef0e8",
+            color: "#3d6b4a",
+            borderColor: "#3d6b4a",
+          }}
+        >
+          運営AI
+        </span>
+      </span>
+    );
+  }
+
   const style = VARIANTS[rank];
   return (
     <span className="inline-flex items-center gap-1">

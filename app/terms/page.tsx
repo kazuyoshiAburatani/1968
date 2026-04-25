@@ -144,7 +144,21 @@ export default function TermsPage() {
         </ol>
       </Section>
 
-      <Section title="第9条（投稿コンテンツ）">
+      <Section title="第9条（運営による AI を活用した投稿）">
+        <ol className="list-decimal pl-5 space-y-1">
+          <li>
+            当方は、本サービスの活性化、話題のきっかけ作り、昭和文化の解説、案内などの目的で、運営アカウントから AI を活用した投稿を行うことがあります。
+          </li>
+          <li>
+            AI を活用した投稿には、ニックネームに「運営ちゃん」を冠したアカウントを用い、「運営AI」のバッジを付して明示します。
+          </li>
+          <li>
+            AI を活用した投稿は、運営による意見表明ではなく、話題提供を主目的とした投稿です。会員からのお問い合わせに、AI が個別に応答することはありません。
+          </li>
+        </ol>
+      </Section>
+
+      <Section title="第10条（投稿コンテンツ）">
         <ol className="list-decimal pl-5 space-y-1">
           <li>
             会員は、自己の責任において投稿を行うものとし、投稿内容について一切の責任を負います。
@@ -161,7 +175,7 @@ export default function TermsPage() {
         </ol>
       </Section>
 
-      <Section title="第10条（禁止事項）">
+      <Section title="第11条（禁止事項）">
         <p>
           会員は、本サービスの利用にあたり、以下の行為を行ってはなりません。
         </p>
@@ -192,7 +206,7 @@ export default function TermsPage() {
         </ol>
       </Section>
 
-      <Section title="第11条（違反対応および退会処分）">
+      <Section title="第12条（違反対応および退会処分）">
         <ol className="list-decimal pl-5 space-y-1">
           <li>
             会員が本規約に違反したと当方が判断した場合、当方は事前の通知なく、当該会員に対し以下の措置を講じることができます。
@@ -208,7 +222,7 @@ export default function TermsPage() {
         </ol>
       </Section>
 
-      <Section title="第12条（ダイレクトメッセージ機能）">
+      <Section title="第13条（ダイレクトメッセージ機能）">
         <ol className="list-decimal pl-5 space-y-1">
           <li>
             正会員は、ダイレクトメッセージ機能を通じて他の正会員と個別にやり取りすることができます。
@@ -222,7 +236,7 @@ export default function TermsPage() {
         </ol>
       </Section>
 
-      <Section title="第13条（オフ会その他オンライン外の交流）">
+      <Section title="第14条（オフ会その他オンライン外の交流）">
         <ol className="list-decimal pl-5 space-y-1">
           <li>
             本サービスは、会員間のオンラインを超えた交流（以下「オフ会」）を促進する場合があります。
@@ -236,7 +250,7 @@ export default function TermsPage() {
         </ol>
       </Section>
 
-      <Section title="第14条（サービスの変更、停止、終了）">
+      <Section title="第15条（サービスの変更、停止、終了）">
         <ol className="list-decimal pl-5 space-y-1">
           <li>
             当方は、本サービスの内容を、会員に対する事前の通知なく変更、追加、削除することができます。
@@ -250,7 +264,7 @@ export default function TermsPage() {
         </ol>
       </Section>
 
-      <Section title="第15条（免責）">
+      <Section title="第16条（免責）">
         <ol className="list-decimal pl-5 space-y-1">
           <li>
             当方は、本サービスについて、その完全性、正確性、確実性、有用性、特定目的への適合性等について、いかなる保証も行いません。
@@ -264,13 +278,13 @@ export default function TermsPage() {
         </ol>
       </Section>
 
-      <Section title="第16条（知的財産権）">
+      <Section title="第17条（知的財産権）">
         <p>
           本サービスのコンテンツ、デザイン、ロゴ、商標、ソフトウェアその他に関する一切の知的財産権は、当方または正当な権利者に帰属します。会員は、当方の事前の書面による許諾なく、これらを複製、転載、改変、公衆送信その他の利用をすることはできません。
         </p>
       </Section>
 
-      <Section title="第17条（個人情報の取り扱い）">
+      <Section title="第18条（個人情報の取り扱い）">
         <p>
           会員から取得する個人情報の取り扱いについては、別途定める
           <Link href="/privacy" className="underline">プライバシーポリシー</Link>
@@ -278,7 +292,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <Section title="第18条（規約の変更）">
+      <Section title="第19条（規約の変更）">
         <ol className="list-decimal pl-5 space-y-1">
           <li>
             当方は、本規約を変更する場合、変更内容および変更日を本サービス内またはメールで会員に通知します。
@@ -289,7 +303,7 @@ export default function TermsPage() {
         </ol>
       </Section>
 
-      <Section title="第19条（準拠法および合意管轄）">
+      <Section title="第20条（準拠法および合意管轄）">
         <ol className="list-decimal pl-5 space-y-1">
           <li>本規約の解釈および適用は、日本法に準拠します。</li>
           <li>

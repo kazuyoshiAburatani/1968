@@ -18,8 +18,17 @@ import { ViewTracker } from "@/components/view-tracker";
 import { SubmitButton } from "@/components/submit-button";
 import { MediaPicker } from "@/components/media-picker";
 import { ReplyBodyEditor } from "@/components/reply-body-editor";
+import { fetchAuthorInfo } from "@/lib/author-info";
 import type { MediaItem } from "@/lib/media";
 import { createReply } from "./actions";
+
+function AiBadge() {
+  return (
+    <span className="inline-block px-1.5 py-px rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 align-middle ml-1">
+      運営AI
+    </span>
+  );
+}
 
 type Props = {
   params: Promise<{ slug: string; thread: string }>;
@@ -106,23 +115,14 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
   const { data: replies } = await replyQuery;
   const replyRows = (replies ?? []) as ReplyRow[];
 
-  // 作者＋返信者のニックネームをまとめ取り
-  const userIds = [
+  // 作者＋返信者のニックネーム＋ランク＋AI 判定をまとめ取り
+  const authorMap = await fetchAuthorInfo(supabase, [
     thread.user_id,
     ...replyRows.map((r) => r.user_id),
-  ];
-  const uniqueUserIds = [...new Set(userIds)];
-  const nickMap = new Map<string, string>();
-  if (uniqueUserIds.length > 0) {
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, nickname")
-      .in("user_id", uniqueUserIds);
-    for (const p of profiles ?? []) {
-      nickMap.set(p.user_id as string, p.nickname as string);
-    }
-  }
-  const authorName = nickMap.get(thread.user_id) ?? "（匿名）";
+  ]);
+  const author = authorMap.get(thread.user_id);
+  const authorName = author?.nickname ?? "（匿名）";
+  const authorIsAi = author?.isAi === true;
 
   // 現ユーザーの「いいね」一覧、スレッド本文＋閲覧可能な返信分
   const likedSet = new Set<string>();
@@ -157,6 +157,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
             <Link href={`/u/${thread.user_id}`} className="underline">
               {authorName}
             </Link>
+            {authorIsAi && <AiBadge />}
             {" ・ "}
             {new Date(thread.created_at).toLocaleString("ja-JP")}
             {" ・ "}
@@ -200,11 +201,14 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
         ) : (
           <ol className="mt-4 space-y-6">
             {replyRows.map((r, i) => {
-              const name = nickMap.get(r.user_id) ?? "（匿名）";
+              const replyAuthor = authorMap.get(r.user_id);
+              const name = replyAuthor?.nickname ?? "（匿名）";
+              const replyIsAi = replyAuthor?.isAi === true;
               const parentName = r.parent_reply_id
                 ? (() => {
                     const parent = replyRows.find((x) => x.id === r.parent_reply_id);
-                    return parent ? nickMap.get(parent.user_id) : null;
+                    if (!parent) return null;
+                    return authorMap.get(parent.user_id)?.nickname ?? null;
                   })()
                 : null;
               return (
@@ -217,6 +221,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
                     <span className="font-bold text-foreground">
                       #{i + 1} {name}
                     </span>
+                    {replyIsAi && <AiBadge />}
                     {" ・ "}
                     {new Date(r.created_at).toLocaleString("ja-JP")}
                     {parentName && (
@@ -257,7 +262,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
             <p className="font-bold">続きは会員の方にご覧いただけます。</p>
             <p className="mt-2 text-foreground/80">
               {thread.reply_count - GUEST_REPLY_LIMIT} 件の返信が隠れています。
-              月額180円から、本音の語らいに加わってみませんか。
+              月額480円から、本音の語らいに加わってみませんか。
             </p>
             <p className="mt-4">
               <Link

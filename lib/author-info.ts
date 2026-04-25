@@ -7,6 +7,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export type AuthorInfo = {
   nickname: string | null;
   rank: "member" | "regular" | null;
+  isAi: boolean;
 };
 
 export async function fetchAuthorInfo(
@@ -21,21 +22,23 @@ export async function fetchAuthorInfo(
     supabase.from("profiles").select("user_id, nickname").in("user_id", uniqueIds),
     supabase
       .from("member_display")
-      .select("user_id, membership_rank")
+      .select("user_id, membership_rank, is_ai_persona")
       .in("user_id", uniqueIds),
   ]);
 
+  const init = (): AuthorInfo => ({ nickname: null, rank: null, isAi: false });
   for (const id of uniqueIds) {
-    map.set(id, { nickname: null, rank: null });
+    map.set(id, init());
   }
   for (const p of profileRes.data ?? []) {
-    const current = map.get(p.user_id as string) ?? { nickname: null, rank: null };
+    const current = map.get(p.user_id as string) ?? init();
     current.nickname = p.nickname as string;
     map.set(p.user_id as string, current);
   }
   for (const r of rankRes.data ?? []) {
-    const current = map.get(r.user_id as string) ?? { nickname: null, rank: null };
+    const current = map.get(r.user_id as string) ?? init();
     current.rank = r.membership_rank as "member" | "regular";
+    current.isAi = r.is_ai_persona === true;
     map.set(r.user_id as string, current);
   }
 

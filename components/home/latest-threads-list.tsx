@@ -87,16 +87,19 @@ export async function LatestThreadsList({ limit = 10 }: { limit?: number }) {
               <div className="mt-1.5 flex items-center gap-3 text-xs text-foreground/60 flex-wrap">
                 <span className="flex items-center gap-1.5">
                   {nickname}
-                  {rank === "regular" && (
+                  {author?.isAi ? (
+                    <span className="inline-block px-1.5 py-px rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
+                      運営AI
+                    </span>
+                  ) : rank === "regular" ? (
                     <span className="inline-block px-1.5 py-px rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/30">
                       正会員
                     </span>
-                  )}
-                  {rank === "member" && (
+                  ) : rank === "member" ? (
                     <span className="inline-block px-1.5 py-px rounded text-[10px] font-medium bg-muted text-foreground/70 border border-border">
                       会員
                     </span>
-                  )}
+                  ) : null}
                 </span>
                 <span>{new Date(t.created_at).toLocaleString("ja-JP", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                 <span className="inline-flex items-center gap-1">

@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentRank } from "@/lib/auth/current-rank";
 import { canView, canPost, type Tier, type ViewLevel, type PostLevel } from "@/lib/auth/permissions";
+import { fetchAuthorInfo } from "@/lib/author-info";
 
 const PAGE_SIZE = 20;
 
@@ -115,18 +116,11 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   const threadRows = (threads ?? []) as ThreadRow[];
 
-  // 作者ニックネームをバッチ取得（bio_visible により取得不可のプロフィールは undefined）
-  const authorIds = [...new Set(threadRows.map((t) => t.user_id))];
-  const authorMap = new Map<string, string>();
-  if (authorIds.length > 0) {
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, nickname")
-      .in("user_id", authorIds);
-    for (const p of profiles ?? []) {
-      authorMap.set(p.user_id as string, p.nickname as string);
-    }
-  }
+  // 作者ニックネーム＋ランク＋AI 判定をまとめて取得
+  const authorMap = await fetchAuthorInfo(
+    supabase,
+    threadRows.map((t) => t.user_id),
+  );
 
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
   const canPostHere = canPost(rank, category.access_level_post);
@@ -164,7 +158,8 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       ) : (
         <ul className="mt-8 divide-y divide-border">
           {threadRows.map((t) => {
-            const nickname = authorMap.get(t.user_id) ?? "（匿名）";
+            const author = authorMap.get(t.user_id);
+            const nickname = author?.nickname ?? "（匿名）";
             const excerpt = t.body.slice(0, 80);
             return (
               <li key={t.id} className="py-4">
@@ -176,9 +171,17 @@ export default async function CategoryPage({ params, searchParams }: Props) {
                   <p className="mt-1 text-sm text-foreground/70 line-clamp-2">
                     {excerpt}
                   </p>
-                  <p className="mt-2 text-xs text-foreground/60">
-                    {nickname} ・ {new Date(t.created_at).toLocaleDateString("ja-JP")} ・
-                    返信{t.reply_count} ・ いいね{t.like_count}
+                  <p className="mt-2 text-xs text-foreground/60 flex items-center gap-1.5 flex-wrap">
+                    <span>{nickname}</span>
+                    {author?.isAi && (
+                      <span className="inline-block px-1.5 py-px rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
+                        運営AI
+                      </span>
+                    )}
+                    <span>
+                      ・ {new Date(t.created_at).toLocaleDateString("ja-JP")} ・
+                      返信{t.reply_count} ・ いいね{t.like_count}
+                    </span>
                   </p>
                 </Link>
               </li>
