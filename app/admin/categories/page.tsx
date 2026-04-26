@@ -139,26 +139,7 @@ export default async function AdminCategoriesPage({ searchParams }: Props) {
                     <i className="ri-pencil-line text-xs" aria-hidden />
                     編集
                   </Link>
-                  {threadCount === 0 ? (
-                    <form action={deleteCategory}>
-                      <input type="hidden" name="id" value={c.id} />
-                      <button
-                        type="submit"
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-rose-300 bg-rose-50 text-rose-900 text-xs hover:bg-rose-100"
-                      >
-                        <i className="ri-delete-bin-line text-xs" aria-hidden />
-                        削除
-                      </button>
-                    </form>
-                  ) : (
-                    <span
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-stone-200 bg-stone-50 text-stone-500 text-xs cursor-not-allowed"
-                      title="スレッドが残っているため削除できません"
-                    >
-                      <i className="ri-delete-bin-line text-xs" aria-hidden />
-                      削除（不可）
-                    </span>
-                  )}
+                  <CategoryDeleteForm id={c.id} threadCount={threadCount} />
                 </div>
               </div>
             </li>
@@ -166,5 +147,65 @@ export default async function AdminCategoriesPage({ searchParams }: Props) {
         })}
       </ul>
     </div>
+  );
+}
+
+// 削除フォーム、スレッド数によって挙動を変える
+// 0 件 → ワンタップで削除
+// 1 件以上 → cascade チェックを促す詳細フォームを開く
+function CategoryDeleteForm({
+  id,
+  threadCount,
+}: {
+  id: number;
+  threadCount: number;
+}) {
+  if (threadCount === 0) {
+    return (
+      <form action={deleteCategory}>
+        <input type="hidden" name="id" value={id} />
+        <button
+          type="submit"
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-rose-300 bg-rose-50 text-rose-900 text-xs hover:bg-rose-100"
+        >
+          <i className="ri-delete-bin-line text-xs" aria-hidden />
+          削除
+        </button>
+      </form>
+    );
+  }
+  return (
+    <details className="relative inline-block">
+      <summary className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-rose-300 bg-rose-50 text-rose-900 text-xs hover:bg-rose-100 cursor-pointer list-none">
+        <i className="ri-delete-bin-line text-xs" aria-hidden />
+        削除…
+      </summary>
+      <form
+        action={deleteCategory}
+        className="absolute right-0 z-10 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-rose-300 bg-rose-50 p-3 shadow-lg space-y-2"
+      >
+        <input type="hidden" name="id" value={id} />
+        <p className="text-xs text-rose-900 leading-6">
+          このカテゴリには <strong>{threadCount} 件のスレッド</strong>
+          があります。削除すると元に戻せません。
+        </p>
+        <label className="flex items-start gap-2 text-xs text-rose-900">
+          <input
+            type="checkbox"
+            name="cascade"
+            value="on"
+            required
+            className="size-4 mt-0.5"
+          />
+          <span>中の投稿（スレッド・返信・添付画像）もまとめて削除する</span>
+        </label>
+        <button
+          type="submit"
+          className="inline-flex items-center min-h-[36px] px-4 rounded-full bg-rose-700 text-white text-xs font-medium active:opacity-90"
+        >
+          まとめて削除する
+        </button>
+      </form>
+    </details>
   );
 }

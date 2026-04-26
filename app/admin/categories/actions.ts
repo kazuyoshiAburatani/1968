@@ -149,14 +149,19 @@ export async function updateCategory(formData: FormData) {
 }
 
 // =======================================
-// カテゴリ削除（スレッドが 0 件の場合のみ）
+// カテゴリ削除
+// 通常はスレッド 0 件のみ削除可能、cascade=on でスレッドも一括削除する強制モードあり
 // =======================================
 const DeleteSchema = z.object({
   id: z.coerce.number().int().min(1),
+  cascade: z.literal("on").optional(),
 });
 
 export async function deleteCategory(formData: FormData) {
-  const parsed = DeleteSchema.safeParse({ id: formData.get("id") });
+  const parsed = DeleteSchema.safeParse({
+    id: formData.get("id"),
+    cascade: formData.get("cascade") ?? undefined,
+  });
   if (!parsed.success) return;
 
   const { admin } = await requireAdmin();
@@ -167,9 +172,9 @@ export async function deleteCategory(formData: FormData) {
     .select("id", { count: "exact", head: true })
     .eq("category_id", parsed.data.id);
 
-  if ((threadCount ?? 0) > 0) {
+  if ((threadCount ?? 0) > 0 && parsed.data.cascade !== "on") {
     fail(
-      `このカテゴリにはスレッドが ${threadCount} 件残っています。先にすべて削除してから再度お試しください。`,
+      `このカテゴリにはスレッドが ${threadCount} 件残っています。スレッドごと削除する場合は「中の投稿もまとめて削除する」にチェックしてください。`,
       "/admin/categories",
     );
   }
@@ -179,6 +184,33 @@ export async function deleteCategory(formData: FormData) {
     .select("*")
     .eq("id", parsed.data.id)
     .maybeSingle();
+
+  // cascade=on の場合、まず該当カテゴリのスレッド本体と添付メディアを取得して削除
+  if (parsed.data.cascade === "on" && (threadCount ?? 0) > 0) {
+    const { data: threadsToDelete } = await sb
+      .from("threads")
+      .select("id, media")
+      .eq("category_id", parsed.data.id);
+    const mediaPaths: string[] = [];
+    for (const t of threadsToDelete ?? []) {
+      const items = (t.media as Array<{ path?: string }> | null) ?? [];
+      for (const m of items) {
+        if (m.path) mediaPaths.push(m.path);
+      }
+    }
+    // スレッド削除（CASCADE で replies / likes / reports も連鎖）
+    const { error: delErr } = await sb
+      .from("threads")
+      .delete()
+      .eq("category_id", parsed.data.id);
+    if (delErr) {
+      console.error("[admin/categories/delete] thread delete failed:", delErr.message);
+      fail("関連スレッドの削除に失敗しました", "/admin/categories");
+    }
+    if (mediaPaths.length > 0) {
+      await sb.storage.from("post-media").remove(mediaPaths);
+    }
+  }
 
   const { error } = await sb
     .from("categories")
@@ -196,7 +228,8 @@ export async function deleteCategory(formData: FormData) {
     targetType: "category",
     targetId: String(parsed.data.id),
     targetSummary:
-      ((before as { name?: string } | null)?.name ?? "") + " を削除",
+      ((before as { name?: string } | null)?.name ?? "") +
+      ` を削除（cascade=${parsed.data.cascade === "on" ? "yes" : "no"}, スレッド ${threadCount ?? 0} 件）`,
     before: before as Record<string, unknown> | null,
   });
 

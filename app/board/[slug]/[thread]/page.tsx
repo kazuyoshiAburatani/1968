@@ -420,8 +420,8 @@ function ThreadOriginalCard(props: {
           </Link>
         )}
       </div>
-      {/* 運営モデレーション、運営アカウントのみ表示 */}
-      {props.isAdmin && !props.isOwner && (
+      {/* 運営モデレーション、運営アカウントなら自分の投稿でも表示 */}
+      {props.isAdmin && (
         <AdminModToolbar
           kind="thread"
           slug={props.slug}
@@ -493,23 +493,35 @@ function ReplyBubble(props: {
           </p>
         )}
         {props.mine ? (
-          <OwnReplyBubble
-            replyId={props.replyId}
-            body={props.body}
-            media={props.media}
-            pathToRevalidate={`/board/${props.slug}/${props.threadId}`}
-            metaRow={
-              <>
-                {timeMeta}
-                <LikeButton
-                  targetType="reply"
-                  targetId={props.replyId}
-                  initialLiked={props.liked}
-                  initialCount={props.likeCount}
-                />
-              </>
-            }
-          />
+          <>
+            <OwnReplyBubble
+              replyId={props.replyId}
+              body={props.body}
+              media={props.media}
+              pathToRevalidate={`/board/${props.slug}/${props.threadId}`}
+              metaRow={
+                <>
+                  {timeMeta}
+                  <LikeButton
+                    targetType="reply"
+                    targetId={props.replyId}
+                    initialLiked={props.liked}
+                    initialCount={props.likeCount}
+                  />
+                </>
+              }
+            />
+            {/* 自分の返信でも運営なら運営編集／削除可 */}
+            {props.isAdmin && (
+              <AdminModToolbar
+                kind="reply"
+                slug={props.slug}
+                threadId={props.threadId}
+                replyId={props.replyId}
+                body={props.body}
+              />
+            )}
+          </>
         ) : (
           <>
             <div className="rounded-2xl px-4 py-2.5 leading-7 text-sm whitespace-pre-wrap bg-background border border-border rounded-bl-sm break-words overflow-hidden">
