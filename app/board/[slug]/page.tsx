@@ -37,7 +37,7 @@ type ThreadRow = {
 
 type Props = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; deleted?: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CategoryPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const { page: pageParam } = await searchParams;
+  const { page: pageParam, deleted } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
 
   const supabase = await createSupabaseServerClient();
@@ -142,6 +142,12 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           </div>
         </div>
       </header>
+
+      {deleted && (
+        <div className="mx-4 sm:mx-0 mt-3 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 px-4 py-2.5 text-sm">
+          スレッドを削除しました。
+        </div>
+      )}
 
       {threadRows.length === 0 ? (
         <div className="mt-12 px-4 text-center text-foreground/70">
