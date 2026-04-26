@@ -2,7 +2,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchAuthorInfo } from "@/lib/author-info";
+import { ThreadThumbnail } from "@/components/thread-thumbnail";
 import type { Tier } from "@/lib/auth/permissions";
+import type { MediaItem } from "@/lib/media";
 
 export const metadata: Metadata = {
   title: "みんなの新着",
@@ -23,6 +25,7 @@ type ThreadRow = {
   reply_count: number;
   like_count: number;
   user_id: string;
+  media: MediaItem[] | null;
   categories: { slug: string; name: string; tier: Tier } | null;
 };
 
@@ -64,7 +67,7 @@ export default async function TimelinePage({ searchParams }: Props) {
   const { data, count } = await supabase
     .from("threads")
     .select(
-      "id, title, body, created_at, reply_count, like_count, user_id, categories(slug, name, tier)",
+      "id, title, body, created_at, reply_count, like_count, user_id, media, categories(slug, name, tier)",
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
@@ -101,44 +104,46 @@ export default async function TimelinePage({ searchParams }: Props) {
               <li key={t.id}>
                 <Link
                   href={`/board/${t.categories?.slug}/${t.id}`}
-                  className="block px-4 py-4 no-underline hover:bg-muted/40 active:bg-muted/70 transition-colors"
+                  className="flex items-start gap-3 px-4 py-4 no-underline hover:bg-muted/40 active:bg-muted/70 transition-colors"
                 >
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                      className={`text-[10px] font-bold px-1.5 py-px rounded border ${TIER_BADGE[tier]}`}
-                    >
-                      段階{tier}
-                    </span>
-                    <span className="text-xs text-foreground/60">
-                      {t.categories?.name}
-                    </span>
-                    <span className="ml-auto text-xs text-foreground/50">
-                      {formatRelative(t.created_at)}
-                    </span>
-                  </div>
-                  <h2 className="mt-1.5 font-bold text-foreground leading-snug">
-                    {t.title}
-                  </h2>
-                  <p className="mt-1 text-sm text-foreground/70 line-clamp-2 leading-7">
-                    {preview(t.body)}
-                  </p>
-                  <div className="mt-2 flex items-center gap-3 text-xs text-foreground/60 flex-wrap">
-                    <span className="flex items-center gap-1.5">
-                      <span>{nickname}</span>
-                      {author?.isAi && (
-                        <span className="inline-block px-1.5 py-px rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
-                          運営AI
+                  <ThreadThumbnail
+                    media={t.media}
+                    categorySlug={t.categories?.slug}
+                    size={72}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-px rounded border ${TIER_BADGE[tier]}`}
+                      >
+                        段階{tier}
+                      </span>
+                      <span className="text-xs text-foreground/60 truncate">
+                        {t.categories?.name}
+                      </span>
+                      <span className="ml-auto text-xs text-foreground/50 shrink-0">
+                        {formatRelative(t.created_at)}
+                      </span>
+                    </div>
+                    <h2 className="mt-1 font-bold text-foreground leading-snug line-clamp-1">
+                      {t.title}
+                    </h2>
+                    <p className="mt-0.5 text-sm text-foreground/70 line-clamp-1 leading-6">
+                      {preview(t.body)}
+                    </p>
+                    <div className="mt-1.5 flex items-center gap-2 text-xs text-foreground/60 flex-wrap">
+                      <span className="truncate max-w-[8em]">{nickname}</span>
+                      <span className="ml-auto inline-flex items-center gap-2.5">
+                        <span className="inline-flex items-center gap-0.5">
+                          <i className="ri-message-2-line" aria-hidden />
+                          {t.reply_count}
                         </span>
-                      )}
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <i className="ri-message-2-line" aria-hidden />
-                      {t.reply_count}
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <i className="ri-heart-line" aria-hidden />
-                      {t.like_count}
-                    </span>
+                        <span className="inline-flex items-center gap-0.5">
+                          <i className="ri-heart-line" aria-hidden />
+                          {t.like_count}
+                        </span>
+                      </span>
+                    </div>
                   </div>
                 </Link>
               </li>

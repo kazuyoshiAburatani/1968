@@ -72,6 +72,10 @@ export default async function NewThreadPage({ params, searchParams }: Props) {
       <p className="mt-1 text-sm text-foreground/70">
         カテゴリ、{category.name}
       </p>
+      <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+        ⚠ 新しいスレッドには <strong>話題に合う画像（または動画）を 1 つ以上添付</strong>
+        してください。アップロードした最初の画像が一覧画面のサムネイルとして表示されます。
+      </p>
 
       {error && (
         <div className="mt-4 rounded-lg border border-red-700/50 bg-red-50 p-4 text-red-900 text-sm">

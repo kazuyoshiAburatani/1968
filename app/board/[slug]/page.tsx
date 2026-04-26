@@ -6,7 +6,9 @@ import { getCurrentRank } from "@/lib/auth/current-rank";
 import { canView, canPost, type Tier, type ViewLevel, type PostLevel } from "@/lib/auth/permissions";
 import { fetchAuthorInfo } from "@/lib/author-info";
 import { UserAvatar } from "@/components/user-avatar";
+import { ThreadThumbnail } from "@/components/thread-thumbnail";
 import { fetchCategoryBySlug } from "@/lib/cached-categories";
+import type { MediaItem } from "@/lib/media";
 
 const PAGE_SIZE = 20;
 
@@ -30,6 +32,7 @@ type ThreadRow = {
   like_count: number;
   view_count: number;
   user_id: string;
+  media: MediaItem[] | null;
 };
 
 type Props = {
@@ -99,7 +102,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const { data: threads, count } = await supabase
     .from("threads")
     .select(
-      "id, title, body, created_at, reply_count, like_count, view_count, user_id",
+      "id, title, body, created_at, reply_count, like_count, view_count, user_id, media",
       { count: "exact" },
     )
     .eq("category_id", category.id)
@@ -152,7 +155,6 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           {threadRows.map((t) => {
             const author = authorMap.get(t.user_id);
             const nickname = author?.nickname ?? "（匿名）";
-            const isAi = author?.isAi === true;
             const avatarUrl = author?.avatarUrl ?? null;
             const excerpt = t.body.replace(/\s+/g, " ").trim().slice(0, 70);
             return (
@@ -161,44 +163,38 @@ export default async function CategoryPage({ params, searchParams }: Props) {
                   href={`/board/${category.slug}/${t.id}`}
                   className="flex items-start gap-3 px-4 py-3.5 no-underline hover:bg-muted/40 active:bg-muted/70 transition-colors"
                 >
-                  <UserAvatar
-                    name={nickname}
-                    avatarUrl={avatarUrl}
-                    isAi={isAi}
-                    size={48}
+                  <ThreadThumbnail
+                    media={t.media}
+                    categorySlug={category.slug}
+                    size={64}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <p className="font-bold text-foreground truncate flex items-center gap-1.5">
-                        <span className="truncate">{nickname}</span>
-                        {isAi && (
-                          <span className="shrink-0 inline-block px-1.5 py-px rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
-                            運営AI
-                          </span>
-                        )}
-                      </p>
-                      <span className="text-xs text-foreground/60 shrink-0">
-                        {formatRelative(t.created_at)}
-                      </span>
-                    </div>
-                    <p className="mt-0.5 font-medium text-sm text-foreground line-clamp-1">
+                    <p className="font-bold text-base text-foreground line-clamp-1">
                       {t.title}
                     </p>
-                    <p className="mt-0.5 text-sm text-foreground/70 line-clamp-1">
+                    <p className="mt-0.5 text-xs text-foreground/70 line-clamp-1">
                       {excerpt}
                     </p>
-                    <div className="mt-1.5 flex items-center gap-3 text-xs text-foreground/60">
+                    <div className="mt-1.5 flex items-center gap-2 text-xs text-foreground/60 flex-wrap">
                       <span className="inline-flex items-center gap-1">
-                        <i className="ri-message-2-line" aria-hidden />
-                        {t.reply_count}
+                        <UserAvatar
+                          name={nickname}
+                          avatarUrl={avatarUrl}
+                          size={20}
+                        />
+                        <span className="truncate max-w-[6em]">{nickname}</span>
                       </span>
-                      <span className="inline-flex items-center gap-1">
-                        <i className="ri-heart-line" aria-hidden />
-                        {t.like_count}
-                      </span>
-                      <span className="inline-flex items-center gap-1">
-                        <i className="ri-eye-line" aria-hidden />
-                        {t.view_count}
+                      <span>・</span>
+                      <span>{formatRelative(t.created_at)}</span>
+                      <span className="ml-auto inline-flex items-center gap-2.5">
+                        <span className="inline-flex items-center gap-0.5">
+                          <i className="ri-message-2-line" aria-hidden />
+                          {t.reply_count}
+                        </span>
+                        <span className="inline-flex items-center gap-0.5">
+                          <i className="ri-heart-line" aria-hidden />
+                          {t.like_count}
+                        </span>
                       </span>
                     </div>
                   </div>

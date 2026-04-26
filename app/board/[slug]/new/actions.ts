@@ -40,6 +40,12 @@ async function validateAndUploadMedia(
   if (imageFiles.length > 0 && videoFile) {
     return { error: "画像と動画は同時に添付できません、どちらか一方にしてください" };
   }
+  // 新規スレッドは画像（または動画）が必須、関連画像をサムネイルとして表示する
+  if (imageFiles.length === 0 && !videoFile) {
+    return {
+      error: "話題に合う画像を 1 枚以上添付してください、サムネイルとして表示されます",
+    };
+  }
   if (imageFiles.length > MAX_IMAGES_PER_POST) {
     return { error: `画像は最大${MAX_IMAGES_PER_POST}枚までです` };
   }
