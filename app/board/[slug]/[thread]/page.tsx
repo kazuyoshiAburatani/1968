@@ -17,7 +17,8 @@ import { RealtimeRepliesWatcher } from "@/components/realtime-replies-watcher";
 import { ViewTracker } from "@/components/view-tracker";
 import { SubmitButton } from "@/components/submit-button";
 import { MediaPicker } from "@/components/media-picker";
-import { ReplyBodyEditor } from "@/components/reply-body-editor";
+import { OwnReplyBubble } from "@/components/own-reply-bubble";
+import { AdminModToolbar } from "@/components/admin-mod-toolbar";
 import { UserAvatar } from "@/components/user-avatar";
 import { fetchAuthorInfo } from "@/lib/author-info";
 import { fetchCategoryBySlug } from "@/lib/cached-categories";
@@ -81,6 +82,17 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
 
   const supabase = await createSupabaseServerClient();
   const { rank, userId: viewerId } = await getCurrentRank(supabase);
+
+  // viewer が運営かどうか、ツールバー表示の判定に使う
+  let isAdmin = false;
+  if (viewerId) {
+    const { data: a } = await supabase
+      .from("admins")
+      .select("id")
+      .eq("user_id", viewerId)
+      .maybeSingle();
+    isAdmin = !!a;
+  }
 
   const category = await fetchCategoryBySlug(slug);
   if (!category) notFound();
@@ -184,6 +196,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
           likeCount={thread.like_count}
           liked={likedSet.has(`thread:${thread.id}`)}
           isOwner={viewerId === thread.user_id}
+          isAdmin={isAdmin}
         />
 
         {/* 返信、左右バブル */}
@@ -237,6 +250,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
                     avatarUrl={replyAvatar}
                     mine={mine}
                     parentName={parentName}
+                    isAdmin={isAdmin}
                   />
                 </li>
               );
@@ -332,6 +346,7 @@ function ThreadOriginalCard(props: {
   likeCount: number;
   liked: boolean;
   isOwner: boolean;
+  isAdmin: boolean;
 }) {
   return (
     <article className="rounded-2xl border border-primary/30 bg-background p-4 shadow-sm">
@@ -368,7 +383,7 @@ function ThreadOriginalCard(props: {
         <RichText text={props.body} />
         <MediaDisplay items={props.media} />
       </div>
-      <div className="mt-3 flex items-center gap-3 flex-wrap">
+      <div className="mt-3 flex items-center gap-2 flex-wrap">
         <LikeButton
           targetType="thread"
           targetId={props.threadId}
@@ -379,12 +394,23 @@ function ThreadOriginalCard(props: {
         {props.isOwner && (
           <Link
             href={`/board/${props.slug}/${props.threadId}/edit`}
-            className="text-xs text-foreground/50 hover:text-foreground/80 underline ml-auto"
+            className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-border bg-background hover:bg-muted text-xs font-medium ml-auto no-underline"
           >
+            <i className="ri-pencil-line text-xs" aria-hidden />
             編集
           </Link>
         )}
       </div>
+      {/* 運営モデレーション、運営アカウントのみ表示 */}
+      {props.isAdmin && !props.isOwner && (
+        <AdminModToolbar
+          kind="thread"
+          slug={props.slug}
+          threadId={props.threadId}
+          title={props.title}
+          body={props.body}
+        />
+      )}
     </article>
   );
 }
@@ -405,7 +431,17 @@ function ReplyBubble(props: {
   avatarUrl: string | null;
   mine: boolean;
   parentName: string | null;
+  isAdmin: boolean;
 }) {
+  const timeMeta = (
+    <span>
+      {new Date(props.createdAt).toLocaleTimeString("ja-JP", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}
+    </span>
+  );
+
   return (
     <div
       className={`flex items-end gap-2 ${props.mine ? "justify-end" : "justify-start"}`}
@@ -436,51 +472,56 @@ function ReplyBubble(props: {
             ↳ @{props.parentName} へ
           </p>
         )}
-        <div
-          className={`rounded-2xl px-4 py-2.5 leading-7 text-sm whitespace-pre-wrap ${
-            props.mine
-              ? "bg-primary text-white rounded-br-sm"
-              : "bg-background border border-border rounded-bl-sm"
-          }`}
-        >
-          {props.mine ? (
-            <ReplyBodyEditor
-              replyId={props.replyId}
-              initialBody={props.body}
-              pathToRevalidate={`/board/${props.slug}/${props.threadId}`}
-            />
-          ) : (
-            <RichText text={props.body} />
-          )}
-          {props.media && props.media.length > 0 && (
-            <div className="mt-2">
-              <MediaDisplay items={props.media} />
+        {props.mine ? (
+          <OwnReplyBubble
+            replyId={props.replyId}
+            body={props.body}
+            media={props.media}
+            pathToRevalidate={`/board/${props.slug}/${props.threadId}`}
+            metaRow={
+              <>
+                {timeMeta}
+                <LikeButton
+                  targetType="reply"
+                  targetId={props.replyId}
+                  initialLiked={props.liked}
+                  initialCount={props.likeCount}
+                />
+              </>
+            }
+          />
+        ) : (
+          <>
+            <div className="rounded-2xl px-4 py-2.5 leading-7 text-sm whitespace-pre-wrap bg-background border border-border rounded-bl-sm">
+              <RichText text={props.body} />
+              {props.media && props.media.length > 0 && (
+                <div className="mt-2">
+                  <MediaDisplay items={props.media} />
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        <div
-          className={`mt-1 flex items-center gap-2 text-[10px] text-foreground/50 ${props.mine ? "justify-end" : "justify-start"}`}
-        >
-          <span>
-            {new Date(props.createdAt).toLocaleTimeString("ja-JP", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <LikeButton
-              targetType="reply"
-              targetId={props.replyId}
-              initialLiked={props.liked}
-              initialCount={props.likeCount}
-            />
-          </span>
-          {!props.mine && (
-            <span className="inline-flex items-center">
+            <div className="mt-1 flex items-center gap-2 text-[10px] text-foreground/50 justify-start flex-wrap">
+              {timeMeta}
+              <LikeButton
+                targetType="reply"
+                targetId={props.replyId}
+                initialLiked={props.liked}
+                initialCount={props.likeCount}
+              />
               <ReportButton targetType="reply" targetId={props.replyId} />
-            </span>
-          )}
-        </div>
+            </div>
+            {/* 運営モデレーション、運営アカウントのみ表示 */}
+            {props.isAdmin && (
+              <AdminModToolbar
+                kind="reply"
+                slug={props.slug}
+                threadId={props.threadId}
+                replyId={props.replyId}
+                body={props.body}
+              />
+            )}
+          </>
+        )}
       </div>
     </div>
   );
