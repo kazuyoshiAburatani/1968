@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchAuthorInfo } from "@/lib/author-info";
+import { UserAvatar } from "@/components/user-avatar";
 
 export const metadata: Metadata = {
   title: "トーク",
@@ -180,18 +181,20 @@ export default async function MessagesIndexPage() {
           {conversations.map((c) => {
             const author = authorMap.get(c.peerId);
             const nickname = author?.nickname ?? "（不明な方）";
+            const avatarUrl = author?.avatarUrl ?? null;
+            const isAi = author?.isAi === true;
             return (
               <li key={c.peerId}>
                 <Link
                   href={`/messages/${c.peerId}`}
                   className="flex items-start gap-3 px-4 py-3.5 no-underline hover:bg-muted/40 active:bg-muted/70 transition-colors"
                 >
-                  <span
-                    aria-hidden
-                    className="shrink-0 inline-flex items-center justify-center size-12 rounded-full bg-muted text-xl font-bold text-foreground/70"
-                  >
-                    {nickname.slice(0, 1)}
-                  </span>
+                  <UserAvatar
+                    name={nickname}
+                    avatarUrl={avatarUrl}
+                    isAi={isAi}
+                    size={48}
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline justify-between gap-2">
                       <p className="font-bold text-foreground truncate">

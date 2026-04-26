@@ -7,6 +7,8 @@ import { Suspense } from "react";
 import { MembershipBadge } from "@/components/membership-badge";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { NavProgress } from "@/components/nav-progress";
+import { UserAvatar } from "@/components/user-avatar";
+import { publicAvatarUrl } from "@/lib/avatar";
 import type { Rank } from "@/lib/auth/permissions";
 import "./globals.css";
 
@@ -52,17 +54,21 @@ export default async function RootLayout({
   const supabase = await createSupabaseServerClient();
   const { rank, userId } = await getCurrentRank(supabase);
   let nickname: string | null = null;
+  let avatarUrl: string | null = null;
   let isAdmin = false;
   if (userId) {
     const [{ data: profile }, { data: adminRow }] = await Promise.all([
       supabase
         .from("profiles")
-        .select("nickname")
+        .select("nickname, avatar_url")
         .eq("user_id", userId)
         .maybeSingle(),
       supabase.from("admins").select("id").eq("user_id", userId).maybeSingle(),
     ]);
     nickname = (profile?.nickname as string | undefined) ?? null;
+    avatarUrl = publicAvatarUrl(
+      (profile?.avatar_url as string | null | undefined) ?? null,
+    );
     isAdmin = !!adminRow;
   }
 
@@ -83,6 +89,7 @@ export default async function RootLayout({
           rank={rank}
           userId={userId}
           nickname={nickname}
+          avatarUrl={avatarUrl}
           isAdmin={isAdmin}
         />
         {/* モバイル時はタブバー分の下部余白を確保 */}
@@ -98,11 +105,13 @@ function SiteHeader({
   rank,
   userId,
   nickname,
+  avatarUrl,
   isAdmin,
 }: {
   rank: Rank;
   userId: string | null;
   nickname: string | null;
+  avatarUrl: string | null;
   isAdmin: boolean;
 }) {
   return (
@@ -140,11 +149,16 @@ function SiteHeader({
           {userId ? (
             <Link
               href="/mypage"
-              className="inline-flex items-center gap-2 min-h-[var(--spacing-tap)] px-3 rounded-full border border-border bg-background hover:bg-muted/40 no-underline text-sm"
+              className="inline-flex items-center gap-2 min-h-[var(--spacing-tap)] pl-1 pr-3 rounded-full border border-border bg-background hover:bg-muted/40 active:bg-muted/60 no-underline text-sm"
               aria-label="マイページへ"
             >
+              <UserAvatar
+                name={nickname ?? "ユーザー"}
+                avatarUrl={avatarUrl}
+                size={32}
+              />
               <MembershipBadge rank={rank} />
-              <span className="font-medium text-foreground max-w-[8rem] truncate">
+              <span className="font-medium text-foreground max-w-[6rem] truncate hidden sm:inline">
                 {nickname ?? "マイページ"}
               </span>
             </Link>

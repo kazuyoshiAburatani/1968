@@ -1,9 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { requireSession } from "@/lib/auth/require-session";
 import { PREFECTURES } from "@/lib/prefectures";
 import { SubmitButton } from "@/components/submit-button";
-import { updateProfile } from "./actions";
+import { publicAvatarUrl } from "@/lib/avatar";
+import { removeAvatar, updateProfile, uploadAvatar } from "./actions";
 
 export const metadata: Metadata = {
   title: "プロフィール編集",
@@ -20,7 +22,7 @@ export default async function ProfileEditPage({ searchParams }: Props) {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "nickname, birth_month, birth_day, gender, prefecture, hometown, school, occupation, introduction, bio_visible",
+      "nickname, birth_month, birth_day, gender, prefecture, hometown, school, occupation, introduction, bio_visible, avatar_url",
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -47,7 +49,11 @@ export default async function ProfileEditPage({ searchParams }: Props) {
 
       {saved && (
         <div className="mt-4 rounded-lg border border-primary/40 bg-muted/40 p-4 text-sm">
-          保存しました。
+          {saved === "avatar"
+            ? "プロフィール画像を更新しました。"
+            : saved === "avatar-removed"
+              ? "プロフィール画像を削除しました。"
+              : "保存しました。"}
         </div>
       )}
       {error && (
@@ -56,7 +62,53 @@ export default async function ProfileEditPage({ searchParams }: Props) {
         </div>
       )}
 
-      <form action={updateProfile} className="mt-8 space-y-6">
+      {/* プロフィール画像、独立フォーム、enctype 必須 */}
+      <section className="mt-8">
+        <h2 className="font-bold text-base mb-3">プロフィール画像</h2>
+        <div className="flex items-center gap-5">
+          <AvatarPreview
+            url={publicAvatarUrl(profile.avatar_url)}
+            nickname={profile.nickname}
+          />
+          <div className="flex-1 min-w-0">
+            <form
+              action={uploadAvatar}
+              encType="multipart/form-data"
+              className="space-y-2"
+            >
+              <label className="block">
+                <input
+                  type="file"
+                  name="avatar"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  required
+                  className="block w-full text-sm file:mr-3 file:px-4 file:py-2.5 file:rounded-full file:border-0 file:bg-primary file:text-white file:font-medium file:cursor-pointer"
+                />
+              </label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <SubmitButton pendingText="保存中…">画像を保存</SubmitButton>
+                {profile.avatar_url && (
+                  <form action={removeAvatar}>
+                    <button
+                      type="submit"
+                      className="inline-flex items-center min-h-[var(--spacing-tap)] px-4 rounded-full border border-border text-sm hover:bg-muted active:bg-muted/70"
+                    >
+                      画像を削除
+                    </button>
+                  </form>
+                )}
+              </div>
+              <p className="text-xs text-foreground/60 leading-6">
+                JPEG / PNG / WebP、5 MB 以内。正方形で表示されます。
+              </p>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <hr className="my-6 border-border" />
+
+      <form action={updateProfile} className="space-y-6">
         <Field label="ニックネーム" required hint="他の会員に表示されるお名前（30文字以内）">
           <input
             type="text"
@@ -175,6 +227,33 @@ export default async function ProfileEditPage({ searchParams }: Props) {
         </div>
       </form>
     </div>
+  );
+}
+
+function AvatarPreview({
+  url,
+  nickname,
+}: {
+  url: string | null;
+  nickname: string;
+}) {
+  const initial = nickname.slice(0, 1);
+  return url ? (
+    <Image
+      src={url}
+      alt={`${nickname} のプロフィール画像`}
+      width={96}
+      height={96}
+      className="size-24 rounded-full object-cover border border-border bg-muted"
+      unoptimized
+    />
+  ) : (
+    <span
+      aria-hidden
+      className="size-24 rounded-full bg-muted text-foreground/60 inline-flex items-center justify-center text-3xl font-bold border border-border"
+    >
+      {initial}
+    </span>
   );
 }
 

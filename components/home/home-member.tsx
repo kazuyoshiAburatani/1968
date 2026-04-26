@@ -215,37 +215,37 @@ function QuickAction({
     <Link
       href={href}
       className={
-        "rounded-lg p-6 shadow-sm min-h-[44px] flex flex-col items-center text-center group no-underline transition-shadow " +
+        "rounded-2xl p-6 md:p-7 shadow-sm min-h-[120px] flex flex-col items-center justify-center text-center group no-underline transition-all active:scale-[0.98] " +
         (primary
-          ? "bg-primary hover:opacity-90"
-          : "bg-background border border-border hover:shadow-md")
+          ? "bg-primary hover:opacity-90 active:opacity-95"
+          : "bg-background border border-border hover:shadow-md active:bg-muted/40")
       }
     >
       <div
         className={
-          "w-12 h-12 flex items-center justify-center rounded-lg mb-3 transition-colors " +
+          "w-16 h-16 flex items-center justify-center rounded-full mb-3 transition-colors " +
           (primary
             ? "bg-white/20 group-hover:bg-white/30"
-            : "bg-muted group-hover:bg-muted/70")
+            : "bg-muted group-hover:bg-primary/10")
         }
       >
         <i
           className={
-            icon + " text-xl " + (primary ? "text-white" : "text-foreground/70")
+            icon + " text-3xl " + (primary ? "text-white" : "text-primary")
           }
           aria-hidden
         />
       </div>
       <h3
         className={
-          "font-semibold mb-1 " + (primary ? "text-white" : "text-foreground")
+          "font-bold text-lg mb-1 " + (primary ? "text-white" : "text-foreground")
         }
       >
         {title}
       </h3>
       <p
         className={
-          "text-sm " + (primary ? "text-white/80" : "text-foreground/60")
+          "text-sm " + (primary ? "text-white/85" : "text-foreground/70")
         }
       >
         {sub}

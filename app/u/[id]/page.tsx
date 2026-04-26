@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentRank } from "@/lib/auth/current-rank";
+import { UserAvatar } from "@/components/user-avatar";
+import { publicAvatarUrl } from "@/lib/avatar";
 
 // 他会員のプロフィール表示。
 // profiles テーブルのニックネームはフォーラム機能の都合で広く読み取り可だが、
@@ -23,7 +25,7 @@ export default async function UserProfilePage({
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "nickname, birth_month, birth_day, gender, prefecture, hometown, school, occupation, introduction, bio_visible",
+      "nickname, birth_month, birth_day, gender, prefecture, hometown, school, occupation, introduction, bio_visible, avatar_url",
     )
     .eq("user_id", id)
     .maybeSingle();
@@ -68,11 +70,19 @@ export default async function UserProfilePage({
       </nav>
 
       <header className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">{profile.nickname}</h1>
-          <p className="mt-1 text-sm text-foreground/60">
-            1968年{profile.birth_month}月{profile.birth_day}日生まれ
-          </p>
+        <div className="flex items-center gap-4 min-w-0">
+          <UserAvatar
+            name={profile.nickname}
+            avatarUrl={publicAvatarUrl(profile.avatar_url as string | null)}
+            isAi={peerIsAi}
+            size={72}
+          />
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold truncate">{profile.nickname}</h1>
+            <p className="mt-1 text-sm text-foreground/60">
+              1968年{profile.birth_month}月{profile.birth_day}日生まれ
+            </p>
+          </div>
         </div>
         {canDm && (
           <Link

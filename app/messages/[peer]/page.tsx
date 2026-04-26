@@ -6,6 +6,8 @@ import { sendMessage } from "../actions";
 import { SubmitButton } from "@/components/submit-button";
 import { MessagesRealtime } from "@/components/messages-realtime";
 import { MarkReadOnMount } from "@/components/messages-mark-read";
+import { UserAvatar } from "@/components/user-avatar";
+import { publicAvatarUrl } from "@/lib/avatar";
 
 type Props = {
   params: Promise<{ peer: string }>;
@@ -84,10 +86,13 @@ export default async function PeerMessagesPage({
 
   const { data: peerProfile } = await supabase
     .from("profiles")
-    .select("nickname")
+    .select("nickname, avatar_url")
     .eq("user_id", peer)
     .maybeSingle();
   const peerName = peerProfile?.nickname ?? "（不明な方）";
+  const peerAvatar = publicAvatarUrl(
+    (peerProfile?.avatar_url as string | null | undefined) ?? null,
+  );
 
   const canSend = myRank === "regular" && peerRank === "regular" && !peerIsAi;
 
@@ -117,12 +122,12 @@ export default async function PeerMessagesPage({
           href={`/u/${peer}`}
           className="flex items-center gap-2 no-underline flex-1 min-w-0"
         >
-          <span
-            aria-hidden
-            className="inline-flex items-center justify-center size-9 rounded-full bg-muted text-base font-bold text-foreground/70 shrink-0"
-          >
-            {peerName.slice(0, 1)}
-          </span>
+          <UserAvatar
+            name={peerName}
+            avatarUrl={peerAvatar}
+            isAi={peerIsAi}
+            size={36}
+          />
           <span className="font-bold truncate">{peerName}</span>
           {peerIsAi && (
             <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-1.5 py-px rounded shrink-0">

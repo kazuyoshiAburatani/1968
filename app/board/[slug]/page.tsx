@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentRank } from "@/lib/auth/current-rank";
 import { canView, canPost, type Tier, type ViewLevel, type PostLevel } from "@/lib/auth/permissions";
 import { fetchAuthorInfo } from "@/lib/author-info";
+import { UserAvatar } from "@/components/user-avatar";
 
 const PAGE_SIZE = 20;
 
@@ -161,25 +162,20 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             const author = authorMap.get(t.user_id);
             const nickname = author?.nickname ?? "（匿名）";
             const isAi = author?.isAi === true;
+            const avatarUrl = author?.avatarUrl ?? null;
             const excerpt = t.body.replace(/\s+/g, " ").trim().slice(0, 70);
-            const initial = nickname.slice(0, 1);
             return (
               <li key={t.id}>
                 <Link
                   href={`/board/${category.slug}/${t.id}`}
                   className="flex items-start gap-3 px-4 py-3.5 no-underline hover:bg-muted/40 active:bg-muted/70 transition-colors"
                 >
-                  {/* アバター、AI なら緑、人なら primary 色 */}
-                  <span
-                    aria-hidden
-                    className={`shrink-0 inline-flex items-center justify-center size-12 rounded-full text-base font-bold ${
-                      isAi
-                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                        : "bg-muted text-foreground/70"
-                    }`}
-                  >
-                    {isAi ? "💁‍♀️" : initial}
-                  </span>
+                  <UserAvatar
+                    name={nickname}
+                    avatarUrl={avatarUrl}
+                    isAi={isAi}
+                    size={48}
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline justify-between gap-2">
                       <p className="font-bold text-foreground truncate flex items-center gap-1.5">
