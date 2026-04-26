@@ -88,7 +88,7 @@ export function MobileTabBar() {
               <Link
                 href={item.href}
                 className={[
-                  "flex flex-col items-center justify-center gap-0.5 min-h-[64px] px-1 py-1.5 no-underline",
+                  "flex flex-col items-center justify-center gap-0.5 min-h-[64px] px-1 py-1.5 no-underline transition-colors active:bg-muted/60",
                   active
                     ? "text-primary"
                     : "text-foreground/60 hover:text-foreground",

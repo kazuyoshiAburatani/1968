@@ -101,7 +101,7 @@ export default async function TimelinePage({ searchParams }: Props) {
               <li key={t.id}>
                 <Link
                   href={`/board/${t.categories?.slug}/${t.id}`}
-                  className="block px-4 py-4 no-underline hover:bg-muted/40"
+                  className="block px-4 py-4 no-underline hover:bg-muted/40 active:bg-muted/70 transition-colors"
                 >
                   <div className="flex items-center gap-2 flex-wrap">
                     <span

@@ -3,8 +3,10 @@ import { Noto_Sans_JP } from "next/font/google";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentRank } from "@/lib/auth/current-rank";
+import { Suspense } from "react";
 import { MembershipBadge } from "@/components/membership-badge";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
+import { NavProgress } from "@/components/nav-progress";
 import type { Rank } from "@/lib/auth/permissions";
 import "./globals.css";
 
@@ -74,6 +76,9 @@ export default async function RootLayout({
         />
       </head>
       <body className="min-h-dvh flex flex-col">
+        <Suspense fallback={null}>
+          <NavProgress />
+        </Suspense>
         <SiteHeader
           rank={rank}
           userId={userId}

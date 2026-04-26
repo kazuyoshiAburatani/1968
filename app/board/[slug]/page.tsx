@@ -126,63 +126,95 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const canPostHere = canPost(rank, category.access_level_post);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <nav className="mb-4 text-sm">
-        <Link href="/board">← 掲示板一覧</Link>
-      </nav>
-
-      <header className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold">{category.name}</h1>
-          {category.description && (
-            <p className="mt-1 text-foreground/80">
-              {category.description}
-            </p>
-          )}
-        </div>
-        {canPostHere && (
+    <div className="mx-auto max-w-2xl px-0 sm:px-4 py-4 sm:py-8 pb-24 sm:pb-32">
+      {/* スティッキーヘッダー、戻るボタンとカテゴリ名 */}
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3 sm:rounded-t-xl sm:border sm:border-b">
+        <div className="flex items-center gap-3">
           <Link
-            href={`/board/${category.slug}/new`}
-            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-4 rounded-full bg-primary text-white font-medium no-underline hover:opacity-90"
+            href="/board"
+            aria-label="ひろばへ戻る"
+            className="text-foreground/70 hover:text-foreground active:bg-muted -mx-1 px-1 py-1 rounded"
           >
-            新しいスレッドを書く
+            <i className="ri-arrow-left-line text-xl" aria-hidden />
           </Link>
-        )}
+          <div className="flex-1 min-w-0">
+            <h1 className="font-bold truncate">{category.name}</h1>
+            {category.description && (
+              <p className="text-xs text-foreground/60 line-clamp-1">
+                {category.description}
+              </p>
+            )}
+          </div>
+        </div>
       </header>
 
       {threadRows.length === 0 ? (
-        <div className="mt-12 text-center text-foreground/70">
-          まだスレッドはありません。
-          {canPostHere && "最初の一歩を書いてみませんか？"}
+        <div className="mt-12 px-4 text-center text-foreground/70">
+          <p>まだスレッドはありません。</p>
+          {canPostHere && (
+            <p className="mt-2 text-sm">最初の一歩を書いてみませんか？</p>
+          )}
         </div>
       ) : (
-        <ul className="mt-8 divide-y divide-border">
+        <ul className="divide-y divide-border bg-background sm:rounded-b-xl sm:border-x sm:border-b sm:border-border">
           {threadRows.map((t) => {
             const author = authorMap.get(t.user_id);
             const nickname = author?.nickname ?? "（匿名）";
-            const excerpt = t.body.slice(0, 80);
+            const isAi = author?.isAi === true;
+            const excerpt = t.body.replace(/\s+/g, " ").trim().slice(0, 70);
+            const initial = nickname.slice(0, 1);
             return (
-              <li key={t.id} className="py-4">
+              <li key={t.id}>
                 <Link
                   href={`/board/${category.slug}/${t.id}`}
-                  className="block no-underline hover:bg-muted/40 -mx-2 px-2 py-1 rounded"
+                  className="flex items-start gap-3 px-4 py-3.5 no-underline hover:bg-muted/40 active:bg-muted/70 transition-colors"
                 >
-                  <p className="font-bold text-base">{t.title}</p>
-                  <p className="mt-1 text-sm text-foreground/70 line-clamp-2">
-                    {excerpt}
-                  </p>
-                  <p className="mt-2 text-xs text-foreground/60 flex items-center gap-1.5 flex-wrap">
-                    <span>{nickname}</span>
-                    {author?.isAi && (
-                      <span className="inline-block px-1.5 py-px rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
-                        運営AI
+                  {/* アバター、AI なら緑、人なら primary 色 */}
+                  <span
+                    aria-hidden
+                    className={`shrink-0 inline-flex items-center justify-center size-12 rounded-full text-base font-bold ${
+                      isAi
+                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                        : "bg-muted text-foreground/70"
+                    }`}
+                  >
+                    {isAi ? "💁‍♀️" : initial}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="font-bold text-foreground truncate flex items-center gap-1.5">
+                        <span className="truncate">{nickname}</span>
+                        {isAi && (
+                          <span className="shrink-0 inline-block px-1.5 py-px rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
+                            運営AI
+                          </span>
+                        )}
+                      </p>
+                      <span className="text-xs text-foreground/60 shrink-0">
+                        {formatRelative(t.created_at)}
                       </span>
-                    )}
-                    <span>
-                      ・ {new Date(t.created_at).toLocaleDateString("ja-JP")} ・
-                      返信{t.reply_count} ・ いいね{t.like_count}
-                    </span>
-                  </p>
+                    </div>
+                    <p className="mt-0.5 font-medium text-sm text-foreground line-clamp-1">
+                      {t.title}
+                    </p>
+                    <p className="mt-0.5 text-sm text-foreground/70 line-clamp-1">
+                      {excerpt}
+                    </p>
+                    <div className="mt-1.5 flex items-center gap-3 text-xs text-foreground/60">
+                      <span className="inline-flex items-center gap-1">
+                        <i className="ri-message-2-line" aria-hidden />
+                        {t.reply_count}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <i className="ri-heart-line" aria-hidden />
+                        {t.like_count}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <i className="ri-eye-line" aria-hidden />
+                        {t.view_count}
+                      </span>
+                    </div>
+                  </div>
                 </Link>
               </li>
             );
@@ -190,14 +222,26 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         </ul>
       )}
 
+      {/* 投稿 FAB、画面右下にフロート */}
+      {canPostHere && (
+        <Link
+          href={`/board/${category.slug}/new`}
+          aria-label="新しいスレッドを書く"
+          className="fixed right-4 bottom-24 md:bottom-8 z-30 inline-flex items-center gap-2 px-5 py-3.5 rounded-full bg-primary text-white font-medium no-underline shadow-lg active:opacity-90"
+        >
+          <i className="ri-edit-line text-lg" aria-hidden />
+          新しく書く
+        </Link>
+      )}
+
       {totalPages > 1 && (
-        <nav className="mt-10 flex items-center justify-between text-sm">
+        <nav className="mt-8 px-4 sm:px-0 flex items-center justify-between text-sm">
           {page > 1 ? (
             <Link
               href={`/board/${category.slug}?page=${page - 1}`}
-              className="inline-flex items-center min-h-[var(--spacing-tap)] px-4 rounded-full border border-border no-underline"
+              className="inline-flex items-center min-h-[var(--spacing-tap)] px-4 rounded-full border border-border no-underline active:bg-muted"
             >
-              ← 前のページ
+              ← 新しい投稿へ
             </Link>
           ) : (
             <span />
@@ -208,9 +252,9 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           {page < totalPages ? (
             <Link
               href={`/board/${category.slug}?page=${page + 1}`}
-              className="inline-flex items-center min-h-[var(--spacing-tap)] px-4 rounded-full border border-border no-underline"
+              className="inline-flex items-center min-h-[var(--spacing-tap)] px-4 rounded-full border border-border no-underline active:bg-muted"
             >
-              次のページ →
+              古い投稿へ →
             </Link>
           ) : (
             <span />
@@ -219,4 +263,23 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       )}
     </div>
   );
+}
+
+function formatRelative(iso: string): string {
+  const now = Date.now();
+  const t = new Date(iso).getTime();
+  const diff = Math.max(0, now - t);
+  const min = Math.floor(diff / 60_000);
+  if (min < 1) return "たった今";
+  if (min < 60) return `${min}分前`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}時間前`;
+  const day = Math.floor(hr / 24);
+  if (day < 7) return `${day}日前`;
+  const d = new Date(iso);
+  const today = new Date();
+  if (d.getFullYear() === today.getFullYear()) {
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  }
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
 }

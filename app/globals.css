@@ -51,4 +51,47 @@
   :where(a):hover {
     text-decoration: underline;
   }
+
+  /* iOS / Android のデフォルトのタップハイライト（薄い青や黒の矩形）を消し、
+     アプリ側で active: の擬似クラスで明確なフィードバックを与える方針に統一する。 */
+  a, button, [role="button"], summary, label {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* リンクとボタンの共通インタラクション、押した瞬間に必ず色が変わるようにする。
+     transition は 80ms 程度の短さで「即時」感を演出。 */
+  a, button {
+    transition: background-color 80ms ease-out, opacity 80ms ease-out,
+      transform 80ms ease-out;
+  }
+
+  /* 押下時の縮みエフェクト（さりげなく）。シニア向けに過度な動きは避ける。 */
+  a:active, button:active, [role="button"]:active {
+    transform: scale(0.985);
+  }
+}
+
+/* Next.js のページ遷移中にトップに表示する細い進行バー */
+@keyframes nav-progress-indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+.nav-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 100;
+  overflow: hidden;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+.nav-progress-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-primary);
+  width: 25%;
+  animation: nav-progress-indeterminate 900ms linear infinite;
 }

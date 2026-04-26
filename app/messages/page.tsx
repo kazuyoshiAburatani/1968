@@ -184,7 +184,7 @@ export default async function MessagesIndexPage() {
               <li key={c.peerId}>
                 <Link
                   href={`/messages/${c.peerId}`}
-                  className="flex items-start gap-3 px-4 py-3.5 no-underline hover:bg-muted/40"
+                  className="flex items-start gap-3 px-4 py-3.5 no-underline hover:bg-muted/40 active:bg-muted/70 transition-colors"
                 >
                   <span
                     aria-hidden

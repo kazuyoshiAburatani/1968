@@ -151,7 +151,7 @@ export default async function BoardPage() {
                     {viewable ? (
                       <Link
                         href={`/board/${c.slug}`}
-                        className="flex items-start gap-3 px-4 py-3.5 no-underline hover:bg-muted/40 transition-colors"
+                        className="flex items-start gap-3 px-4 py-3.5 no-underline hover:bg-muted/40 active:bg-muted/70 transition-colors"
                       >
                         <Avatar emoji={look.emoji} bg={look.bg} />
                         <div className="flex-1 min-w-0">
