@@ -3,7 +3,10 @@ import type { Metadata } from "next";
 import { requireSession } from "@/lib/auth/require-session";
 import { MembershipBadge } from "@/components/membership-badge";
 import { SubmitButton } from "@/components/submit-button";
+import { UserAvatar } from "@/components/user-avatar";
+import { AvatarUploader } from "@/components/avatar-uploader";
 import { DOCUMENT_TYPE_LABELS } from "@/lib/validation/verification";
+import { publicAvatarUrl } from "@/lib/avatar";
 
 export const metadata: Metadata = {
   title: "マイページ",
@@ -32,6 +35,7 @@ type Props = {
     saved?: string;
     stripe?: string;
     portal?: string;
+    error?: string;
   }>;
 };
 
@@ -44,7 +48,7 @@ const ACTIVE_SUB_STATUSES = new Set(["active", "trialing"]);
 
 export default async function MyPage({ searchParams }: Props) {
   const { supabase, user } = await requireSession();
-  const { saved, stripe, portal } = await searchParams;
+  const { saved, stripe, portal, error } = await searchParams;
 
   const { data: publicUser } = await supabase
     .from("users")
@@ -54,9 +58,12 @@ export default async function MyPage({ searchParams }: Props) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("nickname, birth_month, birth_day, prefecture, bio_visible")
+    .select("nickname, birth_month, birth_day, prefecture, bio_visible, avatar_url")
     .eq("user_id", user.id)
     .maybeSingle();
+  const avatarUrl = publicAvatarUrl(
+    (profile?.avatar_url as string | null | undefined) ?? null,
+  );
 
   const { data: subData } = await supabase
     .from("subscriptions")
@@ -85,20 +92,52 @@ export default async function MyPage({ searchParams }: Props) {
   const hasActiveSub = !!subscription && ACTIVE_SUB_STATUSES.has(subscription.status);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">マイページ</h1>
-          <p className="mt-1 text-foreground/80">
-            {profile?.nickname ?? "ゲスト"} さん
-          </p>
-        </div>
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+      <header className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold">マイページ</h1>
         <MembershipBadge rank={rank} verified={verified} />
       </header>
 
+      {/* プロフィール写真、大きく表示＋直接アップロード */}
+      <section className="mt-6 rounded-2xl border border-border bg-background p-5">
+        <div className="flex items-center gap-4">
+          <UserAvatar
+            name={profile?.nickname ?? "ユーザー"}
+            avatarUrl={avatarUrl}
+            size={80}
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-lg font-bold truncate">
+              {profile?.nickname ?? "ゲスト"} さん
+            </p>
+            <p className="mt-0.5 text-xs text-foreground/60">
+              {avatarUrl
+                ? "プロフィール写真は公開ページや投稿に表示されます"
+                : "写真を入れると、より顔の見える交流に。会員登録後に変更可能です。"}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <AvatarUploader hasAvatar={!!avatarUrl} />
+        </div>
+        <p className="mt-2 text-xs text-foreground/60">
+          JPEG / PNG / WebP、5 MB 以内。正方形にトリミングされて表示されます。
+        </p>
+      </section>
+
+      {error && (
+        <div className="mt-4 rounded-lg border border-red-700/50 bg-red-50 p-3 text-sm text-red-900">
+          {decodeURIComponent(error)}
+        </div>
+      )}
       {saved && (
         <div className="mt-4 rounded-lg border border-primary/40 bg-muted/40 p-3 text-sm">
-          プロフィールを保存しました。
+          {saved === "avatar"
+            ? "プロフィール写真を更新しました。"
+            : saved === "avatar-removed"
+              ? "プロフィール写真を削除しました。"
+              : "プロフィールを保存しました。"}
         </div>
       )}
       {stripe === "success" && (
