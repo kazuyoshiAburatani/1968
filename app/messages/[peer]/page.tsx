@@ -173,10 +173,10 @@ export default async function PeerMessagesPage({
                   <div
                     className={`flex ${mine ? "justify-end" : "justify-start"}`}
                   >
-                    <div className="max-w-[80%]">
+                    <div className="max-w-[80%] min-w-0">
                       {m.body && m.body.length > 0 && (
                         <div
-                          className={`rounded-2xl px-4 py-2.5 leading-7 text-sm whitespace-pre-wrap ${
+                          className={`rounded-2xl px-4 py-2.5 leading-7 text-sm whitespace-pre-wrap break-words overflow-hidden ${
                             mine
                               ? "bg-primary text-white rounded-br-sm"
                               : "bg-background border border-border rounded-bl-sm"

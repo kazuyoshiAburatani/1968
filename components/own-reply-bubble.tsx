@@ -86,8 +86,8 @@ export function OwnReplyBubble({
   }
 
   return (
-    <div className="flex flex-col items-end">
-      <div className="rounded-2xl px-4 py-2.5 leading-7 text-sm whitespace-pre-wrap bg-primary text-white rounded-br-sm">
+    <div className="flex flex-col items-end min-w-0">
+      <div className="rounded-2xl px-4 py-2.5 leading-7 text-sm whitespace-pre-wrap bg-primary text-white rounded-br-sm break-words overflow-hidden">
         <RichText text={body} />
         {media && media.length > 0 && (
           <div className="mt-2">

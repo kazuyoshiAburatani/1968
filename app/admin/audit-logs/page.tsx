@@ -128,21 +128,23 @@ export default async function AuditLogsPage() {
                   <summary className="text-xs text-foreground/60 cursor-pointer">
                     変更前後の差分を表示
                   </summary>
-                  <div className="mt-2 grid sm:grid-cols-2 gap-2 text-xs font-mono">
+                  <div className="mt-2 grid sm:grid-cols-2 gap-2 text-xs font-mono min-w-0">
                     {r.before_data && (
-                      <div className="bg-rose-50 border border-rose-200 rounded p-2 overflow-auto max-h-48">
-                        <p className="text-rose-900 font-bold mb-1">変更前</p>
-                        <pre className="whitespace-pre-wrap break-all">
+                      <div className="bg-rose-50 border border-rose-200 rounded p-2 overflow-auto max-h-48 min-w-0">
+                        <p className="text-rose-900 font-bold mb-1 font-sans">
+                          変更前
+                        </p>
+                        <pre className="whitespace-pre-wrap break-all max-w-full">
                           {JSON.stringify(r.before_data, null, 2)}
                         </pre>
                       </div>
                     )}
                     {r.after_data && (
-                      <div className="bg-emerald-50 border border-emerald-200 rounded p-2 overflow-auto max-h-48">
-                        <p className="text-emerald-900 font-bold mb-1">
+                      <div className="bg-emerald-50 border border-emerald-200 rounded p-2 overflow-auto max-h-48 min-w-0">
+                        <p className="text-emerald-900 font-bold mb-1 font-sans">
                           変更後
                         </p>
-                        <pre className="whitespace-pre-wrap break-all">
+                        <pre className="whitespace-pre-wrap break-all max-w-full">
                           {JSON.stringify(r.after_data, null, 2)}
                         </pre>
                       </div>

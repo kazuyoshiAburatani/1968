@@ -22,6 +22,10 @@
 @layer base {
   html {
     font-size: 16px;
+    /* スマホで横スクロールが発生しないよう、html/body 全体で横オーバーフローを禁止する。
+       内部の長文 URL や JSON、横長の画像が画面幅を超えても、ページ全体は揺れない。 */
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 
   body {
@@ -31,15 +35,37 @@
     line-height: 1.75;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* 念のため body 側でも幅制限。fixed 要素も画面外に押し出さない。 */
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 
   h1, h2, h3, h4, h5, h6 {
     line-height: 1.4;
+    /* 長い見出し（URL を含むなど）が画面幅を超えないよう折り返す */
+    overflow-wrap: anywhere;
   }
 
   p {
     word-break: break-word;
     overflow-wrap: anywhere;
+  }
+
+  /* テキスト入力系もモバイルで枠外に飛び出さないよう最大幅を画面に収める */
+  input, textarea, select {
+    max-width: 100%;
+  }
+
+  /* 画像・動画はコンテナ幅まで自動収縮させる、Image コンポーネントの style と衝突しないよう :where() で低優先度に */
+  :where(img, video) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* JSON や code、URL リテラルなど長い連続文字を含むブロックの折り返し */
+  pre, code {
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   /* リンク既定、ただし class が付いた要素（ボタン化されたリンク等）は Tailwind 指定に任せる。

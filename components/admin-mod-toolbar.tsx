@@ -40,7 +40,7 @@ export function AdminModToolbar(props: Props) {
   const [deleteReason, setDeleteReason] = useState("");
 
   return (
-    <div className="mt-2 inline-block">
+    <div className="mt-2 w-full max-w-full">
       {open === "none" && (
         <div className="inline-flex items-center gap-1.5">
           <span className="inline-block px-1.5 py-px rounded text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-300">
@@ -70,7 +70,7 @@ export function AdminModToolbar(props: Props) {
           action={
             props.kind === "thread" ? adminEditThread : adminEditReply
           }
-          className="mt-2 w-full max-w-xl rounded-xl border border-amber-300 bg-amber-50/40 p-3 space-y-2"
+          className="mt-2 w-full rounded-xl border border-amber-300 bg-amber-50/40 p-3 space-y-2"
         >
           <input type="hidden" name="slug" value={props.slug} />
           <input
@@ -140,7 +140,7 @@ export function AdminModToolbar(props: Props) {
           action={
             props.kind === "thread" ? adminDeleteThread : adminDeleteReply
           }
-          className="mt-2 w-full max-w-xl rounded-xl border border-rose-300 bg-rose-50/60 p-3 space-y-2"
+          className="mt-2 w-full rounded-xl border border-rose-300 bg-rose-50/60 p-3 space-y-2"
         >
           <input
             type="hidden"

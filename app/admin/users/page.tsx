@@ -161,7 +161,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
                 </div>
               </div>
 
-              <div className="mt-2 text-xs text-foreground/60">
+              <div className="mt-2 text-xs text-foreground/60 break-all">
                 登録、{new Date(u.created_at).toLocaleDateString("ja-JP")}
                 {u.stripe_customer_id && ` ・ Stripe ${u.stripe_customer_id.slice(0, 14)}…`}
                 {u.beta_grant_expires_at && (
