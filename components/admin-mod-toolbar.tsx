@@ -36,6 +36,8 @@ export function AdminModToolbar(props: Props) {
     props.kind === "thread" ? props.title : "",
   );
   const [draftBody, setDraftBody] = useState(props.body);
+  const [editReason, setEditReason] = useState("");
+  const [deleteReason, setDeleteReason] = useState("");
 
   return (
     <div className="mt-2 inline-block">
@@ -101,9 +103,19 @@ export function AdminModToolbar(props: Props) {
             className="w-full px-3 py-2 rounded border border-border bg-background text-sm leading-7"
             placeholder="本文"
           />
+          <input
+            type="text"
+            name="reason"
+            value={editReason}
+            onChange={(e) => setEditReason(e.target.value)}
+            maxLength={300}
+            placeholder="編集理由（任意、監査ログに残ります）"
+            className="w-full px-3 py-2 rounded border border-border bg-background text-xs"
+          />
           <p className="text-[11px] text-amber-900">
             ⚠ 運営として {props.kind === "thread" ? "スレッド" : "返信"} を編集します。
-            投稿者には通知されませんが、編集履歴はサーバ側で保持されます。
+            投稿者の表示には「運営により編集されました」と明記され、
+            監査ログ（/admin/audit-logs）に記録されます。
           </p>
           <div className="flex gap-2">
             <button
@@ -144,13 +156,24 @@ export function AdminModToolbar(props: Props) {
           </p>
           <p className="text-xs text-rose-900/80 leading-6">
             {props.kind === "thread"
-              ? "スレッド本体と紐づく返信・いいね・通報を一括で削除します。"
+              ? "スレッド本体と紐づく返信・いいね・通報を一括で削除します。元に戻せません。"
               : "この返信を削除します。元に戻せません。"}
           </p>
+          <input
+            type="text"
+            name="reason"
+            value={deleteReason}
+            onChange={(e) => setDeleteReason(e.target.value)}
+            required
+            maxLength={300}
+            placeholder="削除理由（必須、監査ログに残ります）例：規約違反、個人情報を含む"
+            className="w-full px-3 py-2 rounded border border-rose-300 bg-background text-xs"
+          />
           <div className="flex gap-2">
             <button
               type="submit"
-              className="inline-flex items-center min-h-[36px] px-4 rounded-full bg-rose-700 text-white text-xs font-medium active:opacity-90"
+              disabled={deleteReason.trim().length === 0}
+              className="inline-flex items-center min-h-[36px] px-4 rounded-full bg-rose-700 text-white text-xs font-medium active:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               削除する
             </button>

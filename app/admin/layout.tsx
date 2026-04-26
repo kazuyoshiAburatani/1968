@@ -13,6 +13,7 @@ const NAV: Array<{ href: string; label: string; icon: string }> = [
   { href: "/admin/verifications", label: "身分証審査", icon: "ri-shield-check-line" },
   { href: "/admin/reports", label: "違反報告", icon: "ri-alarm-warning-line" },
   { href: "/admin/users", label: "会員管理", icon: "ri-group-line" },
+  { href: "/admin/audit-logs", label: "監査ログ", icon: "ri-history-line" },
 ];
 
 export default async function AdminLayout({

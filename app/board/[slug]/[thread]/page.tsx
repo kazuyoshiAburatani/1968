@@ -49,6 +49,7 @@ type ThreadRow = {
   view_count: number;
   is_locked: boolean;
   user_id: string;
+  admin_edited_at: string | null;
 };
 
 type ReplyRow = {
@@ -59,6 +60,7 @@ type ReplyRow = {
   like_count: number;
   user_id: string;
   parent_reply_id: string | null;
+  admin_edited_at: string | null;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -100,7 +102,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
   const { data: threadData } = await supabase
     .from("threads")
     .select(
-      "id, title, body, media, created_at, reply_count, like_count, view_count, is_locked, user_id, category_id",
+      "id, title, body, media, created_at, reply_count, like_count, view_count, is_locked, user_id, category_id, admin_edited_at",
     )
     .eq("id", threadId)
     .maybeSingle();
@@ -115,7 +117,9 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
 
   let replyQuery = supabase
     .from("replies")
-    .select("id, body, media, created_at, like_count, user_id, parent_reply_id")
+    .select(
+      "id, body, media, created_at, like_count, user_id, parent_reply_id, admin_edited_at",
+    )
     .eq("thread_id", threadId)
     .order("created_at", { ascending: true });
   if (repliesLimited) {
@@ -197,6 +201,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
           liked={likedSet.has(`thread:${thread.id}`)}
           isOwner={viewerId === thread.user_id}
           isAdmin={isAdmin}
+          adminEditedAt={thread.admin_edited_at}
         />
 
         {/* 返信、左右バブル */}
@@ -251,6 +256,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
                     mine={mine}
                     parentName={parentName}
                     isAdmin={isAdmin}
+                    adminEditedAt={r.admin_edited_at}
                   />
                 </li>
               );
@@ -331,6 +337,17 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
   );
 }
 
+function AdminEditedMark({ at }: { at: string | null }) {
+  if (!at) return null;
+  return (
+    <p className="mt-2 text-[11px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-2 py-1 inline-flex items-center gap-1">
+      <i className="ri-edit-line text-xs" aria-hidden />
+      運営により編集されました（
+      {new Date(at).toLocaleDateString("ja-JP")}）
+    </p>
+  );
+}
+
 // 元投稿のカード、上部に強調表示
 function ThreadOriginalCard(props: {
   threadId: string;
@@ -347,6 +364,7 @@ function ThreadOriginalCard(props: {
   liked: boolean;
   isOwner: boolean;
   isAdmin: boolean;
+  adminEditedAt: string | null;
 }) {
   return (
     <article className="rounded-2xl border border-primary/30 bg-background p-4 shadow-sm">
@@ -383,6 +401,7 @@ function ThreadOriginalCard(props: {
         <RichText text={props.body} />
         <MediaDisplay items={props.media} />
       </div>
+      <AdminEditedMark at={props.adminEditedAt} />
       <div className="mt-3 flex items-center gap-2 flex-wrap">
         <LikeButton
           targetType="thread"
@@ -432,6 +451,7 @@ function ReplyBubble(props: {
   mine: boolean;
   parentName: string | null;
   isAdmin: boolean;
+  adminEditedAt: string | null;
 }) {
   const timeMeta = (
     <span>
@@ -500,6 +520,7 @@ function ReplyBubble(props: {
                 </div>
               )}
             </div>
+            <AdminEditedMark at={props.adminEditedAt} />
             <div className="mt-1 flex items-center gap-2 text-[10px] text-foreground/50 justify-start flex-wrap">
               {timeMeta}
               <LikeButton
