@@ -9,6 +9,7 @@ import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { NavProgress } from "@/components/nav-progress";
 import { UserAvatar } from "@/components/user-avatar";
 import { publicAvatarUrl } from "@/lib/avatar";
+import { fetchUnreadNotificationsCount } from "@/lib/notifications";
 import type { Rank } from "@/lib/auth/permissions";
 import "./globals.css";
 
@@ -56,20 +57,23 @@ export default async function RootLayout({
   let nickname: string | null = null;
   let avatarUrl: string | null = null;
   let isAdmin = false;
+  let unreadCount = 0;
   if (userId) {
-    const [{ data: profile }, { data: adminRow }] = await Promise.all([
+    const [{ data: profile }, { data: adminRow }, unread] = await Promise.all([
       supabase
         .from("profiles")
         .select("nickname, avatar_url")
         .eq("user_id", userId)
         .maybeSingle(),
       supabase.from("admins").select("id").eq("user_id", userId).maybeSingle(),
+      fetchUnreadNotificationsCount(supabase, userId),
     ]);
     nickname = (profile?.nickname as string | undefined) ?? null;
     avatarUrl = publicAvatarUrl(
       (profile?.avatar_url as string | null | undefined) ?? null,
     );
     isAdmin = !!adminRow;
+    unreadCount = unread;
   }
 
   return (
@@ -95,7 +99,7 @@ export default async function RootLayout({
         {/* モバイル時はタブバー分の下部余白を確保 */}
         <main className="flex-1 w-full pb-20 md:pb-0">{children}</main>
         <SiteFooter />
-        <MobileTabBar />
+        <MobileTabBar unreadCount={unreadCount} />
       </body>
     </html>
   );

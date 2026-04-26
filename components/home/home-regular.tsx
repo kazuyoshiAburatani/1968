@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SunLines } from "@/components/illustrations/sun-lines";
-import { LatestThreadsList } from "@/components/home/latest-threads-list";
+import { RecentThreadCards } from "@/components/home/recent-thread-cards";
 import type { Tier } from "@/lib/auth/permissions";
 
 // 正会員（regular）向け本格ダッシュボード。Readdy レイアウト採用。
@@ -107,22 +107,16 @@ export async function HomeRegular({
       {/* メインコンテンツ */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         <div className="lg:grid lg:grid-cols-3 lg:gap-8">
-          {/* 左、最新の話題 */}
+          {/* 左、最新の話題、LINE 風カード */}
           <div className="lg:col-span-2">
-            <section className="bg-background rounded-lg border border-border p-6">
-              <div className="flex items-center justify-between">
+            <section>
+              <div className="flex items-center justify-between mb-3">
                 <h2 className="text-xl font-bold text-foreground">最新の話題</h2>
-                <Link
-                  href="/board"
-                  className="text-primary hover:opacity-70 text-sm font-medium no-underline"
-                >
+                <Link href="/timeline" className="text-sm font-medium">
                   もっと見る →
                 </Link>
               </div>
-              <p className="mt-1 text-sm text-foreground/70">全カテゴリから直近20件</p>
-              <div className="mt-6">
-                <LatestThreadsList limit={20} />
-              </div>
+              <RecentThreadCards limit={12} />
             </section>
           </div>
 

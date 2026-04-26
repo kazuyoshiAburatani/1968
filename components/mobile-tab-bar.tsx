@@ -61,7 +61,7 @@ const HIDDEN_PREFIXES = [
   "/beta",
 ];
 
-export function MobileTabBar() {
+export function MobileTabBar({ unreadCount = 0 }: { unreadCount?: number }) {
   const pathname = usePathname() ?? "/";
 
   if (HIDDEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
@@ -83,22 +83,34 @@ export function MobileTabBar() {
       <ul className="grid grid-cols-5">
         {ITEMS.map((item) => {
           const active = isActive(item);
+          const showBadge =
+            item.href === "/notifications" && unreadCount > 0;
           return (
             <li key={item.href}>
               <Link
                 href={item.href}
                 className={[
-                  "flex flex-col items-center justify-center gap-0.5 min-h-[64px] px-1 py-1.5 no-underline transition-colors active:bg-muted/60",
+                  "flex flex-col items-center justify-center gap-0.5 min-h-[64px] px-1 py-1.5 no-underline transition-colors active:bg-muted/60 relative",
                   active
                     ? "text-primary"
                     : "text-foreground/60 hover:text-foreground",
                 ].join(" ")}
                 aria-current={active ? "page" : undefined}
               >
-                <i
-                  className={`text-2xl leading-none ${active ? item.iconActive : item.icon}`}
-                  aria-hidden
-                />
+                <span className="relative inline-flex">
+                  <i
+                    className={`text-2xl leading-none ${active ? item.iconActive : item.icon}`}
+                    aria-hidden
+                  />
+                  {showBadge && (
+                    <span
+                      aria-label={`未読 ${unreadCount} 件`}
+                      className="absolute -top-1 -right-3 min-w-[16px] h-4 px-1 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center leading-none"
+                    >
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </span>
                 <span className="text-[11px] font-medium leading-tight">
                   {item.label}
                 </span>

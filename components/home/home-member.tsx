@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { RisingSun } from "@/components/illustrations/rising-sun";
-import { LatestThreadsList } from "@/components/home/latest-threads-list";
+import { RecentThreadCards } from "@/components/home/recent-thread-cards";
 import type { Tier } from "@/lib/auth/permissions";
 
 // 無料会員（member）向けダッシュボード。
@@ -156,14 +156,15 @@ export async function HomeMember({
         </div>
       </section>
 
-      {/* 最新の話題 */}
+      {/* 最新の話題、LINE 風カード */}
       <section>
-        <h2 className="text-xl font-bold text-foreground mb-4">
-          最新の話題（段階A・B）
-        </h2>
-        <div className="bg-background rounded-lg shadow-sm border border-border p-4 md:p-6">
-          <LatestThreadsList limit={10} />
+        <div className="flex items-baseline justify-between mb-3">
+          <h2 className="text-xl font-bold text-foreground">最新の話題</h2>
+          <Link href="/timeline" className="text-sm">
+            もっと見る →
+          </Link>
         </div>
+        <RecentThreadCards limit={8} />
       </section>
 
       {/* グレーアウトカテゴリ（C/D） */}

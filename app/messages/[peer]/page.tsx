@@ -7,7 +7,10 @@ import { SubmitButton } from "@/components/submit-button";
 import { MessagesRealtime } from "@/components/messages-realtime";
 import { MarkReadOnMount } from "@/components/messages-mark-read";
 import { UserAvatar } from "@/components/user-avatar";
+import { MediaDisplay } from "@/components/media-display";
+import { DmMediaPicker } from "@/components/dm-media-picker";
 import { publicAvatarUrl } from "@/lib/avatar";
+import type { MediaItem } from "@/lib/media";
 
 type Props = {
   params: Promise<{ peer: string }>;
@@ -19,6 +22,7 @@ type MessageRow = {
   sender_id: string;
   receiver_id: string;
   body: string;
+  media: MediaItem[] | null;
   read_at: string | null;
   created_at: string;
 };
@@ -99,7 +103,7 @@ export default async function PeerMessagesPage({
   // 過去メッセージを古い順で取得（最大 200 件）
   const { data: msgRows } = await supabase
     .from("messages")
-    .select("id, sender_id, receiver_id, body, read_at, created_at")
+    .select("id, sender_id, receiver_id, body, media, read_at, created_at")
     .or(
       `and(sender_id.eq.${user.id},receiver_id.eq.${peer}),and(sender_id.eq.${peer},receiver_id.eq.${user.id})`,
     )
@@ -170,15 +174,24 @@ export default async function PeerMessagesPage({
                     className={`flex ${mine ? "justify-end" : "justify-start"}`}
                   >
                     <div className="max-w-[80%]">
-                      <div
-                        className={`rounded-2xl px-4 py-2.5 leading-7 text-sm whitespace-pre-wrap ${
-                          mine
-                            ? "bg-primary text-white rounded-br-sm"
-                            : "bg-background border border-border rounded-bl-sm"
-                        }`}
-                      >
-                        {m.body}
-                      </div>
+                      {m.body && m.body.length > 0 && (
+                        <div
+                          className={`rounded-2xl px-4 py-2.5 leading-7 text-sm whitespace-pre-wrap ${
+                            mine
+                              ? "bg-primary text-white rounded-br-sm"
+                              : "bg-background border border-border rounded-bl-sm"
+                          }`}
+                        >
+                          {m.body}
+                        </div>
+                      )}
+                      {m.media && m.media.length > 0 && (
+                        <div
+                          className={`${m.body && m.body.length > 0 ? "mt-1.5" : ""} rounded-2xl overflow-hidden ${mine ? "" : "border border-border"}`}
+                        >
+                          <MediaDisplay items={m.media} />
+                        </div>
+                      )}
                       <div
                         className={`mt-1 text-[10px] text-foreground/50 flex items-center gap-1 ${mine ? "justify-end" : "justify-start"}`}
                       >
@@ -220,17 +233,23 @@ export default async function PeerMessagesPage({
             </p>
           </div>
         ) : (
-          <form action={sendMessage} className="flex items-end gap-2">
+          <form
+            action={sendMessage}
+            encType="multipart/form-data"
+            className="space-y-2"
+          >
             <input type="hidden" name="receiver_id" value={peer} />
-            <textarea
-              name="body"
-              required
-              rows={1}
-              maxLength={2000}
-              placeholder="メッセージを入力"
-              className="flex-1 px-3 py-2 rounded-2xl border border-border bg-background resize-none min-h-[44px] max-h-32 text-sm leading-6"
-            />
-            <SubmitButton pendingText="送信中…">送信</SubmitButton>
+            <div className="relative flex items-end gap-2">
+              <DmMediaPicker />
+              <textarea
+                name="body"
+                rows={1}
+                maxLength={2000}
+                placeholder="メッセージを入力"
+                className="flex-1 px-3 py-2 rounded-2xl border border-border bg-background resize-none min-h-[44px] max-h-32 text-sm leading-6"
+              />
+              <SubmitButton pendingText="送信中…">送信</SubmitButton>
+            </div>
           </form>
         )}
       </div>
