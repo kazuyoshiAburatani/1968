@@ -2,8 +2,9 @@ import { z } from "zod";
 
 export const DOCUMENT_TYPE_VALUES = [
   "mynumber",
-  "health_insurance",
   "driver_license",
+  "passport",
+  "health_insurance",
 ] as const;
 
 export const DOCUMENT_TYPE_LABELS: Record<
@@ -11,8 +12,19 @@ export const DOCUMENT_TYPE_LABELS: Record<
   string
 > = {
   mynumber: "マイナンバーカード",
-  health_insurance: "健康保険証",
   driver_license: "運転免許証",
+  passport: "パスポート",
+  health_insurance: "健康保険証",
+};
+
+export const DOCUMENT_TYPE_DESCRIPTIONS: Record<
+  (typeof DOCUMENT_TYPE_VALUES)[number],
+  string
+> = {
+  mynumber: "顔写真がある面のみご提出ください。マイナンバー（12桁）の番号は隠してください",
+  driver_license: "顔写真と生年月日が見える面をご提出ください",
+  passport: "顔写真があるページをご提出ください",
+  health_insurance: "氏名・生年月日が見える面のみ。被保険者番号は隠してください",
 };
 
 export const ALLOWED_VERIFICATION_MIME_TYPES = [
