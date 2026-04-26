@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SunLines } from "@/components/illustrations/sun-lines";
 import { RecentThreadCards } from "@/components/home/recent-thread-cards";
+import { fetchAllCategories } from "@/lib/cached-categories";
 import type { Tier } from "@/lib/auth/permissions";
 
 // 正会員（regular）向け本格ダッシュボード。Readdy レイアウト採用。
@@ -37,11 +38,7 @@ export async function HomeRegular({
 }) {
   const supabase = await createSupabaseServerClient();
 
-  const { data: catsData } = await supabase
-    .from("categories")
-    .select("id, slug, name, tier, display_order")
-    .order("display_order");
-  const cats = (catsData ?? []) as Category[];
+  const cats = (await fetchAllCategories()) as unknown as Category[];
   const byTier = new Map<Tier, Category[]>();
   for (const c of cats) {
     const list = byTier.get(c.tier) ?? [];

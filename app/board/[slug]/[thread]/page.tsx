@@ -20,6 +20,7 @@ import { MediaPicker } from "@/components/media-picker";
 import { ReplyBodyEditor } from "@/components/reply-body-editor";
 import { UserAvatar } from "@/components/user-avatar";
 import { fetchAuthorInfo } from "@/lib/author-info";
+import { fetchCategoryBySlug } from "@/lib/cached-categories";
 import type { MediaItem } from "@/lib/media";
 import { createReply } from "./actions";
 
@@ -81,12 +82,7 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
   const supabase = await createSupabaseServerClient();
   const { rank, userId: viewerId } = await getCurrentRank(supabase);
 
-  const { data: category } = await supabase
-    .from("categories")
-    .select("id, slug, name, access_level_post")
-    .eq("slug", slug)
-    .maybeSingle();
-
+  const category = await fetchCategoryBySlug(slug);
   if (!category) notFound();
 
   const { data: threadData } = await supabase

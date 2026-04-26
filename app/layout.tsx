@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
 import { Noto_Sans_JP } from "next/font/google";
 import Link from "next/link";
+
+// 全ページの Server Functions を東京リージョン（hnd1）で実行する。
+// Supabase は ap-northeast-2（ソウル）にあり、US 経由だと往復で 200〜400ms かかっていたが、
+// 東京にすれば 30〜80ms に短縮できる、各ページで 5〜15 クエリ走るので体感が劇的に変わる。
+export const preferredRegion = ["hnd1"];
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getCurrentRank } from "@/lib/auth/current-rank";
 import { Suspense } from "react";
 import { MembershipBadge } from "@/components/membership-badge";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { NavProgress } from "@/components/nav-progress";
 import { UserAvatar } from "@/components/user-avatar";
 import { publicAvatarUrl } from "@/lib/avatar";
-import { fetchUnreadNotificationsCount } from "@/lib/notifications";
 import type { Rank } from "@/lib/auth/permissions";
 import "./globals.css";
 
@@ -53,27 +56,34 @@ export default async function RootLayout({
   // 未ログイン時でも Supabase への軽い問い合わせが入るが、proxy.ts のセッションリフレッシュと
   // 同じ getUser を共有するため重複は最小限。
   const supabase = await createSupabaseServerClient();
-  const { rank, userId } = await getCurrentRank(supabase);
+  // auth.getUser だけ先に実行（セッションリフレッシュも兼ねる）。
+  // userId が取れたら、レイアウトに必要な情報を 1 RPC でまとめて取得する。
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  const userId = authUser?.id ?? null;
+
+  let rank: Rank = "guest";
   let nickname: string | null = null;
   let avatarUrl: string | null = null;
   let isAdmin = false;
   let unreadCount = 0;
+
   if (userId) {
-    const [{ data: profile }, { data: adminRow }, unread] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("nickname, avatar_url")
-        .eq("user_id", userId)
-        .maybeSingle(),
-      supabase.from("admins").select("id").eq("user_id", userId).maybeSingle(),
-      fetchUnreadNotificationsCount(supabase, userId),
-    ]);
-    nickname = (profile?.nickname as string | undefined) ?? null;
-    avatarUrl = publicAvatarUrl(
-      (profile?.avatar_url as string | null | undefined) ?? null,
-    );
-    isAdmin = !!adminRow;
-    unreadCount = unread;
+    const { data } = await supabase
+      .rpc("get_session_header_context", { p_user_id: userId })
+      .maybeSingle<{
+        membership_rank: string;
+        nickname: string | null;
+        avatar_url: string | null;
+        is_admin: boolean;
+        unread_count: number;
+      }>();
+    rank = ((data?.membership_rank as Rank | undefined) ?? "member") as Rank;
+    nickname = data?.nickname ?? null;
+    avatarUrl = publicAvatarUrl(data?.avatar_url ?? null);
+    isAdmin = data?.is_admin === true;
+    unreadCount = Number(data?.unread_count ?? 0);
   }
 
   return (

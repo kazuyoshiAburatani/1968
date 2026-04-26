@@ -6,6 +6,7 @@ import { getCurrentRank } from "@/lib/auth/current-rank";
 import { canView, canPost, type Tier, type ViewLevel, type PostLevel } from "@/lib/auth/permissions";
 import { fetchAuthorInfo } from "@/lib/author-info";
 import { UserAvatar } from "@/components/user-avatar";
+import { fetchCategoryBySlug } from "@/lib/cached-categories";
 
 const PAGE_SIZE = 20;
 
@@ -38,12 +39,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = await createSupabaseServerClient();
-  const { data: category } = await supabase
-    .from("categories")
-    .select("name")
-    .eq("slug", slug)
-    .maybeSingle();
+  const category = await fetchCategoryBySlug(slug);
   return { title: category?.name ?? "カテゴリ" };
 }
 
@@ -53,15 +49,10 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const page = Math.max(1, Number(pageParam) || 1);
 
   const supabase = await createSupabaseServerClient();
-  const { rank } = await getCurrentRank(supabase);
-
-  const { data: category } = await supabase
-    .from("categories")
-    .select(
-      "id, slug, name, description, tier, access_level_view, access_level_post, posting_limit_per_day",
-    )
-    .eq("slug", slug)
-    .maybeSingle<Category>();
+  const [{ rank }, category] = await Promise.all([
+    getCurrentRank(supabase),
+    fetchCategoryBySlug(slug),
+  ]);
 
   if (!category) {
     notFound();

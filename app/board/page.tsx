@@ -6,24 +6,11 @@ import {
   canView,
   canPost,
   type Tier,
-  type ViewLevel,
-  type PostLevel,
 } from "@/lib/auth/permissions";
+import { fetchAllCategories } from "@/lib/cached-categories";
 
 export const metadata: Metadata = {
   title: "ひろば",
-};
-
-type Category = {
-  id: number;
-  slug: string;
-  name: string;
-  description: string | null;
-  display_order: number;
-  tier: Tier;
-  access_level_view: ViewLevel;
-  access_level_post: PostLevel;
-  posting_limit_per_day: number | null;
 };
 
 type ThreadPreview = {
@@ -86,20 +73,15 @@ export default async function BoardPage() {
   const supabase = await createSupabaseServerClient();
   const { rank } = await getCurrentRank(supabase);
 
-  const { data: categories } = await supabase
-    .from("categories")
-    .select(
-      "id, slug, name, description, display_order, tier, access_level_view, access_level_post, posting_limit_per_day",
-    )
-    .order("display_order");
-  const all = (categories ?? []) as Category[];
-
-  // カテゴリごとの最新スレッドとスレッド数をまとめて取得（RLS で表示可能なものだけ通る）
-  const { data: threadRows } = await supabase
-    .from("threads")
-    .select("category_id, title, body, created_at, reply_count")
-    .order("created_at", { ascending: false });
-  const threads = (threadRows ?? []) as ThreadPreview[];
+  // categories はキャッシュ済み（5 分）、毎回 Supabase に問い合わせない
+  const [all, threadsRes] = await Promise.all([
+    fetchAllCategories(),
+    supabase
+      .from("threads")
+      .select("category_id, title, body, created_at, reply_count")
+      .order("created_at", { ascending: false }),
+  ]);
+  const threads = (threadsRes.data ?? []) as ThreadPreview[];
 
   const latestByCat = new Map<number, ThreadPreview>();
   const countByCat = new Map<number, number>();
@@ -108,7 +90,7 @@ export default async function BoardPage() {
     countByCat.set(t.category_id, (countByCat.get(t.category_id) ?? 0) + 1);
   }
 
-  const byTier = new Map<Tier, Category[]>();
+  const byTier = new Map<Tier, typeof all>();
   for (const c of all) {
     const list = byTier.get(c.tier) ?? [];
     list.push(c);

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { RisingSun } from "@/components/illustrations/rising-sun";
 import { RecentThreadCards } from "@/components/home/recent-thread-cards";
+import { fetchAllCategories } from "@/lib/cached-categories";
 import type { Tier } from "@/lib/auth/permissions";
 
 // 無料会員（member）向けダッシュボード。
@@ -26,11 +27,7 @@ export async function HomeMember({
 }) {
   const supabase = await createSupabaseServerClient();
 
-  const { data: catsData } = await supabase
-    .from("categories")
-    .select("id, slug, name, description, tier, posting_limit_per_day, display_order")
-    .order("display_order");
-  const cats = (catsData ?? []) as Category[];
+  const cats = (await fetchAllCategories()) as unknown as Category[];
 
   const tierA = cats.filter((c) => c.tier === "A");
   const tierB = cats.filter((c) => c.tier === "B");
