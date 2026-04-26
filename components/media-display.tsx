@@ -1,7 +1,9 @@
 import { getMediaUrl, type MediaItem } from "@/lib/media";
 
 // 投稿に添付されたメディアを描画する共通コンポーネント。
-// 画像は最大4枚のグリッド、動画は1本の HTML video プレイヤー。
+// 画像は元の縦横比を保ったまま幅 100% に合わせ、横長は横一杯、
+// 縦長はそのまま（ただし画面の見やすさを保つため最大高を viewport の 80% に制限）。
+// 動画も同様に幅優先、最大高 80vh。
 export function MediaDisplay({ items }: { items: MediaItem[] }) {
   if (!items || items.length === 0) return null;
 
@@ -13,7 +15,7 @@ export function MediaDisplay({ items }: { items: MediaItem[] }) {
           src={getMediaUrl(video.path)}
           controls
           preload="metadata"
-          className="w-full max-h-[480px] rounded border border-border bg-black"
+          className="w-full max-h-[80vh] rounded border border-border bg-black object-contain"
         />
       </div>
     );
@@ -35,14 +37,14 @@ export function MediaDisplay({ items }: { items: MediaItem[] }) {
           href={getMediaUrl(img.path)}
           target="_blank"
           rel="noopener noreferrer"
-          className="block"
+          className="block bg-muted/30 rounded border border-border overflow-hidden"
         >
           {/* next/image 向けの remotePatterns が未設定のため通常の img タグを利用 */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={getMediaUrl(img.path)}
             alt=""
-            className="w-full h-auto rounded border border-border object-cover aspect-square"
+            className="w-full h-auto max-h-[70vh] object-contain mx-auto"
             loading="lazy"
           />
         </a>
