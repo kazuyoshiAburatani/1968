@@ -5,6 +5,10 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { BetaApplicationSchema } from "@/lib/validation/beta";
+import {
+  sendBetaApplicationAdminNotice,
+  sendBetaApplicationReceipt,
+} from "@/lib/email/templates";
 
 function fail(message: string): never {
   redirect(`/beta?error=${encodeURIComponent(message)}`);
@@ -60,62 +64,19 @@ export async function submitBetaApplication(formData: FormData) {
     fail("送信に失敗しました、時間をおいて再度お試しください");
   }
 
-  // Resend が設定されていれば運営に通知メール送信、未設定なら console に出力のみ
-  await notifyAdmin({
-    name: parsed.data.name,
-    email: parsed.data.email,
-    motivation: parsed.data.motivation ?? "（記入なし）",
-  });
+  // 並行送信、応募者本人への受付メールと運営への通知
+  await Promise.all([
+    sendBetaApplicationReceipt({
+      to: parsed.data.email,
+      name: parsed.data.name,
+    }),
+    sendBetaApplicationAdminNotice({
+      name: parsed.data.name,
+      email: parsed.data.email,
+      motivation: parsed.data.motivation ?? "（記入なし）",
+    }),
+  ]);
 
   revalidatePath("/beta");
   redirect("/beta?submitted=1");
-}
-
-async function notifyAdmin(payload: {
-  name: string;
-  email: string;
-  motivation: string;
-}) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const to = process.env.BETA_NOTIFY_EMAIL ?? "support@1968.love";
-  const from = process.env.BETA_NOTIFY_FROM ?? "1968 <noreply@1968.love>";
-
-  if (!apiKey) {
-    console.log(
-      "[beta/notify] RESEND_API_KEY 未設定、コンソール出力のみ",
-      payload,
-    );
-    return;
-  }
-
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to: [to],
-        subject: `[1968] 新しいベータテスター応募、${payload.name} さん`,
-        text: [
-          "ベータテスター応募が届きました。",
-          "",
-          `お名前、${payload.name}`,
-          `メール、${payload.email}`,
-          `応募動機、`,
-          payload.motivation,
-          "",
-          "管理画面、https://supabase.com/dashboard/project/gouctopluwgejgmwvyew/editor",
-        ].join("\n"),
-      }),
-    });
-    if (!res.ok) {
-      const body = await res.text();
-      console.error("[beta/notify] Resend API failed", res.status, body);
-    }
-  } catch (err) {
-    console.error("[beta/notify] notify error", err);
-  }
 }

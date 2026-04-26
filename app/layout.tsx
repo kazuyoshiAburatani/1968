@@ -50,13 +50,18 @@ export default async function RootLayout({
   const supabase = await createSupabaseServerClient();
   const { rank, userId } = await getCurrentRank(supabase);
   let nickname: string | null = null;
+  let isAdmin = false;
   if (userId) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("nickname")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const [{ data: profile }, { data: adminRow }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("nickname")
+        .eq("user_id", userId)
+        .maybeSingle(),
+      supabase.from("admins").select("id").eq("user_id", userId).maybeSingle(),
+    ]);
     nickname = (profile?.nickname as string | undefined) ?? null;
+    isAdmin = !!adminRow;
   }
 
   return (
@@ -69,7 +74,12 @@ export default async function RootLayout({
         />
       </head>
       <body className="min-h-dvh flex flex-col">
-        <SiteHeader rank={rank} userId={userId} nickname={nickname} />
+        <SiteHeader
+          rank={rank}
+          userId={userId}
+          nickname={nickname}
+          isAdmin={isAdmin}
+        />
         {/* モバイル時はタブバー分の下部余白を確保 */}
         <main className="flex-1 w-full pb-20 md:pb-0">{children}</main>
         <SiteFooter />
@@ -83,10 +93,12 @@ function SiteHeader({
   rank,
   userId,
   nickname,
+  isAdmin,
 }: {
   rank: Rank;
   userId: string | null;
   nickname: string | null;
+  isAdmin: boolean;
 }) {
   return (
     <header className="border-b border-border bg-background">
@@ -104,6 +116,15 @@ function SiteHeader({
           </span>
         </Link>
         <nav className="flex items-center gap-3">
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-3 rounded-full border border-amber-700 bg-amber-50 text-amber-900 no-underline text-sm font-medium"
+              aria-label="管理画面へ"
+            >
+              管理
+            </Link>
+          )}
           <Link
             href="/board"
             className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-3 rounded-full border border-border bg-background hover:bg-muted/40 no-underline text-sm font-medium text-foreground"
@@ -158,6 +179,9 @@ function SiteFooter() {
           <div>
             <p className="font-bold mb-2">案内</p>
             <ul className="space-y-1">
+              <li>
+                <Link href="/timeline">みんなの新着</Link>
+              </li>
               <li>
                 <Link href="/beta">ベータテスター募集中</Link>
               </li>
