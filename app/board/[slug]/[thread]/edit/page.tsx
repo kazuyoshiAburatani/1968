@@ -7,7 +7,7 @@ import { SubmitButton } from "@/components/submit-button";
 import { MediaPicker } from "@/components/media-picker";
 import { fetchCategoryBySlug } from "@/lib/cached-categories";
 import { getMediaUrl, type MediaItem } from "@/lib/media";
-import { deleteThread, updateThread } from "./actions";
+import { updateThread } from "./actions";
 
 export const metadata: Metadata = {
   title: "スレッドを編集",
@@ -158,35 +158,17 @@ export default async function EditThreadPage({ params, searchParams }: Props) {
         </div>
       </form>
 
-      {/* 削除セクション、別フォーム */}
+      {/* スレッド削除は運営のみ可能、お問い合わせ案内 */}
       <section className="mt-12 pt-8 border-t border-border">
-        <h2 className="font-bold text-base">スレッドを削除</h2>
+        <h2 className="font-bold text-base">スレッドの削除について</h2>
         <p className="mt-2 text-sm text-foreground/70 leading-7">
-          このスレッドを完全に削除します。返信・いいね・添付メディアもすべて消えます。
-          元に戻せません。
+          スレッドの削除は運営によるモデレーションでのみ受け付けています。
+          削除をご希望の場合は、{" "}
+          <a href="mailto:support@1968.love" className="underline">
+            support@1968.love
+          </a>{" "}
+          までスレッドの URL と削除理由を添えてご連絡ください。
         </p>
-        <form
-          action={deleteThread}
-          className="mt-4 rounded-xl border border-rose-300 bg-rose-50 p-4 space-y-3"
-        >
-          <input type="hidden" name="slug" value={slug} />
-          <input type="hidden" name="thread_id" value={threadId} />
-          <label className="flex items-start gap-2 text-sm text-rose-900">
-            <input
-              type="checkbox"
-              name="confirm"
-              required
-              className="size-4 mt-0.5"
-            />
-            <span>削除することを確認しました（必須）</span>
-          </label>
-          <button
-            type="submit"
-            className="inline-flex items-center min-h-[var(--spacing-tap)] px-5 rounded-full bg-rose-700 text-white text-sm font-medium hover:opacity-90 active:opacity-90"
-          >
-            このスレッドを削除する
-          </button>
-        </form>
       </section>
     </div>
   );

@@ -182,66 +182,6 @@ export async function updateThread(formData: FormData) {
   redirect(`/board/${slug}/${threadId}`);
 }
 
-// =======================================
-// 自分のスレッドを削除
-// =======================================
-const DeleteSchema = z.object({
-  thread_id: z.string().uuid(),
-  slug: z.string(),
-  confirm: z.literal("on", {
-    message: "削除を確定するチェックを入れてください",
-  }),
-});
-
-export async function deleteThread(formData: FormData) {
-  const slug = String(formData.get("slug") ?? "");
-  const threadId = String(formData.get("thread_id") ?? "");
-
-  const parsed = DeleteSchema.safeParse({
-    thread_id: threadId,
-    slug,
-    confirm: formData.get("confirm"),
-  });
-  if (!parsed.success) {
-    redirect(
-      `/board/${slug}/${threadId}/edit?error=${encodeURIComponent(parsed.error.issues[0]?.message ?? "削除確認が必要です")}`,
-    );
-  }
-
-  const { supabase, user } = await requireSession();
-
-  // 削除前にメディアを取得して Storage からも消す
-  const { data: t } = await supabase
-    .from("threads")
-    .select("media, user_id")
-    .eq("id", threadId)
-    .maybeSingle();
-  if (!t || t.user_id !== user.id) {
-    redirect(
-      `/board/${slug}/${threadId}/edit?error=${encodeURIComponent("削除権限がありません")}`,
-    );
-  }
-  const mediaPaths = ((t.media as MediaItem[] | null) ?? []).map((m) => m.path);
-
-  // RLS で本人のみ削除可、cascade で replies / likes / reports / message_attachments も連鎖
-  const { error } = await supabase
-    .from("threads")
-    .delete()
-    .eq("id", threadId)
-    .eq("user_id", user.id);
-
-  if (error) {
-    console.error("[deleteThread] failed:", error.message);
-    redirect(
-      `/board/${slug}/${threadId}/edit?error=${encodeURIComponent("削除に失敗しました")}`,
-    );
-  }
-
-  // Storage の画像も削除
-  if (mediaPaths.length > 0) {
-    await supabase.storage.from("post-media").remove(mediaPaths);
-  }
-
-  revalidatePath(`/board/${slug}`);
-  redirect(`/board/${slug}?deleted=1`);
-}
+// スレッド削除は運営のみ可能とする方針に変更（2026-04-26）。
+// 投稿者本人の削除はサポート（support@1968.love）で受け付け、
+// 運営が /admin/reports や /board/[slug]/[thread] の運営ツールバーから削除する。
