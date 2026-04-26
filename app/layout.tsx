@@ -4,6 +4,7 @@ import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentRank } from "@/lib/auth/current-rank";
 import { MembershipBadge } from "@/components/membership-badge";
+import { MobileTabBar } from "@/components/mobile-tab-bar";
 import type { Rank } from "@/lib/auth/permissions";
 import "./globals.css";
 
@@ -69,8 +70,10 @@ export default async function RootLayout({
       </head>
       <body className="min-h-dvh flex flex-col">
         <SiteHeader rank={rank} userId={userId} nickname={nickname} />
-        <main className="flex-1 w-full">{children}</main>
+        {/* モバイル時はタブバー分の下部余白を確保 */}
+        <main className="flex-1 w-full pb-20 md:pb-0">{children}</main>
         <SiteFooter />
+        <MobileTabBar />
       </body>
     </html>
   );
