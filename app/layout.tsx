@@ -30,46 +30,20 @@ export const metadata: Metadata = {
     template: "%s | 1968",
   },
   description:
-    "1968年（昭和43年）生まれだけが参加できる、同い年の会員制コミュニティ。介護・夫婦・健康・お金など、人には聞きにくい話題を本音で語り合える場。アニメ・歌謡曲・駄菓子の懐かしい思い出から、暮らし・家族の今まで全12カテゴリ。",
-  applicationName: "1968",
-  authors: [{ name: "油谷和好", url: "https://1968.love" }],
-  creator: "油谷和好",
-  publisher: "1968",
-  keywords: [
-    "1968年生まれ",
-    "昭和43年生まれ",
-    "同年代コミュニティ",
-    "50代",
-    "シニアSNS",
-    "1968",
-  ],
+    "1968年（昭和43年）生まれだけが参加できる、同い年の会員制コミュニティ。介護・夫婦・健康・お金など、人には聞きにくい話題を本音で語り合える場。",
   metadataBase: new URL("https://1968.love"),
-  alternates: { canonical: "https://1968.love" },
   openGraph: {
     title: "1968 | 1968年生まれ限定コミュニティ",
     description:
-      "同い年だけが集まる安心感と希少性を軸に、本音で話せる会員制コミュニティ。ベータテスター30名募集中、正会員プラン1年無料。",
+      "同い年だけが集まる安心感と希少性を軸に、本音で話せる会員制コミュニティ。",
     url: "https://1968.love",
     siteName: "1968",
     locale: "ja_JP",
     type: "website",
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "1968 | 1968年生まれ限定コミュニティ",
-    description:
-      "1968年（昭和43年）生まれだけの会員制コミュニティ。ベータテスター30名募集中。",
-  },
   robots: {
     index: true,
     follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-      "max-video-preview": -1,
-    },
   },
 };
 
@@ -122,58 +96,6 @@ export default async function RootLayout({
         />
       </head>
       <body className="min-h-dvh flex flex-col">
-        {/* JSON-LD 構造化データ、AEO・SEO 用 */}
-        {/* Organization と WebSite を root layout に置くことで全ページに継承させる */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@graph": [
-                {
-                  "@type": "Organization",
-                  "@id": "https://1968.love/#organization",
-                  name: "1968",
-                  alternateName: "1968年生まれ限定コミュニティ",
-                  url: "https://1968.love",
-                  logo: "https://1968.love/icon.png",
-                  founder: {
-                    "@type": "Person",
-                    name: "油谷和好",
-                  },
-                  email: "support@1968.love",
-                  description:
-                    "1968年（昭和43年）生まれの人だけが参加できる、同い年の会員制オンラインコミュニティ。",
-                  address: {
-                    "@type": "PostalAddress",
-                    streetAddress: "南船場3丁目2番22号おおきに南船場ビル205",
-                    addressLocality: "大阪市中央区",
-                    addressRegion: "大阪府",
-                    postalCode: "542-0081",
-                    addressCountry: "JP",
-                  },
-                  contactPoint: {
-                    "@type": "ContactPoint",
-                    contactType: "customer support",
-                    email: "support@1968.love",
-                    areaServed: "JP",
-                    availableLanguage: ["Japanese"],
-                  },
-                },
-                {
-                  "@type": "WebSite",
-                  "@id": "https://1968.love/#website",
-                  url: "https://1968.love",
-                  name: "1968",
-                  description:
-                    "1968年生まれだけが参加できる会員制コミュニティ。",
-                  publisher: { "@id": "https://1968.love/#organization" },
-                  inLanguage: "ja-JP",
-                },
-              ],
-            }),
-          }}
-        />
         <Suspense fallback={null}>
           <NavProgress />
         </Suspense>

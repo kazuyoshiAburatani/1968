@@ -45,68 +45,8 @@ export default async function BetaPage({ searchParams }: Props) {
     );
   }
 
-  // FAQ の JSON-LD、ReactNode を含むため文字列化用に q/a 文字列のみ抽出
-  const faqJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        q: "本当に無料ですか？",
-        a: "ベータ期間中、および正式公開後12ヶ月、正会員プランを無料でご利用いただけます。クレジットカードの登録も不要です。期間終了後、継続するかは自由にお選びいただけます。",
-      },
-      {
-        q: "1968年生まれかどうかは、どう確認するのですか？",
-        a: "会員登録時にご記入いただく生年月日に加え、サービス内で身分証（マイナンバーカード・運転免許証・パスポート・健康保険証のいずれか）の画像を提出いただきます。画像は確認後30日以内に完全削除されます。",
-      },
-      {
-        q: "顔出しや本名は必要ですか？",
-        a: "必要ありません。プロフィールはニックネーム制で、写真も任意です。",
-      },
-      {
-        q: "パソコンに詳しくないのですが、使えますか？",
-        a: "スマートフォンで操作できます。文字も大きく、画面も分かりやすく作っています。",
-      },
-      {
-        q: "応募を取り下げたい場合は？",
-        a: "support@1968.love までお気軽にご連絡ください。",
-      },
-      {
-        q: "1968年以外の生まれですが、家族のために応募できますか？",
-        a: "申し訳ございません、本サービスはご本人が1968年生まれの方のみご利用いただけます。代理での申し込みはご遠慮ください。",
-      },
-      {
-        q: "応募すれば必ず参加できますか？",
-        a: "ベータ期間中は人数を絞ってご招待しています。お申し込みの順序や、活動内容を拝見して順次ご案内します。あらかじめご了承ください。",
-      },
-    ].map(({ q, a }) => ({
-      "@type": "Question",
-      name: q,
-      acceptedAnswer: { "@type": "Answer", text: a },
-    })),
-  };
-
-  const webPageJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    name: "1968 ベータテスター30名募集",
-    description:
-      "1968年生まれ限定コミュニティ「1968」のベータテスター30名を募集中。正会員プラン1年無料。",
-    url: "https://1968.love/beta",
-    inLanguage: "ja-JP",
-    isPartOf: { "@id": "https://1968.love/#website" },
-    about: { "@id": "https://1968.love/#organization" },
-  };
-
   return (
     <div className="bg-background text-foreground">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
       {/* ヒーロー */}
       <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden px-4 py-16 sm:py-20">
         <div className="relative z-10 text-center max-w-4xl mx-auto">
