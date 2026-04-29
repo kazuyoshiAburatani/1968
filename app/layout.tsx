@@ -8,6 +8,7 @@ import Link from "next/link";
 export const preferredRegion = ["hnd1"];
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Suspense } from "react";
+import { Analytics } from "@/components/analytics";
 import { MembershipBadge } from "@/components/membership-badge";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { NavProgress } from "@/components/nav-progress";
@@ -188,6 +189,7 @@ export default async function RootLayout({
         <main className="flex-1 w-full pb-20 md:pb-0">{children}</main>
         <SiteFooter />
         <MobileTabBar unreadCount={unreadCount} />
+        <Analytics />
       </body>
     </html>
   );
