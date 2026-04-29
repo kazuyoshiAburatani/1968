@@ -26,6 +26,8 @@
        内部の長文 URL や JSON、横長の画像が画面幅を超えても、ページ全体は揺れない。 */
     overflow-x: hidden;
     max-width: 100vw;
+    /* アンカーリンクのスムーズスクロール、/beta の「応募フォームへ →」のような遷移が滑らかに */
+    scroll-behavior: smooth;
   }
 
   body {
