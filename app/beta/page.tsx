@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { SubmitButton } from "@/components/submit-button";
-import { PREFECTURES } from "@/lib/prefectures";
+import { BetaApplicationForm } from "@/components/beta/beta-application-form";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { submitBetaApplication } from "./actions";
 
 export const metadata: Metadata = {
@@ -10,12 +10,24 @@ export const metadata: Metadata = {
     "1968 ベータ版にご参加いただける方を募集しています。1968年生まれ限定の会員制コミュニティを、一緒に育てていただけませんか。",
 };
 
+// ベータ募集枠、応募の進捗をリアルタイムに見せて緊急感を出す
+const BETA_SLOTS = 30;
+
 type Props = {
   searchParams: Promise<{ submitted?: string; error?: string }>;
 };
 
 export default async function BetaPage({ searchParams }: Props) {
   const { submitted, error } = await searchParams;
+
+  // 既存応募数を取得し、残席数を表示する
+  const sb = getSupabaseAdminClient();
+  const { count } = await sb
+    .from("beta_applications")
+    .select("id", { count: "exact", head: true });
+  const applied = count ?? 0;
+  const remaining = Math.max(0, BETA_SLOTS - applied);
+  const isFull = remaining === 0;
 
   if (submitted) {
     return (
@@ -98,7 +110,7 @@ export default async function BetaPage({ searchParams }: Props) {
   };
 
   return (
-    <div className="bg-background text-foreground">
+    <div className="bg-background text-foreground pb-24 md:pb-0">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }}
@@ -107,16 +119,33 @@ export default async function BetaPage({ searchParams }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-      {/* ヒーロー */}
-      <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden px-4 py-16 sm:py-20">
+      {/* ヒーロー、Instagram in-app ブラウザでも収まるよう mobile は 60svh */}
+      <section className="relative min-h-[60svh] sm:min-h-[80vh] flex items-center justify-center overflow-hidden px-4 py-12 sm:py-20">
         <div className="relative z-10 text-center max-w-4xl mx-auto">
-          <p className="text-xs tracking-widest text-foreground/60 uppercase mb-4">
-            Beta Tester Recruiting
-          </p>
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold mb-6 leading-tight">
+          {/* 残席カウンタ、緊急感を生むファーストインプレッション */}
+          <div className="inline-flex items-center gap-2 mb-5 px-4 py-2 rounded-full border-2 border-primary/40 bg-primary/5">
+            <span
+              className={`size-2.5 rounded-full ${isFull ? "bg-foreground/40" : "bg-primary animate-pulse"}`}
+              aria-hidden
+            />
+            <span className="text-sm sm:text-base font-bold text-primary">
+              {isFull ? (
+                <>募集終了</>
+              ) : (
+                <>
+                  残り <span className="text-xl sm:text-2xl">{remaining}</span> 名
+                  <span className="text-foreground/60 font-normal">
+                    {" "}
+                    / 全 {BETA_SLOTS} 名
+                  </span>
+                </>
+              )}
+            </span>
+          </div>
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold mb-5 sm:mb-6 leading-tight">
             昭和43年生まれだけの、
             <br />
-            <span className="text-primary">ベータテスター30名募集中</span>
+            <span className="text-primary">ベータテスター募集</span>
           </h1>
           <p className="text-base sm:text-xl md:text-2xl mb-8 text-foreground/80 leading-relaxed">
             正会員プラン（通常 月480円）を、
@@ -124,25 +153,26 @@ export default async function BetaPage({ searchParams }: Props) {
             <span className="font-bold text-primary">1年間無料</span>
             でご利用いただけます。
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
             <a
               href="#application-form"
               className="inline-flex items-center justify-center bg-primary text-white px-8 py-4 rounded-full text-lg font-bold hover:opacity-90 active:opacity-90 transition-opacity min-w-[240px] no-underline"
+              aria-label="応募フォームへ移動"
             >
-              応募フォームへ →
+              {isFull ? "応募状況を見る" : "応募フォームへ →"}
             </a>
-            <Link
-              href="/"
-              className="inline-flex items-center justify-center border-2 border-primary text-primary bg-background px-8 py-3.5 rounded-full text-lg font-bold hover:bg-primary hover:text-white active:opacity-90 transition-colors min-w-[240px] no-underline"
+            <a
+              href="#about"
+              className="inline-flex items-center justify-center text-primary text-base font-medium underline underline-offset-4 px-4 py-2"
             >
-              サービスを見る
-            </Link>
+              ↓ ベータの特典・流れを見る
+            </a>
           </div>
         </div>
       </section>
 
       {/* 1968 とは */}
-      <section className="py-16 px-4">
+      <section id="about" className="py-16 px-4 scroll-mt-4">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-12">
             1968 とは
@@ -281,9 +311,14 @@ export default async function BetaPage({ searchParams }: Props) {
       {/* 応募フォーム */}
       <section className="py-16 px-4 scroll-mt-4" id="application-form">
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-4">
             応募フォーム
           </h2>
+          {!isFull && (
+            <p className="text-center text-sm text-foreground/70 mb-8">
+              所要 1〜2 分・全 2 ステップ
+            </p>
+          )}
 
           {error && (
             <div className="mb-6 rounded-lg border border-red-700/50 bg-red-50 p-4 text-sm text-red-900">
@@ -291,170 +326,22 @@ export default async function BetaPage({ searchParams }: Props) {
             </div>
           )}
 
-          <form
-            action={submitBetaApplication}
-            className="bg-background p-6 sm:p-8 rounded-2xl shadow-sm border border-border space-y-6"
-          >
-            {/* honeypot */}
-            <input
-              type="text"
-              name="website"
-              autoComplete="off"
-              tabIndex={-1}
-              aria-hidden="true"
-              className="absolute -left-[9999px] top-auto h-px w-px overflow-hidden"
-            />
-
-            <div>
-              <label className="block text-base sm:text-lg font-bold mb-2">
-                お名前 <span className="text-red-700">*</span>
-              </label>
-              <p className="text-xs text-foreground/60 mb-2">
-                本名でなくてもかまいません
+          {isFull ? (
+            <div className="rounded-2xl border border-border bg-muted/30 p-8 text-center">
+              <p className="text-lg font-bold mb-2">
+                ベータ募集は定員に達しました
               </p>
-              <input
-                type="text"
-                name="name"
-                required
-                maxLength={60}
-                className="w-full p-3 sm:p-4 border border-border rounded-lg text-base sm:text-lg bg-background"
-                placeholder="例、油谷 和好"
-              />
-            </div>
-
-            <div>
-              <label className="block text-base sm:text-lg font-bold mb-2">
-                メールアドレス <span className="text-red-700">*</span>
-              </label>
-              <p className="text-xs text-foreground/60 mb-2">
-                ご連絡先として使用します
+              <p className="text-sm text-foreground/70">
+                次回募集のご案内をご希望の方は、
+                <a href="mailto:support@1968.love" className="underline">
+                  support@1968.love
+                </a>
+                までお問い合わせください。
               </p>
-              <input
-                type="email"
-                name="email"
-                required
-                autoComplete="email"
-                className="w-full p-3 sm:p-4 border border-border rounded-lg text-base sm:text-lg bg-background"
-                placeholder="example@example.com"
-              />
             </div>
-
-            <div>
-              <label className="block text-base sm:text-lg font-bold mb-2">
-                生年月日 <span className="text-red-700">*</span>
-              </label>
-              <p className="text-xs text-foreground/60 mb-2">
-                1968 年生まれの方のみご応募いただけます
-              </p>
-              <div className="flex gap-2 sm:gap-3">
-                <input
-                  type="text"
-                  value="1968年"
-                  className="p-3 sm:p-4 border border-border rounded-lg text-base sm:text-lg bg-muted/40 w-24 sm:w-28 text-center"
-                  readOnly
-                />
-                <select
-                  name="birth_month"
-                  required
-                  defaultValue=""
-                  className="flex-1 p-3 sm:p-4 border border-border rounded-lg text-base sm:text-lg bg-background"
-                >
-                  <option value="" disabled>月を選択</option>
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                    <option key={m} value={m}>
-                      {m}月
-                    </option>
-                  ))}
-                </select>
-                <select
-                  name="birth_day"
-                  required
-                  defaultValue=""
-                  className="flex-1 p-3 sm:p-4 border border-border rounded-lg text-base sm:text-lg bg-background"
-                >
-                  <option value="" disabled>日を選択</option>
-                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                    <option key={d} value={d}>
-                      {d}日
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-base sm:text-lg font-bold mb-2">
-                都道府県（任意）
-              </label>
-              <select
-                name="prefecture"
-                defaultValue=""
-                className="w-full p-3 sm:p-4 border border-border rounded-lg text-base sm:text-lg bg-background"
-              >
-                <option value="">選択しない</option>
-                {PREFECTURES.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-base sm:text-lg font-bold mb-2">
-                SNS アカウントなど（任意）
-              </label>
-              <p className="text-xs text-foreground/60 mb-2">
-                本人確認の参考にさせていただきます
-              </p>
-              <input
-                type="text"
-                name="sns_handle"
-                maxLength={100}
-                className="w-full p-3 sm:p-4 border border-border rounded-lg text-base sm:text-lg bg-background"
-                placeholder="例、X @username、Instagram @username"
-              />
-            </div>
-
-            <div>
-              <label className="block text-base sm:text-lg font-bold mb-2">
-                応募動機（任意・800 字以内）
-              </label>
-              <textarea
-                name="motivation"
-                rows={5}
-                maxLength={800}
-                className="w-full p-3 sm:p-4 border border-border rounded-lg text-base sm:text-lg h-32 resize-none bg-background"
-                placeholder="1968 年生まれの仲間と交流したい理由や、サービスに期待することをお聞かせください。"
-              />
-            </div>
-
-            <label className="flex items-start gap-3 text-sm">
-              <input
-                type="checkbox"
-                name="agree_terms"
-                required
-                className="mt-1 size-5"
-              />
-              <span>
-                <Link href="/terms" className="underline" target="_blank">
-                  利用規約
-                </Link>
-                および{" "}
-                <Link href="/privacy" className="underline" target="_blank">
-                  プライバシーポリシー
-                </Link>
-                に同意します
-              </span>
-            </label>
-
-            <SubmitButton
-              className="w-full py-4 text-lg sm:text-xl"
-              pendingText="送信中…"
-            >
-              応募する
-            </SubmitButton>
-          </form>
+          ) : (
+            <BetaApplicationForm action={submitBetaApplication} />
+          )}
         </div>
       </section>
 
@@ -526,6 +413,18 @@ export default async function BetaPage({ searchParams }: Props) {
           </div>
         </div>
       </section>
+
+      {/* モバイル sticky CTA、リール流入のスクロール離脱防止 */}
+      {!isFull && (
+        <div className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <a
+            href="#application-form"
+            className="block w-full text-center bg-primary text-white py-3.5 rounded-full text-base font-bold no-underline active:opacity-90"
+          >
+            応募する（残り {remaining} 名）→
+          </a>
+        </div>
+      )}
     </div>
   );
 }
