@@ -22,24 +22,10 @@ export function getStripe(): Stripe {
   return stripeClient;
 }
 
-// Price ID を env から取り出す、サブスク作成時に plan_type と対応付けて使う
-export function getStripePriceIds(): { monthly: string; yearly: string } {
-  const monthly = process.env.STRIPE_PRICE_MONTHLY;
-  const yearly = process.env.STRIPE_PRICE_YEARLY;
-  if (!monthly || !yearly) {
-    throw new Error(
-      "STRIPE_PRICE_MONTHLY と STRIPE_PRICE_YEARLY を設定してください",
-    );
-  }
-  return { monthly, yearly };
-}
+// 応援団の支払い金額（円）。年次サポーターは一回 3000 円固定。
+// 価格を Stripe ダッシュボードで Price として作るのではなく、
+// price_data でその場生成するのでシンプル。
+export const SUPPORTER_AMOUNT_YEN = 3000;
 
-// Price ID から plan_type 文字列（DB の check 制約に合うもの）に変換
-export function priceIdToPlanType(
-  priceId: string,
-): "regular_monthly" | "regular_yearly" | null {
-  const { monthly, yearly } = getStripePriceIds();
-  if (priceId === monthly) return "regular_monthly";
-  if (priceId === yearly) return "regular_yearly";
-  return null;
-}
+// 旧課金プラン用の Price ID 取得は廃止。過去ログ閲覧のためだけ残し、
+// 新規 checkout からは呼び出さない。

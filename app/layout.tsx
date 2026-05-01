@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "1968 | 1968年生まれ限定コミュニティ",
     description:
-      "同い年だけが集まる安心感と希少性を軸に、本音で話せる会員制コミュニティ。ベータテスター30名募集中、正会員プラン1年無料。",
+      "同い年だけが集まる安心感と希少性を軸に、本音で話せる会員制コミュニティ。完全無料、ベータテスター30名募集中。創設メンバーには 8 つの永久特典。",
     url: "https://1968.love",
     siteName: "1968",
     locale: "ja_JP",
@@ -94,6 +94,8 @@ export default async function RootLayout({
   let nickname: string | null = null;
   let avatarUrl: string | null = null;
   let isAdmin = false;
+  let isFoundingMember = false;
+  let isCurrentSupporter = false;
   let unreadCount = 0;
 
   if (userId) {
@@ -104,12 +106,16 @@ export default async function RootLayout({
         nickname: string | null;
         avatar_url: string | null;
         is_admin: boolean;
+        is_founding_member: boolean;
+        is_supporter: boolean;
         unread_count: number;
       }>();
     rank = ((data?.membership_rank as Rank | undefined) ?? "member") as Rank;
     nickname = data?.nickname ?? null;
     avatarUrl = publicAvatarUrl(data?.avatar_url ?? null);
     isAdmin = data?.is_admin === true;
+    isFoundingMember = data?.is_founding_member === true;
+    isCurrentSupporter = data?.is_supporter === true;
     unreadCount = Number(data?.unread_count ?? 0);
   }
 
@@ -184,6 +190,8 @@ export default async function RootLayout({
           nickname={nickname}
           avatarUrl={avatarUrl}
           isAdmin={isAdmin}
+          isFoundingMember={isFoundingMember}
+          isCurrentSupporter={isCurrentSupporter}
         />
         {/* モバイル時はタブバー分の下部余白を確保 */}
         <main className="flex-1 w-full pb-20 md:pb-0">{children}</main>
@@ -201,12 +209,16 @@ function SiteHeader({
   nickname,
   avatarUrl,
   isAdmin,
+  isFoundingMember,
+  isCurrentSupporter,
 }: {
   rank: Rank;
   userId: string | null;
   nickname: string | null;
   avatarUrl: string | null;
   isAdmin: boolean;
+  isFoundingMember: boolean;
+  isCurrentSupporter: boolean;
 }) {
   return (
     <header className="border-b border-border bg-background">
@@ -251,7 +263,11 @@ function SiteHeader({
                 avatarUrl={avatarUrl}
                 size={32}
               />
-              <MembershipBadge rank={rank} />
+              <MembershipBadge
+                rank={rank}
+                isFoundingMember={isFoundingMember}
+                isCurrentSupporter={isCurrentSupporter}
+              />
               <span className="font-medium text-foreground max-w-[6rem] truncate hidden sm:inline">
                 {nickname ?? "マイページ"}
               </span>

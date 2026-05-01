@@ -43,7 +43,7 @@ export default async function HomePage({ searchParams }: Props) {
     .maybeSingle();
   const nickname = (profile?.nickname as string | undefined) ?? "会員";
 
-  if (rank === "regular") {
+  if (rank === "verified") {
     return <HomeRegular nickname={nickname} userId={userId} />;
   }
   return <HomeMember nickname={nickname} userId={userId} />;

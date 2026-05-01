@@ -106,7 +106,7 @@ export default async function BoardPage() {
           {rank === "guest" &&
             "今は 4 カテゴリをご覧いただけます。会員登録で 8 カテゴリに広がります。"}
           {rank === "member" && "8 カテゴリを閲覧、段階A に投稿できます。"}
-          {rank === "regular" && "全カテゴリを自由に語れます。"}
+          {rank === "verified" && "全カテゴリを自由に語れます。"}
         </p>
       </header>
 

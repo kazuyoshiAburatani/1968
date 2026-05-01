@@ -1,11 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getStripe, getStripePriceIds } from "@/lib/stripe/server";
+import { getStripe, SUPPORTER_AMOUNT_YEN } from "@/lib/stripe/server";
 import { getSiteUrl } from "@/lib/site-url";
 
-// Stripe Checkout Session を作成して、Stripe 決済画面にリダイレクトするための URL を返す。
-// 呼び出し側、<form method="post" action="/api/stripe/checkout?plan=monthly">。
-export async function POST(request: NextRequest) {
+// 応援団（年次サポーター）一回 3,000 円の Stripe Checkout を生成する。
+// 完全無料化以降は subscription を作らず、payment mode の一回払いに統一。
+//
+// 呼び出し側、<form method="post" action="/api/stripe/checkout">。
+// 旧 ?plan=monthly|yearly のクエリは無視される。
+export async function POST(_request: NextRequest) {
   const site = getSiteUrl();
 
   const supabase = await createSupabaseServerClient();
@@ -16,18 +19,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", site), { status: 303 });
   }
 
-  // プラン判定
-  const url = new URL(request.url);
-  const plan = url.searchParams.get("plan");
-  const prices = getStripePriceIds();
-  let priceId: string;
-  if (plan === "yearly") {
-    priceId = prices.yearly;
-  } else {
-    priceId = prices.monthly;
-  }
+  // Tokyo timezone での「今年」を計算、Webhook 側でこの year に紐づけて supporters に挿入する
+  const tokyoYear = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }),
+  ).getFullYear();
 
-  // 既存の stripe_customer_id があれば使い回す、無ければ作成
+  // 既存の stripe_customer_id があれば使い回す
   const { data: dbUser } = await supabase
     .from("users")
     .select("email, stripe_customer_id")
@@ -42,28 +39,41 @@ export async function POST(request: NextRequest) {
       metadata: { user_id: user.id },
     });
     customerId = customer.id;
-    // 後続のアクセスを減らすため、ここで保存。RLS で UPDATE 拒否されるので service_role は使わず、
-    // Webhook 側でも上書き保存するが、ここでも insert 相当。
-    // 現状 users は service_role のみ更新可能なので、Webhook 経由に寄せる方が安全。
-    // ただし Customer 作成直後の情報は Webhook に流れないため、
-    // ここで RPC か service_role で書き込む設計が理想。フェーズ4 MVP では Webhook にも id を
-    // メタデータ経由で渡してそこから保存する。
   }
 
   const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
+    mode: "payment",
     customer: customerId,
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${site}/mypage?stripe=success`,
+    line_items: [
+      {
+        price_data: {
+          currency: "jpy",
+          unit_amount: SUPPORTER_AMOUNT_YEN,
+          product_data: {
+            name: `1968 ${tokyoYear} 応援団`,
+            description:
+              "1968 を応援する任意のご支援です。ご支援いただいた方には、その年限定の「応援団」の称号と、応援団ラウンジへのアクセス権が付与されます。",
+          },
+        },
+        quantity: 1,
+      },
+    ],
+    success_url: `${site}/mypage?stripe=supporter_success`,
     cancel_url: `${site}/mypage?stripe=canceled`,
     allow_promotion_codes: false,
-    subscription_data: {
+    payment_intent_data: {
       metadata: {
         user_id: user.id,
+        supporter_year: String(tokyoYear),
+        purpose: "supporter",
       },
     },
     client_reference_id: user.id,
-    // 支払い方法は Stripe ダッシュボードで有効化したものすべて
+    metadata: {
+      user_id: user.id,
+      supporter_year: String(tokyoYear),
+      purpose: "supporter",
+    },
   });
 
   if (!session.url) {

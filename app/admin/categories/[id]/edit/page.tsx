@@ -57,8 +57,8 @@ export default async function EditCategoryPage({
           access_level_view: cat.access_level_view as
             | "guest"
             | "member"
-            | "regular",
-          access_level_post: cat.access_level_post as "member" | "regular",
+            | "verified",
+          access_level_post: cat.access_level_post as "member" | "verified",
           posting_limit_per_day:
             (cat.posting_limit_per_day as number | null) ?? null,
           requires_tenure_months: cat.requires_tenure_months as number,

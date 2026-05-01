@@ -5,54 +5,54 @@ import { MembershipBadge } from "@/components/membership-badge";
 import { SubmitButton } from "@/components/submit-button";
 import { UserAvatar } from "@/components/user-avatar";
 import { AvatarUploader } from "@/components/avatar-uploader";
-import { DOCUMENT_TYPE_LABELS } from "@/lib/validation/verification";
 import { publicAvatarUrl } from "@/lib/avatar";
 
 export const metadata: Metadata = {
   title: "マイページ",
 };
 
-type Rank = "guest" | "member" | "regular";
-
-type Subscription = {
-  stripe_subscription_id: string;
-  plan_type: "regular_monthly" | "regular_yearly";
-  status: string;
-  current_period_end: string | null;
-  cancel_at_period_end: boolean;
-};
+type Rank = "guest" | "member" | "verified";
 
 type Verification = {
-  document_type: keyof typeof DOCUMENT_TYPE_LABELS;
+  document_type:
+    | "self_declaration"
+    | "mynumber"
+    | "health_insurance"
+    | "driver_license"
+    | "passport";
   status: "pending" | "approved" | "rejected";
   rejection_reason: string | null;
   submitted_at: string;
   verified_at: string | null;
 };
 
+type SupporterRow = {
+  year: number;
+  paid_at: string;
+  granted_by: "paid" | "founding_grant" | "admin_grant";
+};
+
 type Props = {
   searchParams: Promise<{
     saved?: string;
     stripe?: string;
-    portal?: string;
     error?: string;
   }>;
 };
 
-const PLAN_LABEL: Record<Subscription["plan_type"], string> = {
-  regular_monthly: "月額 480円",
-  regular_yearly: "年額 4,800円",
-};
-
-const ACTIVE_SUB_STATUSES = new Set(["active", "trialing"]);
+const CURRENT_YEAR_TOKYO = new Date(
+  new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }),
+).getFullYear();
 
 export default async function MyPage({ searchParams }: Props) {
   const { supabase, user } = await requireSession();
-  const { saved, stripe, portal, error } = await searchParams;
+  const { saved, stripe, error } = await searchParams;
 
   const { data: publicUser } = await supabase
     .from("users")
-    .select("email, membership_rank, status, stripe_customer_id, verified, created_at")
+    .select(
+      "email, membership_rank, status, verified, is_founding_member, founding_member_since, created_at",
+    )
     .eq("id", user.id)
     .maybeSingle();
 
@@ -65,17 +65,6 @@ export default async function MyPage({ searchParams }: Props) {
     (profile?.avatar_url as string | null | undefined) ?? null,
   );
 
-  const { data: subData } = await supabase
-    .from("subscriptions")
-    .select(
-      "stripe_subscription_id, plan_type, status, current_period_end, cancel_at_period_end",
-    )
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const subscription = subData as Subscription | null;
-
   const { data: verData } = await supabase
     .from("verifications")
     .select(
@@ -87,18 +76,32 @@ export default async function MyPage({ searchParams }: Props) {
     .maybeSingle();
   const verification = verData as Verification | null;
 
+  const { data: supRows } = await supabase
+    .from("supporters")
+    .select("year, paid_at, granted_by")
+    .eq("user_id", user.id)
+    .order("year", { ascending: false });
+  const supporters = (supRows ?? []) as SupporterRow[];
+  const isCurrentSupporter = supporters.some(
+    (s) => s.year === CURRENT_YEAR_TOKYO,
+  );
+
   const verified = publicUser?.verified === true;
   const rank = (publicUser?.membership_rank ?? "guest") as Rank;
-  const hasActiveSub = !!subscription && ACTIVE_SUB_STATUSES.has(subscription.status);
+  const isFoundingMember = publicUser?.is_founding_member === true;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
-      <header className="flex items-center justify-between gap-3">
+      <header className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-2xl font-bold">マイページ</h1>
-        <MembershipBadge rank={rank} verified={verified} />
+        <MembershipBadge
+          rank={rank}
+          isFoundingMember={isFoundingMember}
+          isCurrentSupporter={isCurrentSupporter}
+        />
       </header>
 
-      {/* プロフィール写真、大きく表示＋直接アップロード */}
+      {/* プロフィール写真 */}
       <section className="mt-6 rounded-2xl border border-border bg-background p-5">
         <div className="flex items-center gap-4">
           <UserAvatar
@@ -140,9 +143,9 @@ export default async function MyPage({ searchParams }: Props) {
               : "プロフィールを保存しました。"}
         </div>
       )}
-      {stripe === "success" && (
-        <div className="mt-4 rounded-lg border border-primary/40 bg-muted/40 p-3 text-sm">
-          ご決済を受け付けました。あとは身分証の確認が完了次第、正会員機能が利用できるようになります。
+      {stripe === "supporter_success" && (
+        <div className="mt-4 rounded-lg border border-rose-300 bg-rose-50 p-3 text-sm text-rose-900">
+          ご支援、誠にありがとうございます。{CURRENT_YEAR_TOKYO} 応援団の称号が付与されました。
         </div>
       )}
       {stripe === "canceled" && (
@@ -150,162 +153,147 @@ export default async function MyPage({ searchParams }: Props) {
           決済をキャンセルしました。気が向いたときにまたどうぞ。
         </div>
       )}
-      {portal === "nocustomer" && (
-        <div className="mt-4 rounded-lg border border-border bg-muted/30 p-3 text-sm">
-          まだ決済情報が登録されていません。正会員になると管理画面が利用できます。
-        </div>
-      )}
 
-      {/* 正会員に必要なステップ案内、片方でも未完了の場合に表示 */}
-      {(rank !== "regular") && (
-        <section className="mt-8 rounded-lg border border-border bg-muted/30 p-5">
-          <h2 className="font-bold">正会員になるまでのステップ</h2>
-          <p className="mt-2 text-sm text-foreground/80">
-            「お支払い」と「ご本人確認」の両方が完了すると、全12カテゴリを自由に閲覧・投稿できます。
-          </p>
-
-          <ol className="mt-4 space-y-4">
-            {/* ステップ 1、お支払い */}
-            <li className="flex items-start gap-3">
-              <span
-                className={`mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                  hasActiveSub
-                    ? "bg-primary/20 text-primary"
-                    : "bg-muted text-foreground/60"
-                }`}
-                aria-hidden
+      {/* 1968 認証ステータス */}
+      <section className="mt-8 rounded-2xl border border-border bg-background p-5">
+        <h2 className="font-bold flex items-center gap-2">
+          <i className="ri-shield-check-line text-xl text-primary" aria-hidden />
+          1968 認証
+        </h2>
+        {verified ? (
+          <div className="mt-3 text-sm">
+            <p className="text-emerald-800 font-medium">
+              ✓ 1968 認証済（{verification?.verified_at &&
+                new Date(verification.verified_at).toLocaleDateString("ja-JP")}）
+            </p>
+            <p className="mt-2 text-foreground/70">
+              全カテゴリの閲覧・投稿、ダイレクトメッセージ、オフ会への参加ができます。
+            </p>
+          </div>
+        ) : verification?.status === "pending" ? (
+          <div className="mt-3 text-sm">
+            <p className="text-amber-900 font-medium">審査中です</p>
+            <p className="mt-1 text-foreground/70">
+              通常 1〜3 営業日以内に運営から結果のご連絡をお送りします。
+            </p>
+          </div>
+        ) : verification?.status === "rejected" ? (
+          <div className="mt-3 text-sm">
+            <p className="text-red-900 font-medium">
+              却下されました
+              {verification.rejection_reason
+                ? `、${verification.rejection_reason}`
+                : ""}
+            </p>
+            <p className="mt-3">
+              <Link
+                href="/mypage/verification"
+                className="inline-flex items-center min-h-[var(--spacing-tap)] px-4 rounded-full border border-border no-underline hover:bg-muted text-sm"
               >
-                {hasActiveSub ? "✓" : "1"}
-              </span>
-              <div className="flex-1">
-                <p className="font-medium">月額または年額のお支払い</p>
-                {hasActiveSub ? (
-                  <p className="mt-1 text-xs text-foreground/70">
-                    {subscription && PLAN_LABEL[subscription.plan_type]} で登録済み
-                  </p>
-                ) : (
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <form action="/api/stripe/checkout?plan=monthly" method="post">
-                      <SubmitButton className="w-full" pendingText="決済画面へ…">
-                        月額 480円で始める
-                      </SubmitButton>
-                    </form>
-                    <form action="/api/stripe/checkout?plan=yearly" method="post">
-                      <SubmitButton
-                        variant="outline"
-                        className="w-full"
-                        pendingText="決済画面へ…"
-                      >
-                        年額 4,800円（2ヶ月分お得）
-                      </SubmitButton>
-                    </form>
-                  </div>
-                )}
-              </div>
-            </li>
-
-            {/* ステップ 2、ご本人確認 */}
-            <li className="flex items-start gap-3">
-              <span
-                className={`mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                  verified
-                    ? "bg-primary/20 text-primary"
-                    : verification?.status === "pending"
-                      ? "bg-amber-100 text-amber-900"
-                      : "bg-muted text-foreground/60"
-                }`}
-                aria-hidden
+                再申請する
+              </Link>
+            </p>
+          </div>
+        ) : (
+          <div className="mt-3 text-sm">
+            <p className="text-foreground/80 leading-7">
+              認証すると <strong>段階B 以降のカテゴリへの投稿</strong>、
+              <strong>段階C・D の閲覧</strong>、<strong>DM</strong>、
+              <strong>オフ会参加</strong> ができます。
+              5 分の誓約フォームのみ・身分証の画像提出は不要です。
+            </p>
+            <p className="mt-4">
+              <Link
+                href="/mypage/verification"
+                className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-5 rounded-full bg-primary text-white text-sm font-medium no-underline active:opacity-90"
               >
-                {verified ? "✓" : "2"}
-              </span>
-              <div className="flex-1">
-                <p className="font-medium">ご本人確認の書類提出</p>
-                {verified ? (
-                  <p className="mt-1 text-xs text-foreground/70">
-                    本人確認済み（{verification?.verified_at &&
-                      new Date(verification.verified_at).toLocaleDateString("ja-JP")}）
-                  </p>
-                ) : verification?.status === "pending" ? (
-                  <p className="mt-1 text-xs text-foreground/70">
-                    審査中、結果が出るまでしばらくお待ちください。
-                  </p>
-                ) : verification?.status === "rejected" ? (
-                  <div className="mt-1 text-xs">
-                    <p className="text-red-900">
-                      却下されました
-                      {verification.rejection_reason
-                        ? `、${verification.rejection_reason}`
-                        : ""}
-                    </p>
-                    <p className="mt-2">
-                      <Link
-                        href="/mypage/verification"
-                        className="inline-flex items-center min-h-[var(--spacing-tap)] px-4 rounded-full border border-border no-underline hover:bg-muted text-sm"
-                      >
-                        再提出する
-                      </Link>
-                    </p>
-                  </div>
-                ) : (
-                  <p className="mt-2">
-                    <Link
-                      href="/mypage/verification"
-                      className="inline-flex items-center min-h-[var(--spacing-tap)] px-5 rounded-full border border-border no-underline hover:bg-muted text-sm"
-                    >
-                      身分証を提出する
-                    </Link>
-                  </p>
-                )}
-              </div>
-            </li>
-          </ol>
+                1968 認証を受ける →
+              </Link>
+            </p>
+          </div>
+        )}
+      </section>
 
-          <p className="mt-5 text-xs text-foreground/60">
-            身分証は運営の確認担当者のみが閲覧します。承認・却下から30日後に自動で削除されます。
+      {/* 創設メンバー */}
+      {isFoundingMember && (
+        <section className="mt-6 rounded-2xl border border-amber-300 bg-amber-50 p-5">
+          <h2 className="font-bold text-amber-900 flex items-center gap-2">
+            <span className="text-xl" aria-hidden>
+              🎖
+            </span>
+            創設メンバーです
+          </h2>
+          <p className="mt-2 text-sm text-amber-900/90 leading-7">
+            ベータ期間からの応援、本当にありがとうございます。
+            {publicUser?.founding_member_since &&
+              `（${new Date(publicUser.founding_member_since).toLocaleDateString("ja-JP")} 〜）`}
+            創設メンバー専用ラウンジ・将来の書籍贈呈・新機能ファーストアクセス等の特典が永久に付帯します。
           </p>
         </section>
       )}
 
-      {/* 正会員、サブスク状態と管理ボタン */}
-      {rank === "regular" && subscription && (
-        <section className="mt-8 rounded-lg border border-primary/30 bg-muted/30 p-5">
-          <h2 className="font-bold">正会員プラン</h2>
-          <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-            <dt className="text-foreground/70">プラン</dt>
-            <dd>{PLAN_LABEL[subscription.plan_type]}</dd>
-            <dt className="text-foreground/70">状態</dt>
-            <dd>
-              {subscription.status === "active"
-                ? subscription.cancel_at_period_end
-                  ? "期間終了で解約予定"
-                  : "有効"
-                : subscription.status}
-            </dd>
-            {subscription.current_period_end && (
-              <>
-                <dt className="text-foreground/70">
-                  {subscription.cancel_at_period_end ? "ご利用終了日" : "次回更新"}
-                </dt>
-                <dd>
-                  {new Date(subscription.current_period_end).toLocaleDateString(
-                    "ja-JP",
-                  )}
-                </dd>
-              </>
+      {/* 応援団（年次サポーター） */}
+      <section className="mt-6 rounded-2xl border border-rose-200 bg-background p-5">
+        <h2 className="font-bold flex items-center gap-2">
+          <span className="text-xl" aria-hidden>
+            🌸
+          </span>
+          1968 を応援する（応援団）
+        </h2>
+        {isCurrentSupporter ? (
+          <div className="mt-3 text-sm">
+            <p className="text-rose-900 font-medium">
+              ✓ {CURRENT_YEAR_TOKYO} 応援団の称号がついています
+            </p>
+            <p className="mt-2 text-foreground/70 leading-7">
+              ご支援、ありがとうございます。応援団ラウンジ、オフ会優先抽選、年始の油谷からのご挨拶などの特典をお楽しみください。
+            </p>
+            {supporters.length > 1 && (
+              <details className="mt-3 text-xs text-foreground/70">
+                <summary className="cursor-pointer">過去の応援履歴を見る</summary>
+                <ul className="mt-2 space-y-1">
+                  {supporters.map((s) => (
+                    <li key={s.year}>
+                      {s.year} 年応援団（
+                      {s.granted_by === "paid"
+                        ? "ご支援"
+                        : s.granted_by === "founding_grant"
+                          ? "創設メンバー進呈"
+                          : "運営付与"}
+                      、{new Date(s.paid_at).toLocaleDateString("ja-JP")}）
+                    </li>
+                  ))}
+                </ul>
+              </details>
             )}
-          </dl>
-          <form action="/api/stripe/portal" method="post" className="mt-4">
-            <SubmitButton variant="outline" pendingText="移動中…">
-              サブスクリプションを管理する
-            </SubmitButton>
-          </form>
-          <p className="mt-3 text-xs text-foreground/60">
-            Stripe のお客様ポータルで、プラン変更・支払方法変更・解約ができます。
-          </p>
-        </section>
-      )}
+          </div>
+        ) : (
+          <div className="mt-3 text-sm">
+            <p className="text-foreground/80 leading-7">
+              一回 <strong>3,000 円</strong> のご支援で、その年の{" "}
+              <strong>「{CURRENT_YEAR_TOKYO} 応援団」</strong> 称号がつきます。
+              定期支払いではなく単発、来年も支援したいときだけまたどうぞ。
+            </p>
+            <ul className="mt-3 text-xs text-foreground/70 space-y-1.5 list-disc pl-5 leading-6">
+              <li>応援団バッジ（プロフィール・投稿に表示）</li>
+              <li>応援団ラウンジ（限定スレッドへのアクセス）</li>
+              <li>オフ会の優先抽選</li>
+              <li>タイムラインでの優先表示</li>
+              <li>年始の油谷からの個別お礼メッセージ</li>
+            </ul>
+            <p className="mt-3 text-xs text-foreground/60">
+              ※ 機能差はありません、純粋な応援としてのお支払いです。サイトの運営費に充てます。
+            </p>
+            <form action="/api/stripe/checkout" method="post" className="mt-4">
+              <SubmitButton className="w-full" pendingText="決済画面へ…">
+                3,000 円で {CURRENT_YEAR_TOKYO} 応援団になる
+              </SubmitButton>
+            </form>
+          </div>
+        )}
+      </section>
 
-      <section className="mt-8">
+      <section className="mt-10">
         <h2 className="font-bold text-lg">プロフィール</h2>
         <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
           <dt className="text-foreground/70">ニックネーム</dt>

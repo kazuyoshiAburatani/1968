@@ -75,7 +75,7 @@ export default async function PeerMessagesPage({
     .select("membership_rank")
     .eq("id", user.id)
     .maybeSingle();
-  const myRank = meRow?.membership_rank as "member" | "regular" | undefined;
+  const myRank = meRow?.membership_rank as "member" | "verified" | undefined;
 
   const { data: peerInfo } = await supabase
     .from("member_display")
@@ -84,7 +84,7 @@ export default async function PeerMessagesPage({
     .maybeSingle();
   const peerRank = peerInfo?.membership_rank as
     | "member"
-    | "regular"
+    | "verified"
     | undefined;
   const peerIsAi = peerInfo?.is_ai_persona === true;
 
@@ -98,7 +98,7 @@ export default async function PeerMessagesPage({
     (peerProfile?.avatar_url as string | null | undefined) ?? null,
   );
 
-  const canSend = myRank === "regular" && peerRank === "regular" && !peerIsAi;
+  const canSend = myRank === "verified" && peerRank === "verified" && !peerIsAi;
 
   // 過去メッセージを古い順で取得（最大 200 件）
   const { data: msgRows } = await supabase
@@ -223,7 +223,7 @@ export default async function PeerMessagesPage({
           <div className="px-2 py-3 text-sm text-foreground/70">
             {peerIsAi
               ? "運営AIへのメッセージは受け付けていません。"
-              : peerRank !== "regular"
+              : peerRank !== "verified"
                 ? "お相手が正会員でないため、メッセージを送れません。"
                 : "メッセージを送るには正会員へのお手続きが必要です。"}
             <p className="mt-2">

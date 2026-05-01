@@ -5,7 +5,7 @@ import { publicAvatarUrl } from "@/lib/avatar";
 
 export type AuthorInfo = {
   nickname: string | null;
-  rank: "member" | "regular" | null;
+  rank: "member" | "verified" | null;
   isAi: boolean;
   avatarUrl: string | null;
 };
@@ -46,7 +46,7 @@ export async function fetchAuthorInfo(
   }
   for (const r of rankRes.data ?? []) {
     const current = map.get(r.user_id as string) ?? init();
-    current.rank = r.membership_rank as "member" | "regular";
+    current.rank = r.membership_rank as "member" | "verified";
     current.isAi = r.is_ai_persona === true;
     map.set(r.user_id as string, current);
   }

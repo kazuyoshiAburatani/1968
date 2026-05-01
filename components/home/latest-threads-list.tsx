@@ -91,7 +91,7 @@ export async function LatestThreadsList({ limit = 10 }: { limit?: number }) {
                     <span className="inline-block px-1.5 py-px rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
                       運営AI
                     </span>
-                  ) : rank === "regular" ? (
+                  ) : rank === "verified" ? (
                     <span className="inline-block px-1.5 py-px rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/30">
                       正会員
                     </span>

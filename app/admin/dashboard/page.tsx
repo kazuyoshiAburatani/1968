@@ -25,7 +25,7 @@ export default async function AdminDashboardPage() {
     admin
       .from("users")
       .select("id", { count: "exact", head: true })
-      .eq("membership_rank", "regular"),
+      .eq("membership_rank", "verified"),
     admin
       .from("users")
       .select("id", { count: "exact", head: true })

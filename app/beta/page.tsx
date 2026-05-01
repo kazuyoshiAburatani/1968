@@ -64,11 +64,11 @@ export default async function BetaPage({ searchParams }: Props) {
     mainEntity: [
       {
         q: "本当に無料ですか？",
-        a: "ベータ期間中、および正式公開後12ヶ月、正会員プランを無料でご利用いただけます。クレジットカードの登録も不要です。期間終了後、継続するかは自由にお選びいただけます。",
+        a: "1968 はすべての機能が完全無料です。クレジットカードの登録も不要、月額・年額の課金も一切ありません。任意でご支援いただける「応援団」制度はありますが、機能差はなく純粋な寄付です。",
       },
       {
         q: "1968年生まれかどうかは、どう確認するのですか？",
-        a: "会員登録時にご記入いただく生年月日に加え、サービス内で身分証（マイナンバーカード・運転免許証・パスポート・健康保険証のいずれか）の画像を提出いただきます。画像は確認後30日以内に完全削除されます。",
+        a: "登録後、サービス内で「1968 認証」のお手続きをお願いしています。誓約と「1968 年生まれの記憶」を 80 字以上で自由記述いただき、運営が目視で確認します。所要 5 分・身分証画像の提出は不要です。",
       },
       {
         q: "顔出しや本名は必要ですか？",
@@ -102,7 +102,7 @@ export default async function BetaPage({ searchParams }: Props) {
     "@type": "WebPage",
     name: "1968 ベータテスター30名募集",
     description:
-      "1968年生まれ限定コミュニティ「1968」のベータテスター30名を募集中。正会員プラン1年無料。",
+      "1968年生まれ限定コミュニティ「1968」のベータテスター30名を募集中。創設メンバー限定の永久バッジ・専用ラウンジ等 8 つの特典が永久付帯。",
     url: "https://1968.love/beta",
     inLanguage: "ja-JP",
     isPartOf: { "@id": "https://1968.love/#website" },
@@ -148,10 +148,10 @@ export default async function BetaPage({ searchParams }: Props) {
             <span className="text-primary">ベータテスター募集</span>
           </h1>
           <p className="text-base sm:text-xl md:text-2xl mb-8 text-foreground/80 leading-relaxed">
-            正会員プラン（通常 月480円）を、
+            通常会員には絶対に付かない、
             <br />
-            <span className="font-bold text-primary">1年間無料</span>
-            でご利用いただけます。
+            <span className="font-bold text-primary">創設メンバー限定の 8 つの特典</span>
+            。
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
             <a
@@ -221,33 +221,48 @@ export default async function BetaPage({ searchParams }: Props) {
         </div>
       </section>
 
-      {/* ベータ特典 */}
+      {/* 創設メンバー特典、8 項目 */}
       <section className="py-16 px-4 bg-background">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-12">
-            ベータ特典
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-3">
+            創設メンバー 8 つの特典
           </h2>
-          <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
-            <div className="border-2 border-primary p-6 sm:p-8 rounded-2xl bg-primary/5">
-              <p className="text-xs text-foreground/60">特典 1</p>
-              <h3 className="text-xl sm:text-2xl font-bold mt-2 mb-3 text-primary">
-                正会員プラン 1年間無料
-              </h3>
-              <p className="text-sm sm:text-base text-foreground/80 leading-7">
-                通常月額 480 円・年額 4,800 円の正会員プランを 1
-                年間無料でご利用いただけます。総額 5,760 円相当の特典です。
-              </p>
-            </div>
-            <div className="border-2 border-accent p-6 sm:p-8 rounded-2xl bg-accent/5">
-              <p className="text-xs text-foreground/60">特典 2</p>
-              <h3 className="text-xl sm:text-2xl font-bold mt-2 mb-3 text-accent">
-                機能改善への声を直接届けられる
-              </h3>
-              <p className="text-sm sm:text-base text-foreground/80 leading-7">
-                ベータテスターとして、サービスの改善提案や新機能のアイデアを直接運営に届けることができます。
-              </p>
-            </div>
+          <p className="text-center text-sm sm:text-base text-foreground/70 mb-10 leading-7">
+            このベータ募集を通って入会された方だけに、永久に付帯します。
+            <br />
+            通常会員には付与されない、希少なポジションです。
+          </p>
+          <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
+            {BENEFITS.map((b, i) => (
+              <div
+                key={b.title}
+                className="border-2 border-amber-300 bg-amber-50/40 p-5 sm:p-6 rounded-2xl"
+              >
+                <div className="flex items-start gap-3">
+                  <span
+                    className="text-3xl sm:text-4xl shrink-0 leading-none"
+                    aria-hidden
+                  >
+                    {b.emoji}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-amber-700 font-bold">
+                      特典 {i + 1}
+                    </p>
+                    <h3 className="text-base sm:text-lg font-bold mt-1 text-amber-900">
+                      {b.title}
+                    </h3>
+                    <p className="mt-2 text-sm text-foreground/80 leading-7">
+                      {b.desc}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
+          <p className="mt-8 text-center text-xs text-foreground/60 leading-6">
+            ※ 7・8 は将来のリリース・出版時に進呈予定の特典です。
+          </p>
         </div>
       </section>
 
@@ -288,10 +303,10 @@ export default async function BetaPage({ searchParams }: Props) {
           </h2>
           <ol className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
             {[
-              { num: 1, title: "応募", time: "3〜5分", desc: "このページのフォームから応募" },
+              { num: 1, title: "応募", time: "1〜2分", desc: "このページのフォームから応募" },
               { num: 2, title: "確認", time: "3〜5営業日", desc: "運営が内容を確認" },
               { num: 3, title: "招待", time: "5分", desc: "招待メールから会員登録" },
-              { num: 4, title: "利用開始", time: "1年間", desc: "正会員として全機能を無料で利用" },
+              { num: 4, title: "利用開始", time: "永久", desc: "創設メンバーとして全機能を無料で" },
             ].map((step) => (
               <li key={step.num} className="text-center">
                 <div className="bg-primary text-white size-16 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
@@ -429,14 +444,57 @@ export default async function BetaPage({ searchParams }: Props) {
   );
 }
 
+const BENEFITS: Array<{ emoji: string; title: string; desc: string }> = [
+  {
+    emoji: "🎖",
+    title: "永久「創設メンバー」バッジ",
+    desc: "通常会員には絶対に付かない、特別デザインのバッジ。プロフィール・投稿に永久に表示されます。",
+  },
+  {
+    emoji: "🏛",
+    title: "創設メンバー専用ラウンジ",
+    desc: "一般会員には見えない非公開スレッド。創設メンバー同士で運営の裏話・要望共有ができる場です。",
+  },
+  {
+    emoji: "📜",
+    title: "創設メンバー名簿への掲載",
+    desc: "サイト内の特設ページにニックネームを掲載します（希望制、いつでも非公開に切替可）。",
+  },
+  {
+    emoji: "📬",
+    title: "油谷さん直通チャンネル",
+    desc: "運営との非公開スレッドで、ご要望・ご提案を直接届けられます。創設メンバーの声が機能になります。",
+  },
+  {
+    emoji: "🚀",
+    title: "新機能ファーストアクセス",
+    desc: "オフ会機能・コラボ案件など、新機能をリリース前に試せる。正式公開前に意見を反映できます。",
+  },
+  {
+    emoji: "⭐",
+    title: "「創設応援団」称号 1 年無料進呈",
+    desc: "通常 3,000 円の応援団称号を、初年度は無料で付与。応援団ラウンジ・優先抽選などの特典も自動付帯。",
+  },
+  {
+    emoji: "📕",
+    title: "将来の書籍・写真集を無料贈呈",
+    desc: "「1968年生まれが語る昭和」など、コミュニティから生まれる出版物が完成した際に、創設メンバーへ進呈する予定です。",
+  },
+  {
+    emoji: "✍",
+    title: "書籍出版時の「創設メンバー」クレジット",
+    desc: "巻末の謝辞ページにニックネームを掲載します（希望制）。コミュニティの歴史に名前が刻まれます。",
+  },
+];
+
 const FAQS: Array<{ q: string; a: React.ReactNode }> = [
   {
     q: "本当に無料ですか？",
-    a: "ベータ期間中、および正式公開後 12 ヶ月、正会員プランを無料でご利用いただけます。クレジットカードの登録も不要です。期間終了後、継続するかは自由にお選びいただけます。",
+    a: "1968 はすべての機能が完全無料でご利用いただけます。クレジットカードの登録も不要、月額・年額の課金も一切ありません。任意でご支援いただける「応援団」制度はありますが、機能差はなく純粋な寄付です。",
   },
   {
     q: "1968 年生まれかどうかは、どう確認するのですか？",
-    a: "会員登録時にご記入いただく生年月日に加え、サービス内で身分証（マイナンバーカード・運転免許証・パスポート・健康保険証のいずれか）の画像を提出いただきます。画像は確認後 30 日以内に完全削除されます。",
+    a: "登録後、サービス内で「1968 認証」のお手続きをお願いしています。誓約と「1968 年生まれの記憶」を 80 字以上で自由記述いただき、運営が目視で確認します。所要 5 分・身分証画像の提出は不要です。",
   },
   {
     q: "顔出しや本名は必要ですか？",

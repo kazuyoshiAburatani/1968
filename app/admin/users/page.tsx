@@ -9,7 +9,7 @@ type UserRow = {
   id: string;
   email: string;
   status: "active" | "suspended" | "withdrawn";
-  membership_rank: "member" | "regular";
+  membership_rank: "member" | "verified";
   verified: boolean;
   is_beta_tester: boolean;
   beta_grant_expires_at: string | null;
@@ -19,12 +19,12 @@ type UserRow = {
 };
 
 type Props = {
-  searchParams: Promise<{ q?: string; rank?: "member" | "regular" | "all" }>;
+  searchParams: Promise<{ q?: string; rank?: "member" | "verified" | "all" }>;
 };
 
 const RANK_BADGE: Record<UserRow["membership_rank"], string> = {
   member: "bg-muted text-foreground/70 border-border",
-  regular: "bg-primary/10 text-primary border-primary/30",
+  verified: "bg-primary/10 text-primary border-primary/30",
 };
 const STATUS_BADGE: Record<UserRow["status"], string> = {
   active: "bg-emerald-50 text-emerald-900 border-emerald-300",
@@ -91,8 +91,8 @@ export default async function AdminUsersPage({ searchParams }: Props) {
           className="min-h-[var(--spacing-tap)] px-3 rounded border border-border text-sm"
         >
           <option value="all">すべて</option>
-          <option value="member">無料会員</option>
-          <option value="regular">正会員</option>
+          <option value="member">一般会員</option>
+          <option value="verified">1968 認証済</option>
         </select>
         <button
           type="submit"
@@ -139,7 +139,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
                   <span
                     className={`text-[10px] font-bold px-1.5 py-px rounded border ${RANK_BADGE[u.membership_rank]}`}
                   >
-                    {u.membership_rank === "regular" ? "正会員" : "無料"}
+                    {u.membership_rank === "verified" ? "認証済" : "一般"}
                   </span>
                   {u.verified && (
                     <span className="text-[10px] font-bold px-1.5 py-px rounded border border-amber-700 bg-amber-50 text-amber-900">

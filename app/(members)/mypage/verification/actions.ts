@@ -1,59 +1,34 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth/require-session";
-import {
-  ALLOWED_VERIFICATION_MIME_TYPES,
-  MAX_VERIFICATION_FILE_SIZE,
-  VerificationSubmitSchema,
-} from "@/lib/validation/verification";
-
-const BUCKET = "verification-documents";
+import { SelfDeclarationSchema } from "@/lib/validation/verification";
 
 function fail(message: string): never {
   redirect(`/mypage/verification?error=${encodeURIComponent(message)}`);
 }
 
-function extensionFromMime(mime: string): string {
-  switch (mime) {
-    case "image/jpeg":
-    case "image/jpg":
-      return "jpg";
-    case "image/png":
-      return "png";
-    case "image/webp":
-      return "webp";
-    case "application/pdf":
-      return "pdf";
-    default:
-      return "bin";
-  }
-}
-
-export async function submitVerification(formData: FormData) {
-  const parsed = VerificationSubmitSchema.safeParse({
-    document_type: formData.get("document_type"),
+// 完全無料化後の 1968 認証は、誓約 + 200字エッセイ + 署名のみ。
+// 画像の Storage 保管・削除運用が不要になり、弁護士事項も最小化される。
+// 運営は提出されたエッセイと誓約内容を目視で確認し、approve/reject を選ぶ。
+export async function submitSelfDeclaration(formData: FormData) {
+  const parsed = SelfDeclarationSchema.safeParse({
+    birth_month: formData.get("birth_month"),
+    birth_day: formData.get("birth_day"),
+    agree_birth: formData.get("agree_birth") ?? "",
+    agree_penalty: formData.get("agree_penalty") ?? "",
+    agree_review: formData.get("agree_review") ?? "",
+    signature: formData.get("signature") ?? "",
+    era_essay: formData.get("era_essay") ?? "",
   });
   if (!parsed.success) {
     fail(parsed.error.issues[0]?.message ?? "入力内容を確認してください");
   }
 
-  const file = formData.get("document") as File | null;
-  if (!file || file.size === 0) {
-    fail("本人確認書類の画像を選択してください");
-  }
-  if (!ALLOWED_VERIFICATION_MIME_TYPES.includes(file.type)) {
-    fail("画像（JPEG/PNG/WebP）または PDF を選択してください");
-  }
-  if (file.size > MAX_VERIFICATION_FILE_SIZE) {
-    fail("ファイルサイズが大きすぎます（最大 10 MB）");
-  }
-
   const { supabase, user } = await requireSession();
 
-  // 既に pending がある場合は新規申請を弾く（DB の RLS でも弾かれるが、UX のため事前に確認）
+  // 既に pending がある場合は新規申請を弾く
   const { data: existingPending } = await supabase
     .from("verifications")
     .select("id")
@@ -64,31 +39,25 @@ export async function submitVerification(formData: FormData) {
     fail("審査中の申請があります。結果が出てから再度提出してください");
   }
 
-  const ext = extensionFromMime(file.type);
-  const path = `${user.id}/${randomUUID()}.${ext}`;
+  // プロフィールの誕生月日を更新（任意）
+  await supabase
+    .from("profiles")
+    .update({
+      birth_month: parsed.data.birth_month,
+      birth_day: parsed.data.birth_day,
+    })
+    .eq("user_id", user.id);
 
-  const { error: uploadError } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, file, {
-      cacheControl: "3600",
-      contentType: file.type,
-      upsert: false,
-    });
-  if (uploadError) {
-    console.error("[verification/submit] upload failed:", uploadError.message);
-    fail("画像のアップロードに失敗しました、時間をおいてお試しください");
-  }
-
-  const { error: insertError } = await supabase.from("verifications").insert({
+  const { error } = await supabase.from("verifications").insert({
     user_id: user.id,
-    document_type: parsed.data.document_type,
+    document_type: "self_declaration",
     status: "pending",
-    image_storage_path: path,
+    era_essay: parsed.data.era_essay,
+    signature: parsed.data.signature,
+    image_storage_path: null,
   });
-  if (insertError) {
-    console.error("[verification/submit] insert failed:", insertError.message);
-    // 失敗時はアップロード済みファイルをロールバック
-    await supabase.storage.from(BUCKET).remove([path]);
+  if (error) {
+    console.error("[verification/declaration] insert failed:", error.message);
     fail("申請の登録に失敗しました、時間をおいてお試しください");
   }
 

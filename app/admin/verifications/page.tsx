@@ -4,7 +4,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { reviewVerification } from "./actions";
 import { DOCUMENT_TYPE_LABELS } from "@/lib/validation/verification";
 
-export const metadata: Metadata = { title: "身分証審査" };
+export const metadata: Metadata = { title: "1968 認証審査" };
 
 type Verif = {
   id: string;
@@ -12,6 +12,8 @@ type Verif = {
   document_type: keyof typeof DOCUMENT_TYPE_LABELS;
   status: "pending" | "approved" | "rejected";
   image_storage_path: string | null;
+  era_essay: string | null;
+  signature: string | null;
   rejection_reason: string | null;
   submitted_at: string;
   verified_at: string | null;
@@ -39,7 +41,7 @@ export default async function AdminVerificationsPage({ searchParams }: Props) {
   let query = admin
     .from("verifications")
     .select(
-      "id, user_id, document_type, status, image_storage_path, rejection_reason, submitted_at, verified_at",
+      "id, user_id, document_type, status, image_storage_path, era_essay, signature, rejection_reason, submitted_at, verified_at",
     )
     .order("submitted_at", { ascending: false })
     .limit(100);
@@ -59,10 +61,17 @@ export default async function AdminVerificationsPage({ searchParams }: Props) {
     userIds.length > 0
       ? admin
           .from("profiles")
-          .select("user_id, nickname")
+          .select("user_id, nickname, birth_month, birth_day")
           .in("user_id", userIds)
       : Promise.resolve(
-          {} as { data: { user_id: string; nickname: string }[] },
+          {} as {
+            data: {
+              user_id: string;
+              nickname: string;
+              birth_month: number;
+              birth_day: number;
+            }[];
+          },
         ),
   ]);
   const userMap = new Map(
@@ -70,11 +79,16 @@ export default async function AdminVerificationsPage({ searchParams }: Props) {
   );
   const profileMap = new Map(
     (profilesData ?? []).map(
-      (p: { user_id: string; nickname: string }) => [p.user_id, p],
+      (p: {
+        user_id: string;
+        nickname: string;
+        birth_month: number;
+        birth_day: number;
+      }) => [p.user_id, p],
     ),
   );
 
-  // 各画像の signed URL を発行（10 分有効）
+  // 旧来型（画像つき）申請の signed URL 発行（10 分有効）。self_declaration には画像が無い
   const signedUrls = new Map<string, string>();
   await Promise.all(
     items.map(async (i) => {
@@ -88,7 +102,10 @@ export default async function AdminVerificationsPage({ searchParams }: Props) {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">身分証審査</h1>
+      <h1 className="text-2xl font-bold">1968 認証審査</h1>
+      <p className="mt-1 text-sm text-foreground/70">
+        誓約フローによる申請内容を運営が目視で確認します。違和感があれば却下、内容が同年代らしければ承認。
+      </p>
 
       <nav className="mt-3 flex gap-2 text-sm">
         {(["pending", "approved", "rejected", "all"] as const).map((k) => (
@@ -121,6 +138,7 @@ export default async function AdminVerificationsPage({ searchParams }: Props) {
             const user = userMap.get(v.user_id);
             const profile = profileMap.get(v.user_id);
             const url = signedUrls.get(v.id);
+            const isSelfDecl = v.document_type === "self_declaration";
             return (
               <li
                 key={v.id}
@@ -134,6 +152,12 @@ export default async function AdminVerificationsPage({ searchParams }: Props) {
                     <p className="text-xs text-foreground/60">
                       {user?.email ?? "-"} ・{" "}
                       {DOCUMENT_TYPE_LABELS[v.document_type]}
+                      {profile?.birth_month && profile?.birth_day && (
+                        <>
+                          {" ・ "}1968 年 {profile.birth_month} 月{" "}
+                          {profile.birth_day} 日生まれ
+                        </>
+                      )}
                     </p>
                   </div>
                   <span
@@ -153,9 +177,36 @@ export default async function AdminVerificationsPage({ searchParams }: Props) {
                   )}
                 </p>
 
-                {url ? (
+                {/* 誓約フローの提出内容 */}
+                {isSelfDecl && (
+                  <div className="mt-4 space-y-3">
+                    {v.signature && (
+                      <div>
+                        <p className="text-xs font-bold text-foreground/70">
+                          署名
+                        </p>
+                        <p className="mt-1 text-sm">{v.signature}</p>
+                      </div>
+                    )}
+                    {v.era_essay && (
+                      <div>
+                        <p className="text-xs font-bold text-foreground/70">
+                          1968 年生まれの記憶
+                        </p>
+                        <p className="mt-1 text-sm whitespace-pre-wrap leading-7 bg-muted/30 p-3 rounded border border-border">
+                          {v.era_essay}
+                        </p>
+                        <p className="mt-1 text-xs text-foreground/50">
+                          {v.era_essay.length} 字
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 旧来の身分証画像（過去レコード閲覧用） */}
+                {!isSelfDecl && url ? (
                   <div className="mt-4">
-                    {/* 拡大して見せる、画像が大きい場合は max-h で抑える */}
                     <a href={url} target="_blank" rel="noopener noreferrer">
                       <Image
                         src={url}
@@ -170,11 +221,11 @@ export default async function AdminVerificationsPage({ searchParams }: Props) {
                       クリックで原寸表示。署名URLは10分有効。
                     </p>
                   </div>
-                ) : (
+                ) : !isSelfDecl ? (
                   <p className="mt-4 text-sm text-foreground/60">
                     画像はすでに削除されています（30日経過 or 運営削除）。
                   </p>
-                )}
+                ) : null}
 
                 {v.status === "rejected" && v.rejection_reason && (
                   <p className="mt-3 text-sm text-red-900 bg-red-50 p-3 rounded">

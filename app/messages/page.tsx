@@ -82,9 +82,9 @@ export default async function MessagesIndexPage() {
     .select("membership_rank")
     .eq("id", user.id)
     .maybeSingle();
-  const rank = (me?.membership_rank ?? "member") as "member" | "regular";
+  const rank = (me?.membership_rank ?? "member") as "member" | "verified";
 
-  if (rank !== "regular") {
+  if (rank !== "verified") {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12">
         <h1 className="text-2xl font-bold">トーク</h1>

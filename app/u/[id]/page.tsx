@@ -43,7 +43,7 @@ export default async function UserProfilePage({
     if (
       profile.bio_visible === "members_only" &&
       rank !== "member" &&
-      rank !== "regular"
+      rank !== "verified"
     ) {
       notFound();
     }
@@ -57,11 +57,11 @@ export default async function UserProfilePage({
     .maybeSingle();
   const peerRank = peerInfo?.membership_rank as
     | "member"
-    | "regular"
+    | "verified"
     | undefined;
   const peerIsAi = peerInfo?.is_ai_persona === true;
   const canDm =
-    !isSelf && rank === "regular" && peerRank === "regular" && !peerIsAi;
+    !isSelf && rank === "verified" && peerRank === "verified" && !peerIsAi;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">

@@ -46,9 +46,48 @@ export async function updateApplicationStatus(formData: FormData) {
     console.error("[admin/applications] update failed:", error.message);
   }
 
-  // 「招待済」に変更した時、応募者へ招待メールを送信
-  if (parsed.data.status === "invited" && app?.email && app?.name) {
-    await sendBetaInvitation({ to: app.email, name: app.name });
+  // 「招待済」または「承認」に変更した時、応募者へ招待メールを送信し、
+  // すでに登録済みのユーザーがいれば創設メンバー扱いに back-fill する
+  if (
+    (parsed.data.status === "invited" || parsed.data.status === "approved") &&
+    app?.email
+  ) {
+    if (parsed.data.status === "invited" && app.name) {
+      await sendBetaInvitation({ to: app.email, name: app.name });
+    }
+
+    // 既に登録済みのユーザーを back-fill、新規登録は trigger 経由で自動付与される
+    const { data: existing } = await sb
+      .from("users")
+      .select("id, is_founding_member")
+      .ilike("email", app.email)
+      .maybeSingle();
+
+    if (existing && existing.is_founding_member !== true) {
+      const tokyoYear = new Date(
+        new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }),
+      ).getFullYear();
+
+      await sb
+        .from("users")
+        .update({
+          is_founding_member: true,
+          founding_member_since: new Date().toISOString(),
+        })
+        .eq("id", existing.id);
+
+      // 初年度の応援団称号も進呈
+      await sb.from("supporters").upsert(
+        {
+          user_id: existing.id,
+          year: tokyoYear,
+          paid_at: new Date().toISOString(),
+          amount_yen: 0,
+          granted_by: "founding_grant",
+        },
+        { onConflict: "user_id,year" },
+      );
+    }
   }
 
   revalidatePath("/admin/applications");

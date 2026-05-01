@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const TIER_VALUES = ["A", "B", "C", "D"] as const;
-export const VIEW_LEVELS = ["guest", "member", "regular"] as const;
-export const POST_LEVELS = ["member", "regular"] as const;
+export const VIEW_LEVELS = ["guest", "member", "verified"] as const;
+export const POST_LEVELS = ["member", "verified"] as const;
 
 export const TIER_LABELS: Record<(typeof TIER_VALUES)[number], string> = {
   A: "段階A、ゲスト閲覧可",

@@ -1,10 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import Stripe from "stripe";
-import { getStripe, priceIdToPlanType } from "@/lib/stripe/server";
+import { getStripe } from "@/lib/stripe/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
-// Stripe Webhook エンドポイント。サブスクリプションのライフサイクル変化を検知して
-// public.subscriptions と public.users.membership_rank を同期する。
+// Stripe Webhook、応援団（一回 3,000 円）の payment_intent.succeeded を主に扱う。
+// 完全無料化以降は subscription を新規作成しないが、過去のサブスク event は
+// （存在し続ける場合の互換のため）静かに無視する。
 
 export async function POST(request: NextRequest) {
   const signature = request.headers.get("stripe-signature");
@@ -35,18 +36,12 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        await handleCheckoutCompleted(admin, stripe, session);
+        await handleCheckoutCompleted(admin, session);
         break;
       }
-      case "customer.subscription.created":
-      case "customer.subscription.updated": {
-        const sub = event.data.object as Stripe.Subscription;
-        await upsertSubscription(admin, sub);
-        break;
-      }
-      case "customer.subscription.deleted": {
-        const sub = event.data.object as Stripe.Subscription;
-        await handleSubscriptionDeleted(admin, sub);
+      case "payment_intent.succeeded": {
+        const intent = event.data.object as Stripe.PaymentIntent;
+        await handleSupporterPayment(admin, intent);
         break;
       }
       default:
@@ -62,10 +57,9 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ received: true });
 }
 
-// 初回決済完了、Customer ID を users.stripe_customer_id に保存する
+// Checkout 完了、Customer ID を users.stripe_customer_id に保存する
 async function handleCheckoutCompleted(
   admin: ReturnType<typeof getSupabaseAdminClient>,
-  stripe: Stripe,
   session: Stripe.Checkout.Session,
 ) {
   const userId = session.client_reference_id ?? session.metadata?.user_id;
@@ -82,89 +76,60 @@ async function handleCheckoutCompleted(
     .from("users")
     .update({ stripe_customer_id: customerId })
     .eq("id", userId);
-
-  // サブスクリプション情報は subscription 作成 event 側で処理されるので、ここでは不要。
-  // ただし subscription が同期的に存在することも多いので、ここで upsert を試みる。
-  if (session.subscription) {
-    const sub = await stripe.subscriptions.retrieve(
-      session.subscription as string,
-    );
-    await upsertSubscription(admin, sub);
-  }
 }
 
-// subscription の作成・更新を DB に反映
-async function upsertSubscription(
+// 応援団の支払い成功、supporters テーブルに insert
+async function handleSupporterPayment(
   admin: ReturnType<typeof getSupabaseAdminClient>,
-  sub: Stripe.Subscription,
+  intent: Stripe.PaymentIntent,
 ) {
-  const userId = (sub.metadata?.user_id ?? "") as string;
-  if (!userId) {
-    console.error("[stripe/webhook] subscription has no user_id metadata", sub.id);
+  const purpose = intent.metadata?.purpose;
+  if (purpose !== "supporter") {
+    // 応援団以外の payment は無視
     return;
   }
 
-  const priceId = sub.items.data[0]?.price.id;
-  const planType = priceId ? priceIdToPlanType(priceId) : null;
-  if (!planType) {
-    console.error("[stripe/webhook] unknown price id", priceId);
+  const userId = intent.metadata?.user_id;
+  const yearStr = intent.metadata?.supporter_year;
+  if (!userId || !yearStr) {
+    console.error("[stripe/webhook] supporter payment missing metadata", {
+      userId,
+      yearStr,
+      intent: intent.id,
+    });
     return;
   }
 
-  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+  const year = Number(yearStr);
+  if (!Number.isInteger(year) || year < 2026 || year > 2100) {
+    console.error("[stripe/webhook] invalid supporter year", yearStr);
+    return;
+  }
 
-  // Stripe の period 情報は items.data[0] 側にも乗るが、subscription 直接プロパティも使う
-  const firstItem = sub.items.data[0];
-  const periodStart = firstItem?.current_period_start ?? null;
-  const periodEnd = firstItem?.current_period_end ?? null;
+  const chargeId =
+    typeof intent.latest_charge === "string"
+      ? intent.latest_charge
+      : (intent.latest_charge?.id ?? null);
 
-  // 柔軟請求モード（billing_mode.type === "flexible"）では cancel_at_period_end は常に false で、
-  // 代わりに cancel_at に解約予定 unix timestamp が入る。両モードに対応するため OR で判定する。
-  const cancelScheduled =
-    sub.cancel_at_period_end === true ||
-    (sub.cancel_at !== null && sub.cancel_at !== undefined);
-
-  const { error } = await admin.from("subscriptions").upsert(
+  // 同一年に重複 insert されないよう upsert（PK は user_id, year）
+  const { error } = await admin.from("supporters").upsert(
     {
       user_id: userId,
-      stripe_subscription_id: sub.id,
-      stripe_customer_id: customerId,
-      plan_type: planType,
-      status: sub.status,
-      current_period_start: periodStart
-        ? new Date(periodStart * 1000).toISOString()
-        : null,
-      current_period_end: periodEnd
-        ? new Date(periodEnd * 1000).toISOString()
-        : null,
-      cancel_at_period_end: cancelScheduled,
-      canceled_at: sub.canceled_at
-        ? new Date(sub.canceled_at * 1000).toISOString()
-        : null,
+      year,
+      paid_at: new Date(intent.created * 1000).toISOString(),
+      amount_yen: intent.amount,
+      stripe_payment_intent_id: intent.id,
+      stripe_charge_id: chargeId,
+      granted_by: "paid",
     },
-    { onConflict: "stripe_subscription_id" },
+    { onConflict: "user_id,year" },
   );
 
   if (error) {
-    console.error("[stripe/webhook] upsert subscription failed:", error.message);
-    return;
+    console.error(
+      "[stripe/webhook] supporter upsert failed:",
+      error.message,
+      intent.id,
+    );
   }
-
-  // membership_rank の更新は subscriptions_refresh_rank トリガが行う、
-  // subscriptions 行が変化すれば compute_membership_rank で再評価される。
-  // 案 A、支払い AND 身分証承認 の両方で regular になる。
-}
-
-// subscription 削除、subscriptions 側を canceled にすればトリガで member に降格される
-async function handleSubscriptionDeleted(
-  admin: ReturnType<typeof getSupabaseAdminClient>,
-  sub: Stripe.Subscription,
-) {
-  await admin
-    .from("subscriptions")
-    .update({
-      status: "canceled",
-      canceled_at: new Date().toISOString(),
-    })
-    .eq("stripe_subscription_id", sub.id);
 }

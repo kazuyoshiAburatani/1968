@@ -106,7 +106,7 @@ export function CategoryForm({
           >
             <option value="guest">ゲスト〜</option>
             <option value="member">会員〜</option>
-            <option value="regular">正会員のみ</option>
+            <option value="verified">正会員のみ</option>
           </select>
         </Field>
         <Field label="投稿可能" required>
@@ -117,7 +117,7 @@ export function CategoryForm({
             className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
           >
             <option value="member">会員〜</option>
-            <option value="regular">正会員のみ</option>
+            <option value="verified">正会員のみ</option>
           </select>
         </Field>
       </div>

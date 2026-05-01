@@ -16,8 +16,8 @@ type Row = {
   description: string | null;
   display_order: number;
   tier: "A" | "B" | "C" | "D";
-  access_level_view: "guest" | "member" | "regular";
-  access_level_post: "member" | "regular";
+  access_level_view: "guest" | "member" | "verified";
+  access_level_post: "member" | "verified";
   posting_limit_per_day: number | null;
   requires_tenure_months: number;
 };
@@ -32,12 +32,12 @@ const TIER_COLOR: Record<Row["tier"], string> = {
 const VIEW_LABEL: Record<Row["access_level_view"], string> = {
   guest: "ゲスト〜",
   member: "会員〜",
-  regular: "正会員のみ",
+  verified: "1968 認証済のみ",
 };
 
 const POST_LABEL: Record<Row["access_level_post"], string> = {
   member: "会員〜",
-  regular: "正会員のみ",
+  verified: "1968 認証済のみ",
 };
 
 export default async function AdminCategoriesPage({ searchParams }: Props) {
