@@ -104,6 +104,12 @@ create index if not exists supporters_year_idx on public.supporters (year);
 
 alter table public.supporters enable row level security;
 
+-- 再実行性のため、既存ポリシーは drop してから create する
+drop policy if exists "supporters_select_own" on public.supporters;
+drop policy if exists "supporters_select_all_auth" on public.supporters;
+drop policy if exists "supporters_select_admin" on public.supporters;
+drop policy if exists "supporters_modify_admin" on public.supporters;
+
 -- 本人は自分の応援履歴を閲覧可
 create policy "supporters_select_own"
   on public.supporters
@@ -269,8 +275,12 @@ comment on column public.verifications.signature is
 
 -- =============================================================
 -- 8. RPC を更新、is_supporter / is_founding_member を返す
+-- 戻り値の列が増えるため、create or replace では型変更不可。
+-- 既存関数を一度 drop してから再作成する。
 -- =============================================================
-create or replace function public.get_session_header_context(p_user_id uuid)
+drop function if exists public.get_session_header_context(uuid);
+
+create function public.get_session_header_context(p_user_id uuid)
 returns table (
   membership_rank text,
   nickname text,

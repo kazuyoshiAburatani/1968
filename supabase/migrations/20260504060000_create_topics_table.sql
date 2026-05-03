@@ -38,6 +38,10 @@ comment on table public.topics is
 -- =============================================================
 alter table public.topics enable row level security;
 
+-- 再実行性のため既存ポリシーを drop
+drop policy if exists "topics_select_public" on public.topics;
+drop policy if exists "topics_admin_all" on public.topics;
+
 -- 全員（ゲスト含む）がアクティブな audience='all' のお題を閲覧可
 create policy "topics_select_public"
   on public.topics

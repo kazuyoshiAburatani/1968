@@ -40,6 +40,10 @@ comment on table public.recommendations is
 -- =============================================================
 alter table public.recommendations enable row level security;
 
+-- 再実行性のため既存ポリシーを drop
+drop policy if exists "recommendations_select_active" on public.recommendations;
+drop policy if exists "recommendations_admin_all" on public.recommendations;
+
 create policy "recommendations_select_active"
   on public.recommendations
   for select
