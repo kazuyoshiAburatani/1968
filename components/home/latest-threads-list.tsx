@@ -23,6 +23,7 @@ const TIER_BADGE: Record<Tier, string> = {
   B: "bg-accent/20 text-accent",
   C: "bg-primary/15 text-primary",
   D: "bg-primary text-white",
+  L: "bg-amber-100 text-amber-900",
 };
 
 const TIER_LABEL: Record<Tier, string> = {
@@ -30,6 +31,7 @@ const TIER_LABEL: Record<Tier, string> = {
   B: "段階B",
   C: "段階C",
   D: "段階D",
+  L: "ラウンジ",
 };
 
 export async function LatestThreadsList({ limit = 10 }: { limit?: number }) {

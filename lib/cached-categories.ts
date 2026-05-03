@@ -18,6 +18,9 @@ export type CachedCategory = {
   access_level_post: PostLevel;
   posting_limit_per_day: number | null;
   requires_tenure_months: number;
+  // ラウンジ専用フラグ、tier='L' のときのみ意味を持つ
+  requires_founding: boolean;
+  requires_supporter: boolean;
 };
 
 // auth コンテキスト不要のため anon キーで軽量クライアントを作る
@@ -33,13 +36,31 @@ function buildAnonClient() {
 export const fetchAllCategories = unstable_cache(
   async (): Promise<CachedCategory[]> => {
     const client = buildAnonClient();
-    const { data } = await client
-      .from("categories")
-      .select(
-        "id, slug, name, description, display_order, tier, access_level_view, access_level_post, posting_limit_per_day, requires_tenure_months",
-      )
-      .order("display_order");
-    return (data ?? []) as CachedCategory[];
+    // requires_founding / requires_supporter はマイグレーション未適用環境では
+    // 列が無いため、try/catch で吸収して欠ける場合は false を埋める
+    let rows: Record<string, unknown>[] = [];
+    try {
+      const { data } = await client
+        .from("categories")
+        .select(
+          "id, slug, name, description, display_order, tier, access_level_view, access_level_post, posting_limit_per_day, requires_tenure_months, requires_founding, requires_supporter",
+        )
+        .order("display_order");
+      rows = data ?? [];
+    } catch {
+      const { data } = await client
+        .from("categories")
+        .select(
+          "id, slug, name, description, display_order, tier, access_level_view, access_level_post, posting_limit_per_day, requires_tenure_months",
+        )
+        .order("display_order");
+      rows = data ?? [];
+    }
+    return rows.map((r) => ({
+      ...r,
+      requires_founding: r.requires_founding === true,
+      requires_supporter: r.requires_supporter === true,
+    })) as CachedCategory[];
   },
   ["all-categories"],
   { revalidate: 300, tags: ["categories"] },

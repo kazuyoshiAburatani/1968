@@ -28,6 +28,7 @@ const TIER_LABEL: Record<Tier, string> = {
   B: "段階B ・ 認証済から投稿",
   C: "段階C ・ 1968 認証済のみ",
   D: "段階D ・ 入会3ヶ月以上",
+  L: "限定ラウンジ",
 };
 
 export async function HomeRegular({

@@ -9,9 +9,24 @@
 // バッジ表示・ラウンジ閲覧の判定にだけ使う。投稿可否には影響しない。
 
 export type Rank = "guest" | "member" | "verified";
-export type Tier = "A" | "B" | "C" | "D";
+export type Tier = "A" | "B" | "C" | "D" | "L";
 export type ViewLevel = "guest" | "member" | "verified";
 export type PostLevel = "member" | "verified";
+
+// 限定ラウンジ（tier = 'L'）の閲覧・投稿可否を判定する。
+// 通常ランクとは別軸で、創設メンバー / 応援団 / 運営 のいずれかに該当すれば許可。
+export function canAccessLounge(input: {
+  isAdmin: boolean;
+  isFoundingMember: boolean;
+  isCurrentSupporter: boolean;
+  requiresFounding: boolean;
+  requiresSupporter: boolean;
+}): boolean {
+  if (input.isAdmin) return true;
+  if (input.requiresFounding && input.isFoundingMember) return true;
+  if (input.requiresSupporter && input.isCurrentSupporter) return true;
+  return false;
+}
 
 // 閲覧可否、access_level_view と rank を突き合わせる
 export function canView(rank: Rank, level: ViewLevel): boolean {

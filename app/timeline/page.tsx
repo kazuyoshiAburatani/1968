@@ -36,6 +36,7 @@ const TIER_BADGE: Record<Tier, string> = {
   B: "bg-accent/15 text-accent border-accent/30",
   C: "bg-primary/15 text-primary border-primary/30",
   D: "bg-primary text-white border-primary",
+  L: "bg-amber-50 text-amber-900 border-amber-300",
 };
 
 function formatRelative(iso: string): string {

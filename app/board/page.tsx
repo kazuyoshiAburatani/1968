@@ -5,6 +5,7 @@ import { getCurrentRank } from "@/lib/auth/current-rank";
 import {
   canView,
   canPost,
+  canAccessLounge,
   type Tier,
 } from "@/lib/auth/permissions";
 import { fetchAllCategories } from "@/lib/cached-categories";
@@ -26,6 +27,7 @@ const TIER_TITLES: Record<Tier, string> = {
   B: "会員から閲覧、認証済から投稿",
   C: "1968 認証済のみ",
   D: "1968 認証済・入会3ヶ月以上",
+  L: "限定ラウンジ",
 };
 
 // カテゴリ別アイコンと色
@@ -45,6 +47,8 @@ const CATEGORY_LOOKS: Record<
   family: { emoji: "🏠", bg: "#f0e7d4", ring: "#8b6f3d" },
   "work-money-retirement": { emoji: "💴", bg: "#e8e0c8", ring: "#7a5d2a" },
   meetups: { emoji: "🍻", bg: "#f0d9c0", ring: "#a3622a" },
+  "founding-lounge": { emoji: "🎖", bg: "#fff7e6", ring: "#c8a25e" },
+  "supporters-lounge": { emoji: "🌸", bg: "#fdebe8", ring: "#a8463b" },
 };
 
 const DEFAULT_LOOK = { emoji: "📌", bg: "#e8e3d6", ring: "#8b7d56" };
@@ -71,7 +75,8 @@ function bodyPreview(body: string, max = 56): string {
 
 export default async function BoardPage() {
   const supabase = await createSupabaseServerClient();
-  const { rank } = await getCurrentRank(supabase);
+  const { rank, isAdmin, isFoundingMember, isCurrentSupporter } =
+    await getCurrentRank(supabase);
 
   // categories はキャッシュ済み（5 分）、毎回 Supabase に問い合わせない
   const [all, threadsRes] = await Promise.all([
@@ -111,21 +116,50 @@ export default async function BoardPage() {
         </p>
       </header>
 
-      {(["A", "B", "C", "D"] as Tier[]).map((tier) => {
+      {(["A", "B", "C", "D", "L"] as Tier[]).map((tier) => {
         const list = byTier.get(tier) ?? [];
         if (list.length === 0) return null;
+        // ラウンジセクションは、自分にアクセス権がある場合のみ目立たせる
+        const isLounge = tier === "L";
+        const visibleLoungeList = isLounge
+          ? list.filter((c) =>
+              canAccessLounge({
+                isAdmin,
+                isFoundingMember,
+                isCurrentSupporter,
+                requiresFounding: c.requires_founding,
+                requiresSupporter: c.requires_supporter,
+              }),
+            )
+          : list;
+        // ラウンジで自分が一つも入れない場合はセクションごと非表示にする
+        if (isLounge && visibleLoungeList.length === 0) return null;
+        const renderList = isLounge ? visibleLoungeList : list;
         return (
           <section key={tier} className="mt-8">
             <div className="px-4 sm:px-0 flex items-baseline gap-3">
-              <h2 className="text-base font-bold">段階{tier}</h2>
+              <h2 className="text-base font-bold">
+                {isLounge ? "限定ラウンジ" : `段階${tier}`}
+              </h2>
               <span className="text-xs text-foreground/60">
                 {TIER_TITLES[tier]}
               </span>
             </div>
             <ul className="mt-3 divide-y divide-border border-y border-border bg-background sm:rounded-xl sm:border">
-              {list.map((c) => {
-                const viewable = canView(rank, c.access_level_view);
-                const postable = canPost(rank, c.access_level_post);
+              {renderList.map((c) => {
+                // ラウンジは canView/canPost ではなく canAccessLounge で判定
+                const viewable = isLounge
+                  ? canAccessLounge({
+                      isAdmin,
+                      isFoundingMember,
+                      isCurrentSupporter,
+                      requiresFounding: c.requires_founding,
+                      requiresSupporter: c.requires_supporter,
+                    })
+                  : canView(rank, c.access_level_view);
+                const postable = isLounge
+                  ? viewable
+                  : canPost(rank, c.access_level_post);
                 const latest = latestByCat.get(c.id);
                 const total = countByCat.get(c.id) ?? 0;
                 const look = CATEGORY_LOOKS[c.slug] ?? DEFAULT_LOOK;

@@ -1,14 +1,15 @@
 import { z } from "zod";
 
-export const TIER_VALUES = ["A", "B", "C", "D"] as const;
+export const TIER_VALUES = ["A", "B", "C", "D", "L"] as const;
 export const VIEW_LEVELS = ["guest", "member", "verified"] as const;
 export const POST_LEVELS = ["member", "verified"] as const;
 
 export const TIER_LABELS: Record<(typeof TIER_VALUES)[number], string> = {
   A: "段階A、ゲスト閲覧可",
-  B: "段階B、無料会員から閲覧可",
-  C: "段階C、正会員のみ",
-  D: "段階D、正会員かつ入会N ヶ月以上",
+  B: "段階B、一般会員から閲覧可",
+  C: "段階C、1968 認証済のみ",
+  D: "段階D、認証済かつ入会N ヶ月以上",
+  L: "限定ラウンジ（創設 / 応援団）",
 };
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
