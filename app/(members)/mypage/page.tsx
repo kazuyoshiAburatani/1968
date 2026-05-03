@@ -7,6 +7,7 @@ import { SubmitButton } from "@/components/submit-button";
 import { UserAvatar } from "@/components/user-avatar";
 import { AvatarUploader } from "@/components/avatar-uploader";
 import { publicAvatarUrl } from "@/lib/avatar";
+import { getOperatorUserId } from "@/lib/operator";
 
 export const metadata: Metadata = {
   title: "マイページ",
@@ -90,6 +91,7 @@ export default async function MyPage({ searchParams }: Props) {
   const verified = publicUser?.verified === true;
   const rank = (publicUser?.membership_rank ?? "guest") as Rank;
   const isFoundingMember = publicUser?.is_founding_member === true;
+  const operatorId = await getOperatorUserId();
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
@@ -236,6 +238,28 @@ export default async function MyPage({ searchParams }: Props) {
                   `（${new Date(publicUser.founding_member_since).toLocaleDateString("ja-JP")} 〜）`}
                 創設メンバー専用ラウンジ・将来の書籍贈呈・新機能ファーストアクセス等の特典が永久に付帯します。
               </p>
+              <div className="mt-4 flex gap-2 flex-wrap">
+                <Link
+                  href="/board/founding-lounge"
+                  className="inline-flex items-center min-h-[var(--spacing-tap)] px-4 rounded-full border border-amber-700 bg-white text-amber-900 text-sm font-medium no-underline hover:bg-amber-50"
+                >
+                  🏛 ラウンジへ
+                </Link>
+                {operatorId && (
+                  <Link
+                    href={`/messages/${operatorId}`}
+                    className="inline-flex items-center min-h-[var(--spacing-tap)] px-4 rounded-full border border-amber-700 bg-white text-amber-900 text-sm font-medium no-underline hover:bg-amber-50"
+                  >
+                    📬 油谷さんに直接話す
+                  </Link>
+                )}
+                <Link
+                  href="/founding-members"
+                  className="inline-flex items-center min-h-[var(--spacing-tap)] px-4 rounded-full border border-amber-700 bg-white text-amber-900 text-sm font-medium no-underline hover:bg-amber-50"
+                >
+                  📜 名簿
+                </Link>
+              </div>
             </div>
           </div>
         </section>

@@ -10,6 +10,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { MediaDisplay } from "@/components/media-display";
 import { DmMediaPicker } from "@/components/dm-media-picker";
 import { publicAvatarUrl } from "@/lib/avatar";
+import { isOperator } from "@/lib/operator";
 import type { MediaItem } from "@/lib/media";
 
 type Props = {
@@ -98,7 +99,33 @@ export default async function PeerMessagesPage({
     (peerProfile?.avatar_url as string | null | undefined) ?? null,
   );
 
-  const canSend = myRank === "verified" && peerRank === "verified" && !peerIsAi;
+  // 通常 DM は両者 verified 必須、ただし peer が運営の場合は
+  // 創設メンバー / 応援団 / 認証済の誰でも DM を送れる「直通チャンネル」扱い。
+  const peerIsOperator = await isOperator(peer);
+  const [{ data: meExtra }, { data: meSupporter }] = await Promise.all([
+    supabase
+      .from("users")
+      .select("is_founding_member")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("supporters")
+      .select("year")
+      .eq("user_id", user.id)
+      .eq(
+        "year",
+        new Date(
+          new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }),
+        ).getFullYear(),
+      )
+      .maybeSingle(),
+  ]);
+  const meIsFounding = meExtra?.is_founding_member === true;
+  const meIsSupporter = !!meSupporter;
+
+  const canSend = peerIsOperator
+    ? myRank === "verified" || meIsFounding || meIsSupporter
+    : myRank === "verified" && peerRank === "verified" && !peerIsAi;
 
   // 過去メッセージを古い順で取得（最大 200 件）
   const { data: msgRows } = await supabase
