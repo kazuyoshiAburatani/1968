@@ -24,7 +24,7 @@ export default async function ProfileEditPage({ searchParams }: Props) {
   const { supabase, user } = await requireSession();
   const { saved, error } = await searchParams;
 
-  // 主要フィールドはまとめて取得、home_banner_color は別クエリで吸収する。
+  // 主要フィールドはまとめて取得、新カラムは別クエリで吸収する。
   // マイグレーション未適用の環境でもこのページが動くよう、欠けるカラムは
   // 主クエリから除外して、別途 try でフェッチする。
   const { data: profileBase } = await supabase
@@ -35,22 +35,41 @@ export default async function ProfileEditPage({ searchParams }: Props) {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  // home_banner_color、未適用なら null として扱う
+  // home_banner_color と founding_directory_listed、未適用なら null/false
   let homeBannerColor: string | null = null;
+  let foundingDirectoryListed = false;
   try {
-    const { data: bannerRow } = await supabase
+    const { data: extra } = await supabase
       .from("profiles")
-      .select("home_banner_color")
+      .select("home_banner_color, founding_directory_listed")
       .eq("user_id", user.id)
       .maybeSingle();
     homeBannerColor =
-      (bannerRow?.home_banner_color as string | null | undefined) ?? null;
+      (extra?.home_banner_color as string | null | undefined) ?? null;
+    foundingDirectoryListed = extra?.founding_directory_listed === true;
   } catch {
     // カラム未適用、無視
   }
 
+  // 創設メンバーかどうか（オプトイン項目を表示するため）
+  let isFoundingMember = false;
+  try {
+    const { data: u } = await supabase
+      .from("users")
+      .select("is_founding_member")
+      .eq("id", user.id)
+      .maybeSingle();
+    isFoundingMember = u?.is_founding_member === true;
+  } catch {
+    /* 未適用 */
+  }
+
   const profile = profileBase
-    ? { ...profileBase, home_banner_color: homeBannerColor }
+    ? {
+        ...profileBase,
+        home_banner_color: homeBannerColor,
+        founding_directory_listed: foundingDirectoryListed,
+      }
     : null;
 
   if (!profile) {
@@ -241,6 +260,33 @@ export default async function ProfileEditPage({ searchParams }: Props) {
             />
           </div>
         </Field>
+
+        {/* 創設メンバー名簿への掲載、創設メンバー本人にのみ表示 */}
+        {isFoundingMember && (
+          <Field
+            label="創設メンバー名簿への掲載"
+            hint="サイト内の特設ページにニックネームと自己紹介が掲載されます"
+          >
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                name="founding_directory_listed"
+                value="on"
+                defaultChecked={
+                  profile.founding_directory_listed === true
+                }
+                className="mt-1 size-5"
+              />
+              <span className="text-sm text-foreground/80 leading-7">
+                <Link href="/founding-members" target="_blank" className="underline">
+                  創設メンバー名簿ページ
+                </Link>
+                に掲載することに同意します。掲載される情報はニックネーム・都道府県・自己紹介のみで、
+                いつでもこのチェックを外せます。
+              </span>
+            </label>
+          </Field>
+        )}
 
         <Field
           label="マイホーム上部の色"

@@ -96,6 +96,11 @@ export const ProfileUpdateSchema = z.object({
     .enum(BANNER_COLOR_KEYS as [string, ...string[]])
     .optional()
     .transform((v) => (v == null || v === "default" ? null : v)),
+  // チェックボックスは "on" or undefined で来る、boolean に正規化
+  founding_directory_listed: z
+    .union([z.literal("on"), z.literal(""), z.undefined()])
+    .optional()
+    .transform((v) => v === "on"),
 });
 
 // 存在する暦日かどうかを判定する（2月31日などを弾く）。

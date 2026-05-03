@@ -20,10 +20,14 @@ export async function updateProfile(formData: FormData) {
 
   const { supabase, user } = await requireSession();
 
-  // home_banner_color カラムが未適用の環境でも動くよう、まず全フィールドで UPDATE を試み、
-  // 失敗したら home_banner_color を除いて再実行する。
-  // home_banner_color は別個に try/catch で書く、こちらが失敗しても他のフィールドは保存される。
-  const { home_banner_color, ...coreFields } = parsed.data;
+  // 主要フィールドと「カラム未適用な可能性のある」フィールドを分離して UPDATE する。
+  // home_banner_color と founding_directory_listed は新カラムなので、
+  // マイグレーション未適用時に他フィールドの保存まで巻き込まないよう独立して書く。
+  const {
+    home_banner_color,
+    founding_directory_listed,
+    ...coreFields
+  } = parsed.data;
 
   const { error: coreError } = await supabase
     .from("profiles")
@@ -37,7 +41,7 @@ export async function updateProfile(formData: FormData) {
     );
   }
 
-  // バナー色は別 UPDATE、カラム未適用なら無視
+  // バナー色、カラム未適用なら無視
   try {
     await supabase
       .from("profiles")
@@ -46,6 +50,19 @@ export async function updateProfile(formData: FormData) {
   } catch (e) {
     console.warn(
       "[profile-edit] home_banner_color update skipped:",
+      e instanceof Error ? e.message : e,
+    );
+  }
+
+  // 創設メンバー名簿掲載フラグ、カラム未適用なら無視
+  try {
+    await supabase
+      .from("profiles")
+      .update({ founding_directory_listed })
+      .eq("user_id", user.id);
+  } catch (e) {
+    console.warn(
+      "[profile-edit] founding_directory_listed update skipped:",
       e instanceof Error ? e.message : e,
     );
   }
