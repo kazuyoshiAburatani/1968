@@ -36,26 +36,40 @@ function buildAnonClient() {
 export const fetchAllCategories = unstable_cache(
   async (): Promise<CachedCategory[]> => {
     const client = buildAnonClient();
-    // requires_founding / requires_supporter はマイグレーション未適用環境では
-    // 列が無いため、try/catch で吸収して欠ける場合は false を埋める
+    // requires_founding / requires_supporter はマイグレーション未適用環境で
+    // 列が無く、Supabase は例外ではなく { data: null, error: {...} } を返す。
+    // エラーを検知したらフォールバッククエリでベース列のみ取得する。
+    const baseSelect =
+      "id, slug, name, description, display_order, tier, access_level_view, access_level_post, posting_limit_per_day, requires_tenure_months";
+    const extendedSelect = `${baseSelect}, requires_founding, requires_supporter`;
+
     let rows: Record<string, unknown>[] = [];
-    try {
-      const { data } = await client
+    const { data: extData, error: extError } = await client
+      .from("categories")
+      .select(extendedSelect)
+      .order("display_order");
+
+    if (extError) {
+      // 拡張列が無い、または別の理由で失敗 → ベース列のみで再取得
+      console.warn(
+        "[cached-categories] extended select failed, falling back:",
+        extError.message,
+      );
+      const { data: baseData, error: baseError } = await client
         .from("categories")
-        .select(
-          "id, slug, name, description, display_order, tier, access_level_view, access_level_post, posting_limit_per_day, requires_tenure_months, requires_founding, requires_supporter",
-        )
+        .select(baseSelect)
         .order("display_order");
-      rows = data ?? [];
-    } catch {
-      const { data } = await client
-        .from("categories")
-        .select(
-          "id, slug, name, description, display_order, tier, access_level_view, access_level_post, posting_limit_per_day, requires_tenure_months",
-        )
-        .order("display_order");
-      rows = data ?? [];
+      if (baseError) {
+        console.error(
+          "[cached-categories] base select failed:",
+          baseError.message,
+        );
+      }
+      rows = baseData ?? [];
+    } else {
+      rows = extData ?? [];
     }
+
     return rows.map((r) => ({
       ...r,
       requires_founding: r.requires_founding === true,
