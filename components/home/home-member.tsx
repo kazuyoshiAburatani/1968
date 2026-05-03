@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { RecentThreadCards } from "@/components/home/recent-thread-cards";
+import { CurrentTopic } from "@/components/topics/current-topic";
 import { fetchAllCategories } from "@/lib/cached-categories";
 import { resolveBannerColor } from "@/lib/home-banner-colors";
 import type { Tier } from "@/lib/auth/permissions";
@@ -89,6 +90,9 @@ export async function HomeMember({
           段階A・B の 8 カテゴリを閲覧、段階A に 1日3件まで投稿できます。
         </p>
       </section>
+
+      {/* 今週のお題、active なら表示 */}
+      <CurrentTopic />
 
       {/* クイックアクション */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">

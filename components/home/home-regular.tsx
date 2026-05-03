@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { RecentThreadCards } from "@/components/home/recent-thread-cards";
+import { CurrentTopic } from "@/components/topics/current-topic";
 import { fetchAllCategories } from "@/lib/cached-categories";
 import { resolveBannerColor } from "@/lib/home-banner-colors";
 import type { Tier } from "@/lib/auth/permissions";
@@ -125,8 +126,13 @@ export async function HomeRegular({
         </div>
       </div>
 
+      {/* 今週のお題、active なら表示 */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <CurrentTopic />
+      </div>
+
       {/* メインコンテンツ */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 mt-6">
         <div className="lg:grid lg:grid-cols-3 lg:gap-8">
           {/* 左、最新の話題、LINE 風カード */}
           <div className="lg:col-span-2">
