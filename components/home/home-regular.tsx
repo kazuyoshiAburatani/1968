@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { RecentThreadCards } from "@/components/home/recent-thread-cards";
 import { CurrentTopic } from "@/components/topics/current-topic";
+import { PicksGrid } from "@/components/picks/picks-grid";
 import { fetchAllCategories } from "@/lib/cached-categories";
 import { resolveBannerColor } from "@/lib/home-banner-colors";
 import type { Tier } from "@/lib/auth/permissions";
@@ -208,6 +209,11 @@ export async function HomeRegular({
             </section>
           </aside>
         </div>
+      </div>
+
+      {/* みんなの推し、運営おすすめのアフィリエイト */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <PicksGrid limit={6} />
       </div>
 
       {/* 今後のアップデート案内 */}

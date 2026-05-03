@@ -15,6 +15,7 @@ const NAV: Array<{ href: string; label: string; icon: string }> = [
   { href: "/admin/users", label: "会員管理", icon: "ri-group-line" },
   { href: "/admin/categories", label: "カテゴリ", icon: "ri-folder-2-line" },
   { href: "/admin/topics", label: "今週のお題", icon: "ri-chat-quote-line" },
+  { href: "/admin/recommendations", label: "みんなの推し", icon: "ri-heart-3-line" },
   { href: "/admin/audit-logs", label: "監査ログ", icon: "ri-history-line" },
 ];
 
