@@ -19,7 +19,7 @@ export default function PrivacyPage() {
       </div>
 
       <p className="mt-6 text-sm text-foreground/70">
-        最終更新日、2026年4月25日（ドラフト）
+        最終更新日、2026年5月4日（ドラフト）
       </p>
 
       <Section title="1. 事業者情報">
@@ -53,10 +53,10 @@ export default function PrivacyPage() {
             <span className="font-medium">プロフィール情報</span>、出身地、卒業校、職業、自己紹介文、プロフィール画像など、会員ご自身が入力された情報
           </li>
           <li>
-            <span className="font-medium">本人確認書類</span>、マイナンバーカード、健康保険証、運転免許証のいずれかの画像（正会員になる方のみ）
+            <span className="font-medium">1968 認証情報</span>、誕生月日、誓約への同意、ご自身が記述された「1968 年生まれの記憶」（200 字程度の自由記述）、署名としてタイプされたニックネーム。身分証画像の取得は行いません
           </li>
           <li>
-            <span className="font-medium">決済関連情報</span>、決済代行事業者（Stripe Inc.）のお客様ID等。クレジットカード番号、有効期限、セキュリティコード等のカード情報は当方のサーバには一切保存されず、Stripe側で管理されます
+            <span className="font-medium">決済関連情報</span>、任意の応援団お支払いをいただいた場合、決済代行事業者（Stripe Inc.）のお客様ID、お支払い年・金額等の最小限の情報。クレジットカード番号、有効期限、セキュリティコード等のカード情報は当方のサーバには一切保存されず、Stripe側で管理されます
           </li>
           <li>
             <span className="font-medium">投稿コンテンツ</span>、掲示板への投稿、返信、いいね履歴、ダイレクトメッセージの内容、添付した画像・動画
@@ -73,13 +73,13 @@ export default function PrivacyPage() {
       <Section title="3. 取得方法">
         <ul className="list-disc pl-5 space-y-1">
           <li>
-            会員登録、プロフィール登録、身分証アップロード、投稿等、会員ご自身による入力または送信により取得します。
+            会員登録、プロフィール登録、1968 認証申請、投稿等、会員ご自身による入力または送信により取得します。
           </li>
           <li>
-            アクセス情報は、ブラウザから自動的に当方のサーバに送信される技術情報として取得します。
+            アクセス情報、行動分析情報（後述）は、ブラウザから自動的に当方および解析事業者のサーバに送信される技術情報として取得します。
           </li>
           <li>
-            決済情報は、決済代行事業者を経由して、当方が取り扱える範囲（顧客ID、サブスクリプション状態等）で取得します。
+            応援団お支払いをいただいた場合の決済情報は、決済代行事業者を経由して、当方が取り扱える範囲（顧客ID、お支払い年・金額等）で取得します。
           </li>
         </ul>
       </Section>
@@ -105,25 +105,22 @@ export default function PrivacyPage() {
         </ul>
       </Section>
 
-      <Section title="5. 本人確認書類の特別な取り扱い">
+      <Section title="5. 1968 認証情報の取り扱い">
         <p>
-          身分証画像は、要配慮性が高いため、他の個人情報と区別して以下のとおり厳重に取り扱います。
+          1968 認証は、誓約と「1968 年生まれの記憶」の自由記述に基づきます。身分証画像の取得は行いません。記述いただいた内容は以下のとおり取り扱います。
         </p>
         <ul className="list-disc pl-5 mt-2 space-y-1">
           <li>
-            アクセス可能なのは、当方が指名した本人確認の担当者のみです。
+            審査時の閲覧者は、当方が指名した認証担当者のみです。
           </li>
           <li>
-            画像はアップロード時にサーバ側で暗号化し、暗号化された状態で保存します。
+            記述された内容自体はプロフィールには公開されず、認証審査用のみに使用されます。
           </li>
           <li>
-            位置情報（Exif/GPS情報）は保存時に削除されます。
+            承認・却下後も、申請の存在・日時・状態のメタデータは監査ログとして保持します。
           </li>
           <li>
-            本人確認の承認または却下から30日以内に、画像本体および参照情報を完全に削除します（審査結果のメタデータのみ、監査記録として保持します）。
-          </li>
-          <li>
-            本人確認以外の目的では一切利用せず、第三者に提供することもありません。
+            1968 認証以外の目的では利用せず、第三者に提供することもありません。
           </li>
         </ul>
       </Section>
@@ -159,7 +156,7 @@ export default function PrivacyPage() {
             <span className="font-medium">Vercel（米国）</span>、Webサイトのホスティングおよび配信
           </li>
           <li>
-            <span className="font-medium">Stripe（米国）</span>、決済処理
+            <span className="font-medium">Stripe（米国）</span>、応援団お支払いの決済処理（任意の場合のみ）
           </li>
           <li>
             <span className="font-medium">Resend（米国）</span>、メール配信
@@ -169,6 +166,12 @@ export default function PrivacyPage() {
           </li>
           <li>
             <span className="font-medium">Sentry（米国）</span>、エラー監視
+          </li>
+          <li>
+            <span className="font-medium">Microsoft Clarity（米国）</span>、ヒートマップ・操作録画によるユーザー行動分析（個人特定不可、IP は匿名化）
+          </li>
+          <li>
+            <span className="font-medium">Google Analytics 4（米国）</span>、アクセス解析（IP 匿名化を有効化）
           </li>
         </ul>
         <p className="mt-2">
@@ -284,7 +287,7 @@ export default function PrivacyPage() {
             会員に関する個人情報は、原則として会員資格が継続する期間および退会後の必要な期間（紛争対応、法令上の保管義務等）保有します。
           </li>
           <li>
-            身分証画像は、本条第5項に従い、本人確認の承認または却下から30日以内に削除します。
+            1968 認証申請の記述内容は、本条第5項に従い保有します。身分証画像の保有はありません。
           </li>
           <li>
             アクセスログは、不正利用の調査および統計分析の目的で、最大1年間保有します。
@@ -309,13 +312,50 @@ export default function PrivacyPage() {
         </ol>
       </Section>
 
-      <Section title="12. クッキー（Cookie）の使用">
+      <Section title="12. クッキー（Cookie）および解析ツールの使用">
         <ol className="list-decimal pl-5 space-y-1">
           <li>
             本サービスは、ログイン状態の維持、利便性の向上、サービスの利用状況の把握のためにクッキーを使用します。
           </li>
           <li>
+            <span className="font-medium">Microsoft Clarity</span> および{" "}
+            <span className="font-medium">Google Analytics 4</span> を、サイト改善のためのアクセス解析に使用しています。これらのツールは、ページ閲覧、クリック位置、スクロール深度、操作録画（Clarity のみ）等を収集します。IP アドレスは匿名化されており、個人を特定する目的では利用しません。
+          </li>
+          <li>
+            Clarity の詳細は{" "}
+            <a
+              href="https://privacy.microsoft.com/en-us/privacystatement"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              Microsoft プライバシーステートメント
+            </a>
+            、Google Analytics の詳細は{" "}
+            <a
+              href="https://policies.google.com/technologies/partner-sites"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              Google のサービスを使用するサイトやアプリから収集した情報の Google による使用
+            </a>
+            をご参照ください。
+          </li>
+          <li>
             会員は、ブラウザの設定によりクッキーの受け入れを制限することができますが、その場合本サービスの一部機能が正常に動作しないことがあります。
+          </li>
+          <li>
+            Google Analytics の利用を停止したい場合、{" "}
+            <a
+              href="https://tools.google.com/dlpage/gaoptout"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              Google アナリティクス オプトアウト アドオン
+            </a>
+            をご利用いただけます。
           </li>
         </ol>
       </Section>
