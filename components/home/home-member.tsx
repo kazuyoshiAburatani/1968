@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { RisingSun } from "@/components/illustrations/rising-sun";
 import { RecentThreadCards } from "@/components/home/recent-thread-cards";
 import { fetchAllCategories } from "@/lib/cached-categories";
+import { resolveBannerColor } from "@/lib/home-banner-colors";
 import type { Tier } from "@/lib/auth/permissions";
 
 // 無料会員（member）向けダッシュボード。
@@ -33,43 +33,56 @@ export async function HomeMember({
   const tierB = cats.filter((c) => c.tier === "B");
   const locked = cats.filter((c) => c.tier === "C" || c.tier === "D");
 
-  // 自分の今日の投稿を category_id で集計
+  // 自分の今日の投稿を category_id で集計、プロフィールのバナー色も並列取得
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { data: myTodayData } = await supabase
-    .from("threads")
-    .select("category_id")
-    .eq("user_id", userId)
-    .gte("created_at", since);
+  const [{ data: myTodayData }, { data: profileData }] = await Promise.all([
+    supabase
+      .from("threads")
+      .select("category_id")
+      .eq("user_id", userId)
+      .gte("created_at", since),
+    supabase
+      .from("profiles")
+      .select("home_banner_color")
+      .eq("user_id", userId)
+      .maybeSingle(),
+  ]);
   const todayCountByCat = new Map<number, number>();
   for (const row of myTodayData ?? []) {
     const cid = row.category_id as number;
     todayCountByCat.set(cid, (todayCountByCat.get(cid) ?? 0) + 1);
   }
+  const banner = resolveBannerColor(
+    (profileData?.home_banner_color as string | null | undefined) ?? null,
+  );
 
   const firstA = tierA[0]?.slug ?? "nostalgia-anime";
 
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-8">
-      {/* あいさつバー */}
-      <section className="bg-background rounded-lg p-6 shadow-sm border border-border relative overflow-hidden">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2 flex-wrap">
-              <h1 className="text-2xl font-bold text-foreground">
-                {nickname} さんのホーム
-              </h1>
-              <span className="bg-muted text-foreground/80 border border-border px-3 py-1 rounded-full text-sm font-medium">
-                会員
-              </span>
-            </div>
-            <p className="text-foreground/70 text-sm">
-              段階A・B の 8 カテゴリを閲覧、段階A に 1日3件まで投稿できます。
-            </p>
-          </div>
-          <div className="hidden md:block text-accent/25">
-            <RisingSun size={96} />
-          </div>
+      {/* あいさつバー、profiles.home_banner_color で会員ごとに色を選べる */}
+      <section
+        className="rounded-lg p-6 shadow-sm border border-border"
+        style={{ backgroundColor: banner.bg, color: banner.fg }}
+      >
+        <div className="flex items-center gap-3 mb-2 flex-wrap">
+          <h1 className="text-2xl font-bold" style={{ color: banner.fg }}>
+            {nickname} さんのホーム
+          </h1>
+          <span
+            className="border px-3 py-1 rounded-full text-sm font-medium"
+            style={{
+              backgroundColor: banner.fg,
+              color: banner.bg,
+              borderColor: banner.fg,
+            }}
+          >
+            一般会員
+          </span>
         </div>
+        <p className="text-sm" style={{ color: banner.fg, opacity: 0.75 }}>
+          段階A・B の 8 カテゴリを閲覧、段階A に 1日3件まで投稿できます。
+        </p>
       </section>
 
       {/* クイックアクション */}

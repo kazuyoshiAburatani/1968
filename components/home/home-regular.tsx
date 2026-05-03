@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { SunLines } from "@/components/illustrations/sun-lines";
 import { RecentThreadCards } from "@/components/home/recent-thread-cards";
 import { fetchAllCategories } from "@/lib/cached-categories";
+import { resolveBannerColor } from "@/lib/home-banner-colors";
 import type { Tier } from "@/lib/auth/permissions";
 
-// 正会員（regular）向け本格ダッシュボード。Readdy レイアウト採用。
+// 1968 認証済（verified）向け本格ダッシュボード。
 // 2カラム（左=最新スレッド / 右=カテゴリナビ＋マイ最近）、下にアップデート案内。
+// 上部バナーの背景色は profiles.home_banner_color で会員ごとに選べる。
 
 type Category = {
   id: number;
@@ -24,8 +25,8 @@ type ThreadLite = {
 
 const TIER_LABEL: Record<Tier, string> = {
   A: "段階A ・ どなたでも",
-  B: "段階B ・ 準会員から",
-  C: "段階C ・ 正会員のみ",
+  B: "段階B ・ 認証済から投稿",
+  C: "段階C ・ 1968 認証済のみ",
   D: "段階D ・ 入会3ヶ月以上",
 };
 
@@ -46,33 +47,50 @@ export async function HomeRegular({
     byTier.set(c.tier, list);
   }
 
-  const { data: myRecentData } = await supabase
-    .from("threads")
-    .select("id, title, created_at, categories(slug)")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(5);
+  const [{ data: myRecentData }, { data: profileData }] = await Promise.all([
+    supabase
+      .from("threads")
+      .select("id, title, created_at, categories(slug)")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("profiles")
+      .select("home_banner_color")
+      .eq("user_id", userId)
+      .maybeSingle(),
+  ]);
   const myRecent = (myRecentData ?? []) as unknown as ThreadLite[];
+  const banner = resolveBannerColor(
+    (profileData?.home_banner_color as string | null | undefined) ?? null,
+  );
 
   return (
     <>
-      {/* あいさつバー */}
-      <div className="bg-background border-b border-border">
+      {/* あいさつバー、profiles.home_banner_color で会員ごとに色を選べる */}
+      <div
+        className="border-b border-border"
+        style={{ backgroundColor: banner.bg, color: banner.fg }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-                {nickname} さんのホーム
-              </h1>
-              <span className="bg-primary text-white px-3 py-1 rounded-full text-sm font-semibold">
-                正会員
-              </span>
-            </div>
-            <div className="hidden lg:block text-accent/40">
-              <SunLines size={120} />
-            </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1
+              className="text-2xl lg:text-3xl font-bold"
+              style={{ color: banner.fg }}
+            >
+              {nickname} さんのホーム
+            </h1>
+            <span
+              className="px-3 py-1 rounded-full text-sm font-semibold"
+              style={{
+                backgroundColor: banner.fg,
+                color: banner.bg,
+              }}
+            >
+              1968 認証済
+            </span>
           </div>
-          <p className="text-foreground/70 mt-2 text-sm">
+          <p className="mt-2 text-sm" style={{ color: banner.fg, opacity: 0.75 }}>
             全12カテゴリを自由に語れます。
           </p>
         </div>

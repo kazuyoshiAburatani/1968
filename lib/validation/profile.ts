@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { PREFECTURES } from "@/lib/prefectures";
+import { BANNER_COLOR_KEYS } from "@/lib/home-banner-colors";
 
 // オンボーディング時の入力スキーマ、生年月日は 1968 固定 + 月日選択。
 export const OnboardingSchema = z.object({
@@ -91,6 +92,10 @@ export const ProfileUpdateSchema = z.object({
     .optional()
     .transform((v) => (v === "" ? null : (v ?? null))),
   bio_visible: z.enum(["public", "members_only", "private"]),
+  home_banner_color: z
+    .enum(BANNER_COLOR_KEYS as [string, ...string[]])
+    .optional()
+    .transform((v) => (v == null || v === "default" ? null : v)),
 });
 
 // 存在する暦日かどうかを判定する（2月31日などを弾く）。

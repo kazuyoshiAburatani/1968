@@ -5,6 +5,11 @@ import { requireSession } from "@/lib/auth/require-session";
 import { PREFECTURES } from "@/lib/prefectures";
 import { SubmitButton } from "@/components/submit-button";
 import { publicAvatarUrl } from "@/lib/avatar";
+import {
+  BANNER_COLORS,
+  BANNER_COLOR_KEYS,
+  type BannerColorKey,
+} from "@/lib/home-banner-colors";
 import { removeAvatar, updateProfile, uploadAvatar } from "./actions";
 
 export const metadata: Metadata = {
@@ -22,7 +27,7 @@ export default async function ProfileEditPage({ searchParams }: Props) {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "nickname, birth_month, birth_day, gender, prefecture, hometown, school, occupation, introduction, bio_visible, avatar_url",
+      "nickname, birth_month, birth_day, gender, prefecture, hometown, school, occupation, introduction, bio_visible, avatar_url, home_banner_color",
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -213,6 +218,50 @@ export default async function ProfileEditPage({ searchParams }: Props) {
               label="自分だけ"
               defaultChecked={profile.bio_visible === "private"}
             />
+          </div>
+        </Field>
+
+        <Field
+          label="マイホーム上部の色"
+          hint="ログイン後のホーム画面、上部あいさつバーの背景色を選べます"
+        >
+          <div
+            className="grid grid-cols-4 sm:grid-cols-8 gap-2"
+            role="radiogroup"
+            aria-label="マイホームのバナー背景色"
+          >
+            {BANNER_COLOR_KEYS.map((key) => {
+              const c = BANNER_COLORS[key];
+              const currentValue =
+                (profile.home_banner_color as BannerColorKey | null) ??
+                "default";
+              const checked = currentValue === key;
+              return (
+                <label
+                  key={key}
+                  className={`block cursor-pointer rounded-lg border-2 p-2 transition-colors ${
+                    checked
+                      ? "border-primary"
+                      : "border-border hover:border-foreground/40"
+                  }`}
+                  style={{ backgroundColor: c.bg }}
+                >
+                  <input
+                    type="radio"
+                    name="home_banner_color"
+                    value={key}
+                    defaultChecked={checked}
+                    className="sr-only"
+                  />
+                  <span
+                    className="block text-xs font-medium text-center min-h-[2rem] flex items-center justify-center"
+                    style={{ color: c.fg }}
+                  >
+                    {c.label}
+                  </span>
+                </label>
+              );
+            })}
           </div>
         </Field>
 
