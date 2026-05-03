@@ -8,6 +8,30 @@ export const metadata: Metadata = {
   title: "ベータテスター募集",
   description:
     "1968 ベータ版にご参加いただける方を募集しています。1968年生まれ限定の会員制コミュニティを、一緒に育てていただけませんか。",
+  openGraph: {
+    title: "ベータテスター30名募集中 | 1968",
+    description:
+      "1968年生まれ限定コミュニティ「1968」のベータテスター30名を募集中。創設メンバー限定の永久バッジ・専用ラウンジ等 8 つの特典が永久付帯。",
+    url: "https://1968.love/beta",
+    siteName: "1968",
+    locale: "ja_JP",
+    type: "website",
+    images: [
+      {
+        url: "/og/og-beta.png",
+        width: 1200,
+        height: 630,
+        alt: "ベータテスター30名募集中 | 1968",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ベータテスター30名募集中 | 1968",
+    description:
+      "1968年生まれ限定コミュニティ「1968」、ベータテスター30名募集中。創設メンバー限定 8 特典。",
+    images: ["/og/og-beta.png"],
+  },
 };
 
 // ベータ募集枠、応募の進捗をリアルタイムに見せて緊急感を出す

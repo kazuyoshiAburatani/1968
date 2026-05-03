@@ -46,6 +46,17 @@ export const metadata: Metadata = {
   ],
   metadataBase: new URL("https://1968.love"),
   alternates: { canonical: "https://1968.love" },
+  // ファビコン・アイコン群、Next.js 16 の Metadata API 経由で head に注入
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/logo/icon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/logo/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/logo/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+    shortcut: ["/favicon.ico"],
+  },
   openGraph: {
     title: "1968 | 1968年生まれ限定コミュニティ",
     description:
@@ -54,12 +65,21 @@ export const metadata: Metadata = {
     siteName: "1968",
     locale: "ja_JP",
     type: "website",
+    images: [
+      {
+        url: "/og/og-tagline.png",
+        width: 1200,
+        height: 630,
+        alt: "1968 | 同い年だけが、本音で話せる場所。",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "1968 | 1968年生まれ限定コミュニティ",
     description:
       "1968年（昭和43年）生まれだけの会員制コミュニティ。ベータテスター30名募集中。",
+    images: ["/og/og-tagline.png"],
   },
   robots: {
     index: true,
@@ -143,7 +163,7 @@ export default async function RootLayout({
                   name: "1968",
                   alternateName: "1968年生まれ限定コミュニティ",
                   url: "https://1968.love",
-                  logo: "https://1968.love/icon.png",
+                  logo: "https://1968.love/logo/icon-512.png",
                   founder: {
                     "@type": "Person",
                     name: "油谷和好",

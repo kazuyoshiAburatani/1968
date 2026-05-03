@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentRank } from "@/lib/auth/current-rank";
 import { canView, canPost, type Tier, type ViewLevel, type PostLevel } from "@/lib/auth/permissions";
 import { fetchAuthorInfo } from "@/lib/author-info";
+import { EmptyState } from "@/components/empty-state";
 import { UserAvatar } from "@/components/user-avatar";
 import { ThreadThumbnail } from "@/components/thread-thumbnail";
 import { fetchCategoryBySlug } from "@/lib/cached-categories";
@@ -150,12 +151,11 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       )}
 
       {threadRows.length === 0 ? (
-        <div className="mt-12 px-4 text-center text-foreground/70">
-          <p>まだスレッドはありません。</p>
-          {canPostHere && (
-            <p className="mt-2 text-sm">最初の一歩を書いてみませんか？</p>
-          )}
-        </div>
+        <EmptyState
+          variant="threads"
+          title="まだスレッドはありません"
+          description={canPostHere ? "最初の一歩を書いてみませんか？" : undefined}
+        />
       ) : (
         <ul className="divide-y divide-border bg-background sm:rounded-b-xl sm:border-x sm:border-b sm:border-border">
           {threadRows.map((t) => {

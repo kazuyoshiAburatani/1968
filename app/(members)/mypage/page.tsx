@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { requireSession } from "@/lib/auth/require-session";
@@ -214,21 +215,29 @@ export default async function MyPage({ searchParams }: Props) {
         )}
       </section>
 
-      {/* 創設メンバー */}
+      {/* 創設メンバー、画像バッジを大きく見せる */}
       {isFoundingMember && (
         <section className="mt-6 rounded-2xl border border-amber-300 bg-amber-50 p-5">
-          <h2 className="font-bold text-amber-900 flex items-center gap-2">
-            <span className="text-xl" aria-hidden>
-              🎖
-            </span>
-            創設メンバーです
-          </h2>
-          <p className="mt-2 text-sm text-amber-900/90 leading-7">
-            ベータ期間からの応援、本当にありがとうございます。
-            {publicUser?.founding_member_since &&
-              `（${new Date(publicUser.founding_member_since).toLocaleDateString("ja-JP")} 〜）`}
-            創設メンバー専用ラウンジ・将来の書籍贈呈・新機能ファーストアクセス等の特典が永久に付帯します。
-          </p>
+          <div className="flex items-start gap-4">
+            <Image
+              src="/badges/founding-member.svg"
+              alt="創設メンバーバッジ"
+              width={88}
+              height={88}
+              className="shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <h2 className="font-bold text-amber-900">
+                創設メンバーです
+              </h2>
+              <p className="mt-2 text-sm text-amber-900/90 leading-7">
+                ベータ期間からの応援、本当にありがとうございます。
+                {publicUser?.founding_member_since &&
+                  `（${new Date(publicUser.founding_member_since).toLocaleDateString("ja-JP")} 〜）`}
+                創設メンバー専用ラウンジ・将来の書籍贈呈・新機能ファーストアクセス等の特典が永久に付帯します。
+              </p>
+            </div>
+          </div>
         </section>
       )}
 

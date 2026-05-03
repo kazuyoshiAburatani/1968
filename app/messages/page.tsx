@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchAuthorInfo } from "@/lib/author-info";
+import { EmptyState } from "@/components/empty-state";
 import { UserAvatar } from "@/components/user-avatar";
 
 export const metadata: Metadata = {
@@ -163,19 +164,18 @@ export default async function MessagesIndexPage() {
       </p>
 
       {conversations.length === 0 ? (
-        <div className="mt-10 px-4 sm:px-0">
-          <div className="rounded-2xl border border-border bg-muted/30 p-6 text-sm text-foreground/80 leading-7">
-            <p>まだメッセージはありません。</p>
-            <p className="mt-2">
-              気になる方のプロフィールから「メッセージを送る」を押してみませんか。
-            </p>
-            <p className="mt-4">
-              <Link href="/board" className="underline">
-                → 掲示板で気になる方を見つける
-              </Link>
-            </p>
-          </div>
-        </div>
+        <EmptyState
+          variant="messages"
+          title="まだメッセージはありません"
+          description="気になる方のプロフィールから「メッセージを送る」を押してみませんか。"
+        >
+          <Link
+            href="/board"
+            className="inline-flex items-center min-h-[var(--spacing-tap)] px-5 rounded-full border border-border no-underline hover:bg-muted text-sm"
+          >
+            掲示板で気になる方を見つける →
+          </Link>
+        </EmptyState>
       ) : (
         <ul className="mt-4 divide-y divide-border border-y border-border bg-background sm:rounded-xl sm:border">
           {conversations.map((c) => {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchAuthorInfo } from "@/lib/author-info";
+import { EmptyState } from "@/components/empty-state";
 import { ThreadThumbnail } from "@/components/thread-thumbnail";
 import type { Tier } from "@/lib/auth/permissions";
 import type { MediaItem } from "@/lib/media";
@@ -91,9 +92,18 @@ export default async function TimelinePage({ searchParams }: Props) {
       </header>
 
       {rows.length === 0 ? (
-        <p className="mt-12 text-center text-sm text-foreground/60">
-          まだ投稿はありません。最初の一歩を書いてみませんか。
-        </p>
+        <EmptyState
+          variant="threads"
+          title="まだ投稿はありません"
+          description="最初の一歩を書いてみませんか。"
+        >
+          <Link
+            href="/board"
+            className="inline-flex items-center min-h-[var(--spacing-tap)] px-5 rounded-full bg-primary text-white text-sm font-medium no-underline active:opacity-90"
+          >
+            掲示板へ →
+          </Link>
+        </EmptyState>
       ) : (
         <ul className="mt-6 divide-y divide-border border-y border-border bg-background sm:rounded-xl sm:border">
           {rows.map((t) => {

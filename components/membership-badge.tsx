@@ -5,10 +5,12 @@
 // 表示優先度（左から順）：
 //   ・運営AI（ランクの代わりに単独表示）
 //   ・1968認証済（verified の場合）
-//   ・創設メンバー（is_founding_member）
+//   ・創設メンバー（is_founding_member、画像バッジを使用）
 //   ・応援団（is_current_supporter）
 //
-// guest / member は無記名扱いとし、バッジは付けないことで「課金色のない平等感」を出す。
+// guest / member は無記名扱いとし、バッジは付けない（課金色のない平等感）。
+
+import Image from "next/image";
 
 type Rank = "guest" | "member" | "verified";
 
@@ -17,13 +19,15 @@ export function MembershipBadge({
   isFoundingMember,
   isCurrentSupporter,
   isAi,
+  badgeSize = "sm",
 }: {
   rank: Rank;
   isFoundingMember?: boolean;
   isCurrentSupporter?: boolean;
   isAi?: boolean;
+  /** 創設メンバーバッジ画像のサイズ。sm=20px、md=28px、lg=64px */
+  badgeSize?: "sm" | "md" | "lg";
 }) {
-  // 運営 AI は独立表示
   if (isAi) {
     return (
       <span className="inline-flex items-center gap-1">
@@ -34,17 +38,25 @@ export function MembershipBadge({
     );
   }
 
+  const foundingPx = badgeSize === "lg" ? 64 : badgeSize === "md" ? 28 : 20;
+
   return (
-    <span className="inline-flex items-center gap-1 flex-wrap">
+    <span className="inline-flex items-center gap-1.5 flex-wrap">
       {rank === "verified" && (
         <Pill bg="#f8f4ec" fg="#1e3a5f" border="#1e3a5f">
           1968認証済
         </Pill>
       )}
       {isFoundingMember && (
-        <Pill bg="#fff7e6" fg="#8b6f3d" border="#c8a25e">
-          創設メンバー
-        </Pill>
+        // 画像バッジ、デザイナー作の創設メンバーバッジを直接使う
+        <Image
+          src="/badges/founding-member.svg"
+          alt="創設メンバー"
+          width={foundingPx}
+          height={foundingPx}
+          className="inline-block shrink-0 align-middle"
+          title="創設メンバー、ベータ期間からの応援に感謝"
+        />
       )}
       {isCurrentSupporter && (
         <Pill bg="#fdebe8" fg="#a8463b" border="#c87d72">

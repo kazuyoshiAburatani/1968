@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchNotifications, isUnread } from "@/lib/notifications";
+import { EmptyState } from "@/components/empty-state";
 import { UserAvatar } from "@/components/user-avatar";
 import { NotificationsMarkSeen } from "@/components/notifications-mark-seen";
 
@@ -62,12 +63,11 @@ export default async function NotificationsPage() {
       </header>
 
       {items.length === 0 ? (
-        <div className="mt-12 px-4 text-center">
-          <p className="text-foreground/70">まだお知らせはありません。</p>
-          <p className="mt-2 text-sm text-foreground/60">
-            返信、いいね、ダイレクトメッセージが届くと、こちらに表示されます。
-          </p>
-        </div>
+        <EmptyState
+          variant="notifications"
+          title="まだお知らせはありません"
+          description="返信、いいね、ダイレクトメッセージが届くと、こちらに表示されます。"
+        />
       ) : (
         <ul className="mt-4 divide-y divide-border border-y border-border bg-background sm:rounded-xl sm:border">
           {items.map((it, idx) => {
