@@ -23,9 +23,9 @@ type ThreadPreview = {
 
 const TIER_TITLES: Record<Tier, string> = {
   A: "どなたでも",
-  B: "会員から",
-  C: "正会員のみ",
-  D: "正会員・入会3ヶ月以上",
+  B: "会員から閲覧、認証済から投稿",
+  C: "1968 認証済のみ",
+  D: "1968 認証済・入会3ヶ月以上",
 };
 
 // カテゴリ別アイコンと色
@@ -105,7 +105,8 @@ export default async function BoardPage() {
           12 のカテゴリで、同い年の方々と語り合えます。
           {rank === "guest" &&
             "今は 4 カテゴリをご覧いただけます。会員登録で 8 カテゴリに広がります。"}
-          {rank === "member" && "8 カテゴリを閲覧、段階A に投稿できます。"}
+          {rank === "member" &&
+            "8 カテゴリを閲覧、段階A に投稿できます。1968 認証で全カテゴリが解放されます。"}
           {rank === "verified" && "全カテゴリを自由に語れます。"}
         </p>
       </header>
@@ -188,7 +189,7 @@ export default async function BoardPage() {
                           <p className="mt-0.5 text-sm text-foreground/60 line-clamp-1">
                             {rank === "guest"
                               ? "会員登録するとご覧いただけます"
-                              : "正会員でご覧いただけます"}
+                              : "1968 認証でご覧いただけます"}
                           </p>
                         </div>
                       </div>

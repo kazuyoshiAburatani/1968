@@ -50,6 +50,26 @@ as $$
   end;
 $$;
 
+-- 運営（admins テーブル登録ユーザー）は RLS 上も常に verified 扱い、
+-- モデレーション・運用作業に支障を出さないため。
+-- current_user_rank() は RLS ポリシー内で参照されるため、ここで挙動を上書きする。
+create or replace function public.current_user_rank()
+returns text
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select case
+    -- 運営は無条件で verified
+    when public.is_admin() then 'verified'
+    else coalesce(
+      (select membership_rank from public.users where id = auth.uid()),
+      'guest'
+    )
+  end;
+$$;
+
 -- subscriptions の trigger は残すが、もはや rank に影響しない。後述の Stripe 改修で
 -- subscriptions テーブルへの新規 insert は止まり、過去レコードのみ閲覧用に残す。
 
