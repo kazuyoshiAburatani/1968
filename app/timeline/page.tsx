@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchAuthorInfo } from "@/lib/author-info";
 import { EmptyState } from "@/components/empty-state";
+import { MembershipBadge } from "@/components/membership-badge";
 import { ThreadThumbnail } from "@/components/thread-thumbnail";
 import type { Tier } from "@/lib/auth/permissions";
 import type { MediaItem } from "@/lib/media";
@@ -141,8 +142,15 @@ export default async function TimelinePage({ searchParams }: Props) {
                     <p className="mt-0.5 text-sm text-foreground/70 line-clamp-1 leading-6">
                       {preview(t.body)}
                     </p>
-                    <div className="mt-1.5 flex items-center gap-2 text-xs text-foreground/60 flex-wrap">
+                    <div className="mt-1.5 flex items-center gap-1.5 text-xs text-foreground/60 flex-wrap">
                       <span className="truncate max-w-[8em]">{nickname}</span>
+                      <MembershipBadge
+                        rank="member"
+                        compact
+                        isAi={author?.isAi}
+                        isFoundingMember={author?.isFoundingMember}
+                        isCurrentSupporter={author?.isCurrentSupporter}
+                      />
                       <span className="ml-auto inline-flex items-center gap-2.5">
                         <span className="inline-flex items-center gap-0.5">
                           <i className="ri-message-2-line" aria-hidden />

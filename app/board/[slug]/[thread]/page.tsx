@@ -20,6 +20,7 @@ import { MediaPicker } from "@/components/media-picker";
 import { OwnReplyBubble } from "@/components/own-reply-bubble";
 import { AdminModToolbar } from "@/components/admin-mod-toolbar";
 import { UserAvatar } from "@/components/user-avatar";
+import { MembershipBadge } from "@/components/membership-badge";
 import { fetchAuthorInfo } from "@/lib/author-info";
 import { fetchCategoryBySlug } from "@/lib/cached-categories";
 import type { MediaItem } from "@/lib/media";
@@ -136,6 +137,8 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
   const author = authorMap.get(thread.user_id);
   const authorName = author?.nickname ?? "（匿名）";
   const authorIsAi = author?.isAi === true;
+  const authorIsFounding = author?.isFoundingMember === true;
+  const authorIsSupporter = author?.isCurrentSupporter === true;
   const authorAvatar = author?.avatarUrl ?? null;
 
   // 現ユーザーの「いいね」一覧、スレッド本文＋閲覧可能な返信分
@@ -192,6 +195,8 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
           authorId={thread.user_id}
           authorName={authorName}
           authorIsAi={authorIsAi}
+          authorIsFounding={authorIsFounding}
+          authorIsSupporter={authorIsSupporter}
           authorAvatar={authorAvatar}
           title={thread.title}
           body={thread.body}
@@ -212,6 +217,8 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
               const replyAuthor = authorMap.get(r.user_id);
               const name = replyAuthor?.nickname ?? "（匿名）";
               const replyIsAi = replyAuthor?.isAi === true;
+              const replyIsFounding = replyAuthor?.isFoundingMember === true;
+              const replyIsSupporter = replyAuthor?.isCurrentSupporter === true;
               const replyAvatar = replyAuthor?.avatarUrl ?? null;
               const mine = viewerId === r.user_id;
               const parentName = r.parent_reply_id
@@ -252,6 +259,8 @@ export default async function ThreadDetailPage({ params, searchParams }: Props) 
                     name={name}
                     authorId={r.user_id}
                     isAi={replyIsAi}
+                    isFounding={replyIsFounding}
+                    isSupporter={replyIsSupporter}
                     avatarUrl={replyAvatar}
                     mine={mine}
                     parentName={parentName}
@@ -355,6 +364,8 @@ function ThreadOriginalCard(props: {
   authorId: string;
   authorName: string;
   authorIsAi: boolean;
+  authorIsFounding: boolean;
+  authorIsSupporter: boolean;
   authorAvatar: string | null;
   title: string;
   body: string;
@@ -384,6 +395,12 @@ function ThreadOriginalCard(props: {
               {props.authorName}
             </Link>
             {props.authorIsAi && <AiBadge />}
+            <MembershipBadge
+              rank="member"
+              compact
+              isFoundingMember={props.authorIsFounding}
+              isCurrentSupporter={props.authorIsSupporter}
+            />
           </p>
           <p className="text-xs text-foreground/60">
             {new Date(props.createdAt).toLocaleString("ja-JP", {
@@ -447,6 +464,8 @@ function ReplyBubble(props: {
   name: string;
   authorId: string;
   isAi: boolean;
+  isFounding: boolean;
+  isSupporter: boolean;
   avatarUrl: string | null;
   mine: boolean;
   parentName: string | null;
@@ -485,6 +504,12 @@ function ReplyBubble(props: {
           <p className="text-xs text-foreground/70 mb-0.5 px-1 flex items-center gap-1">
             <span>{props.name}</span>
             {props.isAi && <AiBadge />}
+            <MembershipBadge
+              rank="member"
+              compact
+              isFoundingMember={props.isFounding}
+              isCurrentSupporter={props.isSupporter}
+            />
           </p>
         )}
         {props.parentName && (

@@ -394,6 +394,7 @@ as
 select
   u.id as user_id,
   u.membership_rank,
+  u.is_ai_persona,
   u.is_founding_member,
   exists (
     select 1 from public.supporters s

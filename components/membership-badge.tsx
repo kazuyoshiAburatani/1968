@@ -20,6 +20,7 @@ export function MembershipBadge({
   isCurrentSupporter,
   isAi,
   badgeSize = "sm",
+  compact = false,
 }: {
   rank: Rank;
   isFoundingMember?: boolean;
@@ -27,6 +28,9 @@ export function MembershipBadge({
   isAi?: boolean;
   /** 創設メンバーバッジ画像のサイズ。sm=20px、md=28px、lg=64px */
   badgeSize?: "sm" | "md" | "lg";
+  /** true なら「1968認証済」pill を非表示にし、特別バッジ（創設・応援団・運営AI）だけ表示。
+   * 投稿バブル内など、rank はカテゴリ権限で自明な場所で使う */
+  compact?: boolean;
 }) {
   if (isAi) {
     return (
@@ -42,13 +46,12 @@ export function MembershipBadge({
 
   return (
     <span className="inline-flex items-center gap-1.5 flex-wrap">
-      {rank === "verified" && (
+      {!compact && rank === "verified" && (
         <Pill bg="#f8f4ec" fg="#1e3a5f" border="#1e3a5f">
           1968認証済
         </Pill>
       )}
       {isFoundingMember && (
-        // 画像バッジ、デザイナー作の創設メンバーバッジを直接使う
         <Image
           src="/badges/founding-member.svg"
           alt="創設メンバー"

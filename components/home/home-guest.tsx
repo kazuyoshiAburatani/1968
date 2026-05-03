@@ -1,14 +1,15 @@
 import Link from "next/link";
-import { PhotoCollageHero } from "./photo-collage-hero";
+import { ImageHero } from "./image-hero";
 import { RecentThreadCards } from "./recent-thread-cards";
 
-// 未ログインのランディング、写真コラージュ風＋チャット風カードで「同年代の集い」感を出す。
+// 未ログインのランディング、ノート + 湯呑みのイラストヒーローで
+// 「同年代と落ち着いて語らえる場」のブランド世界観を一目で伝える。
 // 課金訴求は控えめ、主 CTA は「会員登録」と「掲示板をのぞく」。
 
 export async function HomeGuest() {
   return (
     <div className="pb-12">
-      <PhotoCollageHero
+      <ImageHero
         title={
           <>
             昭和43年生まれだけの、

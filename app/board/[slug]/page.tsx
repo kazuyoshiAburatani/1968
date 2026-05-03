@@ -6,6 +6,7 @@ import { getCurrentRank } from "@/lib/auth/current-rank";
 import { canView, canPost, type Tier, type ViewLevel, type PostLevel } from "@/lib/auth/permissions";
 import { fetchAuthorInfo } from "@/lib/author-info";
 import { EmptyState } from "@/components/empty-state";
+import { MembershipBadge } from "@/components/membership-badge";
 import { UserAvatar } from "@/components/user-avatar";
 import { ThreadThumbnail } from "@/components/thread-thumbnail";
 import { fetchCategoryBySlug } from "@/lib/cached-categories";
@@ -190,6 +191,13 @@ export default async function CategoryPage({ params, searchParams }: Props) {
                         />
                         <span className="truncate max-w-[6em]">{nickname}</span>
                       </span>
+                      <MembershipBadge
+                        rank="member"
+                        compact
+                        isAi={author?.isAi}
+                        isFoundingMember={author?.isFoundingMember}
+                        isCurrentSupporter={author?.isCurrentSupporter}
+                      />
                       <span>・</span>
                       <span>{formatRelative(t.created_at)}</span>
                       <span className="ml-auto inline-flex items-center gap-2.5">

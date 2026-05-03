@@ -7,6 +7,7 @@ import Link from "next/link";
 // 東京にすれば 30〜80ms に短縮できる、各ページで 5〜15 クエリ走るので体感が劇的に変わる。
 export const preferredRegion = ["hnd1"];
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import Image from "next/image";
 import { Suspense } from "react";
 import { Analytics } from "@/components/analytics";
 import { MembershipBadge } from "@/components/membership-badge";
@@ -245,15 +246,26 @@ function SiteHeader({
       <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between gap-3">
         <Link
           href="/"
-          className="flex flex-col leading-tight no-underline shrink-0"
-          aria-label="1968 トップへ"
+          className="flex items-center no-underline shrink-0"
+          aria-label="1968、1968年生まれ限定コミュニティ、トップへ"
         >
-          <span className="text-2xl font-bold tracking-wider text-primary">
-            1968
-          </span>
-          <span className="text-sm text-foreground/70 hidden sm:block">
-            1968年生まれ限定コミュニティ
-          </span>
+          {/* デスクトップではフルロゴ（1968 + サブタイトル）、モバイルではアイコンのみ */}
+          <Image
+            src="/logo/wordmark.png"
+            alt="1968 1968年生まれ限定コミュニティ"
+            width={221}
+            height={96}
+            priority
+            className="hidden sm:block h-12 w-auto"
+          />
+          <Image
+            src="/logo/wordmark-compact.png"
+            alt="1968"
+            width={159}
+            height={48}
+            priority
+            className="block sm:hidden h-9 w-auto"
+          />
         </Link>
         <nav className="flex items-center gap-3">
           {isAdmin && (

@@ -1,12 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { publicAvatarUrl } from "@/lib/avatar";
 
-// 投稿表示用の、ニックネーム＋会員ランク＋アバター URL をまとめて取得するヘルパー。
+// 投稿表示用の、ニックネーム＋会員ランク＋アバター URL ＋称号フラグをまとめて取得するヘルパー。
 
 export type AuthorInfo = {
   nickname: string | null;
   rank: "member" | "verified" | null;
   isAi: boolean;
+  isFoundingMember: boolean;
+  isCurrentSupporter: boolean;
   avatarUrl: string | null;
 };
 
@@ -25,7 +27,9 @@ export async function fetchAuthorInfo(
       .in("user_id", uniqueIds),
     supabase
       .from("member_display")
-      .select("user_id, membership_rank, is_ai_persona")
+      .select(
+        "user_id, membership_rank, is_ai_persona, is_founding_member, is_current_supporter",
+      )
       .in("user_id", uniqueIds),
   ]);
 
@@ -33,6 +37,8 @@ export async function fetchAuthorInfo(
     nickname: null,
     rank: null,
     isAi: false,
+    isFoundingMember: false,
+    isCurrentSupporter: false,
     avatarUrl: null,
   });
   for (const id of uniqueIds) {
@@ -48,6 +54,8 @@ export async function fetchAuthorInfo(
     const current = map.get(r.user_id as string) ?? init();
     current.rank = r.membership_rank as "member" | "verified";
     current.isAi = r.is_ai_persona === true;
+    current.isFoundingMember = r.is_founding_member === true;
+    current.isCurrentSupporter = r.is_current_supporter === true;
     map.set(r.user_id as string, current);
   }
 
