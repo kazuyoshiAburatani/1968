@@ -10,6 +10,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import Image from "next/image";
 import { Suspense } from "react";
 import { Analytics } from "@/components/analytics";
+import { CookieConsent } from "@/components/cookie-consent";
 import { MembershipBadge } from "@/components/membership-badge";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { NavProgress } from "@/components/nav-progress";
@@ -218,6 +219,7 @@ export default async function RootLayout({
         <main className="flex-1 w-full pb-20 md:pb-0">{children}</main>
         <SiteFooter />
         <MobileTabBar unreadCount={unreadCount} />
+        <CookieConsent />
         <Analytics />
       </body>
     </html>
