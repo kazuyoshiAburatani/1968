@@ -24,13 +24,34 @@ export default async function ProfileEditPage({ searchParams }: Props) {
   const { supabase, user } = await requireSession();
   const { saved, error } = await searchParams;
 
-  const { data: profile } = await supabase
+  // 主要フィールドはまとめて取得、home_banner_color は別クエリで吸収する。
+  // マイグレーション未適用の環境でもこのページが動くよう、欠けるカラムは
+  // 主クエリから除外して、別途 try でフェッチする。
+  const { data: profileBase } = await supabase
     .from("profiles")
     .select(
-      "nickname, birth_month, birth_day, gender, prefecture, hometown, school, occupation, introduction, bio_visible, avatar_url, home_banner_color",
+      "nickname, birth_month, birth_day, gender, prefecture, hometown, school, occupation, introduction, bio_visible, avatar_url",
     )
     .eq("user_id", user.id)
     .maybeSingle();
+
+  // home_banner_color、未適用なら null として扱う
+  let homeBannerColor: string | null = null;
+  try {
+    const { data: bannerRow } = await supabase
+      .from("profiles")
+      .select("home_banner_color")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    homeBannerColor =
+      (bannerRow?.home_banner_color as string | null | undefined) ?? null;
+  } catch {
+    // カラム未適用、無視
+  }
+
+  const profile = profileBase
+    ? { ...profileBase, home_banner_color: homeBannerColor }
+    : null;
 
   if (!profile) {
     // (members)/layout 側で担保しているはずだが、万一プロフィール未作成ならオンボーディングへ。

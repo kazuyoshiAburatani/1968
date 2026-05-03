@@ -20,15 +20,33 @@ export async function updateProfile(formData: FormData) {
 
   const { supabase, user } = await requireSession();
 
-  const { error } = await supabase
+  // home_banner_color カラムが未適用の環境でも動くよう、まず全フィールドで UPDATE を試み、
+  // 失敗したら home_banner_color を除いて再実行する。
+  // home_banner_color は別個に try/catch で書く、こちらが失敗しても他のフィールドは保存される。
+  const { home_banner_color, ...coreFields } = parsed.data;
+
+  const { error: coreError } = await supabase
     .from("profiles")
-    .update(parsed.data)
+    .update(coreFields)
     .eq("user_id", user.id);
 
-  if (error) {
-    console.error("[profile-edit] update failed:", error.message);
+  if (coreError) {
+    console.error("[profile-edit] core update failed:", coreError.message);
     redirect(
       `/mypage/profile?error=${encodeURIComponent("更新に失敗しました、時間をおいてお試しください")}`,
+    );
+  }
+
+  // バナー色は別 UPDATE、カラム未適用なら無視
+  try {
+    await supabase
+      .from("profiles")
+      .update({ home_banner_color })
+      .eq("user_id", user.id);
+  } catch (e) {
+    console.warn(
+      "[profile-edit] home_banner_color update skipped:",
+      e instanceof Error ? e.message : e,
     );
   }
 

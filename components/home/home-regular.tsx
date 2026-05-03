@@ -47,23 +47,28 @@ export async function HomeRegular({
     byTier.set(c.tier, list);
   }
 
-  const [{ data: myRecentData }, { data: profileData }] = await Promise.all([
-    supabase
-      .from("threads")
-      .select("id, title, created_at, categories(slug)")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(5),
-    supabase
+  const { data: myRecentData } = await supabase
+    .from("threads")
+    .select("id, title, created_at, categories(slug)")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(5);
+  const myRecent = (myRecentData ?? []) as unknown as ThreadLite[];
+
+  // home_banner_color、マイグレーション未適用なら null フォールバック
+  let bannerColorValue: string | null = null;
+  try {
+    const { data } = await supabase
       .from("profiles")
       .select("home_banner_color")
       .eq("user_id", userId)
-      .maybeSingle(),
-  ]);
-  const myRecent = (myRecentData ?? []) as unknown as ThreadLite[];
-  const banner = resolveBannerColor(
-    (profileData?.home_banner_color as string | null | undefined) ?? null,
-  );
+      .maybeSingle();
+    bannerColorValue =
+      (data?.home_banner_color as string | null | undefined) ?? null;
+  } catch {
+    // カラム未適用、既定色のまま
+  }
+  const banner = resolveBannerColor(bannerColorValue);
 
   return (
     <>

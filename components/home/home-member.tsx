@@ -33,28 +33,33 @@ export async function HomeMember({
   const tierB = cats.filter((c) => c.tier === "B");
   const locked = cats.filter((c) => c.tier === "C" || c.tier === "D");
 
-  // 自分の今日の投稿を category_id で集計、プロフィールのバナー色も並列取得
+  // 自分の今日の投稿を category_id で集計
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const [{ data: myTodayData }, { data: profileData }] = await Promise.all([
-    supabase
-      .from("threads")
-      .select("category_id")
-      .eq("user_id", userId)
-      .gte("created_at", since),
-    supabase
-      .from("profiles")
-      .select("home_banner_color")
-      .eq("user_id", userId)
-      .maybeSingle(),
-  ]);
+  const { data: myTodayData } = await supabase
+    .from("threads")
+    .select("category_id")
+    .eq("user_id", userId)
+    .gte("created_at", since);
   const todayCountByCat = new Map<number, number>();
   for (const row of myTodayData ?? []) {
     const cid = row.category_id as number;
     todayCountByCat.set(cid, (todayCountByCat.get(cid) ?? 0) + 1);
   }
-  const banner = resolveBannerColor(
-    (profileData?.home_banner_color as string | null | undefined) ?? null,
-  );
+
+  // home_banner_color、マイグレーション未適用なら null フォールバック
+  let bannerColorValue: string | null = null;
+  try {
+    const { data } = await supabase
+      .from("profiles")
+      .select("home_banner_color")
+      .eq("user_id", userId)
+      .maybeSingle();
+    bannerColorValue =
+      (data?.home_banner_color as string | null | undefined) ?? null;
+  } catch {
+    // カラム未適用、既定色のまま
+  }
+  const banner = resolveBannerColor(bannerColorValue);
 
   const firstA = tierA[0]?.slug ?? "nostalgia-anime";
 
