@@ -7,11 +7,11 @@ import { submitBetaApplication } from "./actions";
 export const metadata: Metadata = {
   title: "ベータテスター募集",
   description:
-    "1968 ベータ版にご参加いただける方を募集しています。1968年生まれ限定の会員制コミュニティを、一緒に育てていただけませんか。",
+    "同い年だけで、もう一度本音で話せる場所を。1968 年生まれだけの掲示板「1968」、最初の 30 人を一緒に育ててください。",
   openGraph: {
-    title: "ベータテスター30名募集中 | 1968",
+    title: "同い年だけで、もう一度本音で話せる場所を。| 1968",
     description:
-      "1968年生まれ限定コミュニティ「1968」のベータテスター30名を募集中。創設メンバー限定の永久バッジ・専用ラウンジ等 8 つの特典が永久付帯。",
+      "1968 年（昭和 43 年）生まれだけの掲示板。最初の 30 人を募集中。創設メンバーに永久特典 8 つ。",
     url: "https://1968.love/beta",
     siteName: "1968",
     locale: "ja_JP",
@@ -124,9 +124,9 @@ export default async function BetaPage({ searchParams }: Props) {
   const webPageJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: "1968 ベータテスター30名募集",
+    name: "同い年だけで、もう一度本音で話せる場所を。 | 1968 ベータテスター募集",
     description:
-      "1968年生まれ限定コミュニティ「1968」のベータテスター30名を募集中。創設メンバー限定の永久バッジ・専用ラウンジ等 8 つの特典が永久付帯。",
+      "1968 年（昭和 43 年）生まれだけの掲示板「1968」、最初の 30 人を一緒に育ててください。創設メンバー限定の永久バッジ・専用ラウンジ等 8 つの特典が永久付帯。",
     url: "https://1968.love/beta",
     inLanguage: "ja-JP",
     isPartOf: { "@id": "https://1968.love/#website" },
@@ -143,10 +143,10 @@ export default async function BetaPage({ searchParams }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-      {/* ヒーロー、Instagram in-app ブラウザでも収まるよう mobile は 60svh */}
+      {/* ヒーロー、共感訴求型。Instagram in-app ブラウザでも収まるよう mobile は 60svh */}
       <section className="relative min-h-[60svh] sm:min-h-[80vh] flex items-center justify-center overflow-hidden px-4 py-12 sm:py-20">
         <div className="relative z-10 text-center max-w-4xl mx-auto">
-          {/* 残席カウンタ、緊急感を生むファーストインプレッション */}
+          {/* 残席カウンタ、「最初の 30 名」の当事者感を込めた表現 */}
           <div className="inline-flex items-center gap-2 mb-5 px-4 py-2 rounded-full border-2 border-primary/40 bg-primary/5">
             <span
               className={`size-2.5 rounded-full ${isFull ? "bg-foreground/40" : "bg-primary animate-pulse"}`}
@@ -160,22 +160,26 @@ export default async function BetaPage({ searchParams }: Props) {
                   残り <span className="text-xl sm:text-2xl">{remaining}</span> 名
                   <span className="text-foreground/60 font-normal">
                     {" "}
-                    / 全 {BETA_SLOTS} 名
+                    / 最初の {BETA_SLOTS} 名
                   </span>
                 </>
               )}
             </span>
           </div>
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold mb-5 sm:mb-6 leading-tight">
-            昭和43年生まれだけの、
+            同い年だけで、
             <br />
-            <span className="text-primary">ベータテスター募集</span>
+            <span className="text-primary">もう一度、本音で話せる場所を。</span>
           </h1>
-          <p className="text-base sm:text-xl md:text-2xl mb-8 text-foreground/80 leading-relaxed">
-            通常会員には絶対に付かない、
+          <p className="text-base sm:text-xl md:text-2xl mb-4 text-foreground/80 leading-relaxed">
+            1968 年、昭和 43 年生まれだけの掲示板。
             <br />
-            <span className="font-bold text-primary">創設メンバー限定の 8 つの特典</span>
-            。
+            まだ何もないこの場所を、
+            <br className="sm:hidden" />
+            最初の 30 人で一緒に育ててください。
+          </p>
+          <p className="text-sm sm:text-base mb-8 text-foreground/65 leading-7">
+            通常会員には付かない、創設メンバー限定の 8 つの特典も永久付帯します。
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
             <a
@@ -186,69 +190,126 @@ export default async function BetaPage({ searchParams }: Props) {
               {isFull ? "応募状況を見る" : "応募フォームへ →"}
             </a>
             <a
-              href="#about"
+              href="#why"
               className="inline-flex items-center justify-center text-primary text-base font-medium underline underline-offset-4 px-4 py-2"
             >
-              ↓ ベータの特典・流れを見る
+              この場所に込めた想いを見る
             </a>
           </div>
         </div>
       </section>
 
-      {/* 1968 とは */}
-      <section id="about" className="py-16 px-4 scroll-mt-4">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-12">
-            1968 とは
+      {/* 共感セクション、ヒーロー直下、白基調で温度を上げすぎない */}
+      <section id="empathy" className="py-16 sm:py-20 px-4 scroll-mt-4 bg-background">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-snug">
+            50 代になって、
+            <br />
+            <span className="text-primary">同世代だけで話せる場所が少なくなった。</span>
           </h2>
-          <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
-            <div className="bg-background p-6 sm:p-8 rounded-2xl shadow-sm border border-border text-center">
-              <div className="text-5xl sm:text-6xl mb-4" aria-hidden>
-                🤝
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold mb-3">
-                同い年だけが入れる
+          <div className="mt-8 sm:mt-10 text-base sm:text-lg text-foreground/80 leading-loose space-y-4">
+            <p>
+              SNS はある。
+              <br className="sm:hidden" />
+              でも、若い世代の空気に少し遠慮してしまう。
+            </p>
+            <p>
+              仕事、家族、健康、これからの人生。
+              <br />
+              同い年だからこそ、気を使わずに話せることがあります。
+            </p>
+            <p className="pt-2">
+              1968 は、昭和 43 年生まれだけが集まる、
+              <br />
+              小さな掲示板コミュニティです。
+            </p>
+          </div>
+        </div>
+
+        {/* 3 カード、共感の具体例 */}
+        <div className="max-w-5xl mx-auto mt-12 sm:mt-16">
+          <div className="grid md:grid-cols-3 gap-5 sm:gap-6">
+            <div className="bg-page p-6 sm:p-7 rounded-2xl border border-border">
+              <h3 className="text-lg font-bold leading-snug">
+                昔の話が自然に通じる
               </h3>
-              <p className="text-sm text-foreground/80 leading-7">
-                1968年生まれ限定の会員制コミュニティ。
-                <br />
-                同世代だからこそ分かり合える特別な空間です。
+              <p className="mt-3 text-sm sm:text-base text-foreground/80 leading-7">
+                テレビ、音楽、学校、時代の空気。同じ年に生まれたからこそ、説明しなくても分かる話があります。
               </p>
             </div>
-            <div className="bg-background p-6 sm:p-8 rounded-2xl shadow-sm border border-border text-center">
-              <div className="text-5xl sm:text-6xl mb-4" aria-hidden>
-                💬
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold mb-3">
-                12カテゴリで本音
+            <div className="bg-page p-6 sm:p-7 rounded-2xl border border-border">
+              <h3 className="text-lg font-bold leading-snug">
+                今の悩みを本音で話せる
               </h3>
-              <p className="text-sm text-foreground/80 leading-7">
-                趣味、仕事、家族、健康など12 の話題で
-                <br />
-                本音でつながれるコミュニティです。
+              <p className="mt-3 text-sm sm:text-base text-foreground/80 leading-7">
+                仕事、家族、健康、親のこと、自分のこれから。同世代だから話しやすいテーマがあります。
               </p>
             </div>
-            <div className="bg-background p-6 sm:p-8 rounded-2xl shadow-sm border border-border text-center">
-              <div className="text-5xl sm:text-6xl mb-4" aria-hidden>
-                🛡
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold mb-3">
-                本人確認で安心
+            <div className="bg-page p-6 sm:p-7 rounded-2xl border border-border">
+              <h3 className="text-lg font-bold leading-snug">
+                上下関係ではなく同級生感覚
               </h3>
-              <p className="text-sm text-foreground/80 leading-7">
-                身分証による本人確認で、安心して
-                <br />
-                交流できる環境を提供しています。
+              <p className="mt-3 text-sm sm:text-base text-foreground/80 leading-7">
+                年上でも年下でもない。同じ 1968 年生まれとして、気楽に参加できる場所です。
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* なぜ作ったのか、運営の言葉。淡い背景で区切って温度を出す */}
+      <section id="why" className="py-16 sm:py-20 px-4 scroll-mt-4 bg-amber-50/40">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center leading-snug">
+            なぜ、1968 を作ったのか
+          </h2>
+          <div className="mt-8 sm:mt-10 text-base sm:text-lg text-foreground/85 leading-loose space-y-5">
+            <p>
+              50 代になってから、
+              <br />
+              昔のように気軽に話せる場所が少なくなったと感じました。
+            </p>
+            <p>
+              SNS は便利ですが、
+              <br />
+              誰に見られているか分からず、
+              <br className="sm:hidden" />
+              本音を書きにくいこともあります。
+            </p>
+            <p>
+              だから、
+              <br className="sm:hidden" />
+              1968 年生まれだけで集まれる場所を作りました。
+            </p>
+            <p>
+              懐かしい話をするだけではなく、
+              <br />
+              これからの人生を少し前向きにするための場所。
+              <br />
+              それが、1968 です。
+            </p>
+          </div>
+          <p className="mt-10 text-right text-sm sm:text-base text-foreground/70 leading-7">
+            1968 運営
+            <br />
+            <span className="text-base sm:text-lg font-medium text-foreground">
+              油谷 和好
+            </span>
+          </p>
         </div>
       </section>
 
       {/* 創設メンバー特典、8 項目 */}
       <section className="py-16 px-4 bg-background">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-3">
+          <p className="text-center text-base sm:text-lg text-foreground/85 mb-3 leading-8 max-w-2xl mx-auto">
+            この 30 名は、ただの先行利用者ではありません。
+            <br />
+            1968 の空気を最初に作る、
+            <span className="font-bold text-amber-900">創設メンバー</span>
+            です。
+          </p>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mt-8 mb-3">
             創設メンバー 8 つの特典
           </h2>
           <p className="text-center text-sm sm:text-base text-foreground/70 mb-10 leading-7">
@@ -290,19 +351,21 @@ export default async function BetaPage({ searchParams }: Props) {
         </div>
       </section>
 
-      {/* 応募条件 */}
+      {/* こんな方に参加してほしい、応募条件を熱量ある形で */}
       <section className="py-16 px-4">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-12">
-            応募条件
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-12 leading-snug">
+            こんな方に
+            <br className="sm:hidden" />
+            参加してほしいです
           </h2>
           <div className="bg-background p-6 sm:p-8 rounded-2xl shadow-sm border border-border">
             <ul className="space-y-5">
               {[
-                "1968年1月1日〜12月31日生まれの方",
-                "同い年と会話を楽しみたい方",
-                "サービスを一緒に育てたい方",
-                "不具合報告や意見をいただける方",
+                "1968 年 1 月 1 日〜12 月 31 日生まれの方",
+                "同い年と気軽に話せる場所がほしい方",
+                "新しいコミュニティを一緒に育てたい方",
+                "不具合や改善点も前向きに伝えていただける方",
               ].map((cond) => (
                 <li key={cond} className="flex items-start gap-4">
                   <span
@@ -346,6 +409,43 @@ export default async function BetaPage({ searchParams }: Props) {
           </ol>
         </div>
       </section>
+
+      {/* 最後の背中押し、応募直前で当事者感を引き出す */}
+      {!isFull && (
+        <section className="py-14 sm:py-16 px-4 bg-amber-50/40">
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-snug">
+              まだ完成していないからこそ、
+              <br />
+              <span className="text-primary">あなたの声が必要です。</span>
+            </h2>
+            <div className="mt-6 sm:mt-8 text-base sm:text-lg text-foreground/85 leading-loose space-y-4">
+              <p>
+                1968 は、これから育っていく場所です。
+                <br />
+                最初の投稿、最初の会話、最初の空気。
+                <br />
+                その一つひとつが、これから入ってくる
+                <br className="sm:hidden" />
+                同世代の居場所になります。
+              </p>
+              <p>
+                最初の 30 名として、
+                <br className="sm:hidden" />
+                一緒に 1968 を始めてください。
+              </p>
+            </div>
+            <div className="mt-8">
+              <a
+                href="#application-form"
+                className="inline-flex items-center justify-center bg-primary text-white px-8 py-4 rounded-full text-lg font-bold hover:opacity-90 active:opacity-90 transition-opacity min-w-[240px] no-underline"
+              >
+                応募フォームへ進む →
+              </a>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 応募フォーム */}
       <section className="py-16 px-4 scroll-mt-4" id="application-form">
@@ -460,7 +560,7 @@ export default async function BetaPage({ searchParams }: Props) {
             href="#application-form"
             className="block w-full text-center bg-primary text-white py-3.5 rounded-full text-base font-bold no-underline active:opacity-90"
           >
-            応募する（残り {remaining} 名）→
+            最初の 30 名に加わる（残り {remaining} 名）→
           </a>
         </div>
       )}
