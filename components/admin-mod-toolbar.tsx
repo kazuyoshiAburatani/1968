@@ -164,16 +164,14 @@ export function AdminModToolbar(props: Props) {
             name="reason"
             value={deleteReason}
             onChange={(e) => setDeleteReason(e.target.value)}
-            required
             maxLength={300}
-            placeholder="削除理由（必須、監査ログに残ります）例：規約違反、個人情報を含む"
+            placeholder="削除理由（任意、監査ログに残ります）例：規約違反、個人情報を含む"
             className="w-full px-3 py-2 rounded border border-rose-300 bg-background text-xs"
           />
           <div className="flex gap-2">
             <button
               type="submit"
-              disabled={deleteReason.trim().length === 0}
-              className="inline-flex items-center min-h-[36px] px-4 rounded-full bg-rose-700 text-white text-xs font-medium active:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center min-h-[36px] px-4 rounded-full bg-rose-700 text-white text-xs font-medium active:opacity-90"
             >
               削除する
             </button>

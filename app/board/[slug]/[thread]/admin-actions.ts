@@ -39,6 +39,8 @@ const EditReplySchema = z.object({
   reason: z.string().trim().max(300).optional(),
 });
 
+// 削除理由は任意、運営の手間を増やさない方針。
+// 必要なら監査ログに残せるよう入力枠は残すが、空でも削除可能。
 const DeleteSchema = z.object({
   id: z.string().uuid(),
   slug: z.string(),
@@ -46,8 +48,8 @@ const DeleteSchema = z.object({
   reason: z
     .string()
     .trim()
-    .min(1, "削除理由を入力してください、監査ログに残ります")
-    .max(300, "削除理由は300文字以内で入力してください"),
+    .max(300, "削除理由は300文字以内で入力してください")
+    .optional(),
 });
 
 function fail(slug: string, threadId: string, message: string): never {
@@ -118,12 +120,12 @@ export async function adminDeleteThread(formData: FormData) {
   const parsed = DeleteSchema.safeParse({
     id: formData.get("id"),
     slug: formData.get("slug"),
-    reason: formData.get("reason"),
+    reason: formData.get("reason") ?? undefined,
   });
   if (!parsed.success) {
     const slug = String(formData.get("slug") ?? "");
     const tid = String(formData.get("id") ?? "");
-    fail(slug, tid, parsed.error.issues[0]?.message ?? "削除理由を入力してください");
+    fail(slug, tid, parsed.error.issues[0]?.message ?? "入力内容を確認してください");
   }
 
   const { admin } = await requireAdmin();
@@ -220,12 +222,12 @@ export async function adminDeleteReply(formData: FormData) {
     id: formData.get("id"),
     slug: formData.get("slug"),
     thread_id: formData.get("thread_id"),
-    reason: formData.get("reason"),
+    reason: formData.get("reason") ?? undefined,
   });
   if (!parsed.success) {
     const slug = String(formData.get("slug") ?? "");
     const tid = String(formData.get("thread_id") ?? "");
-    fail(slug, tid, parsed.error.issues[0]?.message ?? "削除理由を入力してください");
+    fail(slug, tid, parsed.error.issues[0]?.message ?? "入力内容を確認してください");
   }
 
   const { admin } = await requireAdmin();
