@@ -1,10 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import {
-  requestLoginLink,
-  signInWithPasswordAction,
-  startGoogleOAuth,
-} from "./actions";
+import { requestLoginLink, signInWithPasswordAction } from "./actions";
 import { SubmitButton } from "@/components/submit-button";
 
 export const metadata: Metadata = {
@@ -65,19 +61,18 @@ export default async function LoginPage({ searchParams }: Props) {
         </div>
       )}
 
-      {/* Google */}
-      <form action={startGoogleOAuth} className="mt-8">
-        <SubmitButton
-          variant="outline"
-          className="w-full"
-          pendingText="Google に移動中…"
+      {/* Google、Server Action ではなく Route Handler 経由で PKCE cookie を確実にヘッダに乗せる */}
+      <div className="mt-8">
+        <a
+          href="/auth/google"
+          className="inline-flex items-center justify-center gap-2 min-h-[var(--spacing-tap)] px-6 rounded-full font-medium transition-opacity w-full border border-border text-foreground/80 hover:bg-muted no-underline"
         >
           <span className="inline-flex items-center gap-2">
             <GoogleIcon />
             Google でログイン
           </span>
-        </SubmitButton>
-      </form>
+        </a>
+      </div>
 
       <div className="my-6 flex items-center gap-3">
         <div className="flex-1 h-px bg-border" />
