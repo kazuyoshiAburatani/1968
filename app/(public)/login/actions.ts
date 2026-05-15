@@ -84,18 +84,49 @@ export async function requestLoginLink(formData: FormData) {
   redirect("/login?sent=1");
 }
 
-// Google OAuth ログイン
+// Google OAuth ログイン。
+// redirect() は内部で NEXT_REDIRECT エラーを throw する仕様なので、
+// 通常の throw と区別するため try-catch では NEXT_REDIRECT を再 throw する。
 export async function startGoogleOAuth() {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${getSiteUrl()}/auth/callback`,
-    },
-  });
-  if (error || !data.url) {
-    console.error("[login] google oauth failed:", error?.message);
+  const siteUrl = getSiteUrl();
+  console.log("[login/google] start, siteUrl=", siteUrl);
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${siteUrl}/auth/callback`,
+      },
+    });
+
+    console.log("[login/google] supabase response", {
+      hasData: !!data,
+      hasUrl: !!data?.url,
+      urlHost: data?.url ? new URL(data.url).host : null,
+      errorName: error?.name,
+      errorStatus: error?.status,
+      errorMessage: error?.message,
+    });
+
+    if (error || !data?.url) {
+      console.error(
+        "[login/google] signInWithOAuth failed:",
+        error?.message ?? "no url returned",
+      );
+      redirect("/login?error=google");
+    }
+
+    console.log("[login/google] redirecting to provider URL");
+    redirect(data.url);
+  } catch (e) {
+    // redirect() は NEXT_REDIRECT を throw するため、再 throw して Next.js に処理を委ねる。
+    const message = (e as Error)?.message ?? "";
+    const digest = (e as { digest?: string })?.digest ?? "";
+    if (digest.startsWith("NEXT_REDIRECT") || message.includes("NEXT_REDIRECT")) {
+      throw e;
+    }
+    console.error("[login/google] unexpected exception:", e);
     redirect("/login?error=google");
   }
-  redirect(data.url);
 }

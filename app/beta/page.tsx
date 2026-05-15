@@ -1,3 +1,6 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { BetaApplicationForm } from "@/components/beta/beta-application-form";
@@ -52,6 +55,22 @@ export default async function BetaPage({ searchParams }: Props) {
   const applied = count ?? 0;
   const remaining = Math.max(0, BETA_SLOTS - applied);
   const isFull = remaining === 0;
+
+  // 運営者の顔出し素材、ファイル配置後に自動で表示。
+  // 撮影〜配置ガイド、`資料/lp-founder-content/recording-guide.md` を参照。
+  const founderVideoPath = path.join(
+    process.cwd(),
+    "public",
+    "videos",
+    "founder-message.mp4",
+  );
+  const founderPortraitPath = path.join(
+    process.cwd(),
+    "public",
+    "founder-portrait.jpg",
+  );
+  const founderVideoExists = existsSync(founderVideoPath);
+  const founderPortraitExists = existsSync(founderPortraitPath);
 
   if (submitted) {
     return (
@@ -263,6 +282,29 @@ export default async function BetaPage({ searchParams }: Props) {
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center leading-snug">
             なぜ、1968 を作ったのか
           </h2>
+
+          {/* 運営者からの動画メッセージ、サイト内 video 直配信。
+              public/videos/founder-message.mp4 が配置されたら自動表示。 */}
+          {founderVideoExists && (
+            <div className="mt-8 sm:mt-10">
+              <div className="overflow-hidden rounded-2xl border border-border bg-foreground shadow-sm">
+                <video
+                  controls
+                  playsInline
+                  preload="metadata"
+                  poster={founderPortraitExists ? "/founder-portrait.jpg" : undefined}
+                  className="w-full aspect-video bg-foreground"
+                >
+                  <source src="/videos/founder-message.mp4" type="video/mp4" />
+                  お使いのブラウザは動画再生に対応していません。
+                </video>
+              </div>
+              <p className="mt-3 text-center text-xs text-foreground/60">
+                運営者からのメッセージ、2 分 30 秒
+              </p>
+            </div>
+          )}
+
           <div className="mt-8 sm:mt-10 text-base sm:text-lg text-foreground/85 leading-loose space-y-5">
             <p>
               50 代になってから、
@@ -289,13 +331,27 @@ export default async function BetaPage({ searchParams }: Props) {
               それが、1968 です。
             </p>
           </div>
-          <p className="mt-10 text-right text-sm sm:text-base text-foreground/70 leading-7">
-            1968 運営
-            <br />
-            <span className="text-base sm:text-lg font-medium text-foreground">
-              油谷 和好
-            </span>
-          </p>
+
+          {/* 署名、ポートレートと並べて誠意を視覚化。
+              public/founder-portrait.jpg が配置されたら自動表示。 */}
+          <div className="mt-10 flex items-center justify-end gap-4">
+            <div className="text-right text-sm sm:text-base text-foreground/70 leading-7">
+              1968 運営
+              <br />
+              <span className="text-base sm:text-lg font-medium text-foreground">
+                油谷 和好
+              </span>
+            </div>
+            {founderPortraitExists && (
+              <Image
+                src="/founder-portrait.jpg"
+                alt="運営者、油谷和好"
+                width={64}
+                height={64}
+                className="size-16 rounded-full object-cover ring-2 ring-amber-200"
+              />
+            )}
+          </div>
         </div>
       </section>
 
