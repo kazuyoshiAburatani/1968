@@ -9,6 +9,7 @@ import {
   type Tier,
 } from "@/lib/auth/permissions";
 import { fetchAllCategories } from "@/lib/cached-categories";
+import { CategoryIcon } from "@/components/category-icon";
 
 export const metadata: Metadata = {
   title: "ひろば",
@@ -177,7 +178,7 @@ export default async function BoardPage() {
                         href={`/board/${c.slug}`}
                         className="flex items-start gap-3 px-4 py-3.5 no-underline hover:bg-muted/40 active:bg-muted/70 transition-colors"
                       >
-                        <Avatar emoji={look.emoji} bg={look.bg} />
+                        <Avatar icon={look.emoji} bg={look.bg} fg={look.ring} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline justify-between gap-2">
                             <p className="font-bold text-foreground truncate">
@@ -222,7 +223,7 @@ export default async function BoardPage() {
                         className="flex items-start gap-3 px-4 py-3.5 opacity-60 cursor-not-allowed"
                         aria-disabled="true"
                       >
-                        <Avatar emoji="🔒" bg="#e8e3d6" muted />
+                        <Avatar icon="ri-lock-line" bg="#e8e3d6" fg="#6b6354" muted />
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-foreground/70 truncate">
                             {c.name}
@@ -258,24 +259,26 @@ export default async function BoardPage() {
 }
 
 function Avatar({
-  emoji,
+  icon,
   bg,
+  fg,
   muted,
 }: {
-  emoji: string;
+  icon: string;
   bg: string;
+  fg?: string;
   muted?: boolean;
 }) {
   return (
     <span
-      aria-hidden
       className="shrink-0 inline-flex items-center justify-center size-12 rounded-full text-2xl leading-none"
       style={{
         backgroundColor: bg,
+        color: fg,
         opacity: muted ? 0.6 : 1,
       }}
     >
-      {emoji}
+      <CategoryIcon icon={icon} />
     </span>
   );
 }

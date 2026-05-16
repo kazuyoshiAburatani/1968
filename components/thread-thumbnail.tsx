@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { getMediaUrl, type MediaItem } from "@/lib/media";
+import { CategoryIcon } from "@/components/category-icon";
 
 // スレッド一覧で各行に表示する小さなサムネイル。
 // media に画像があれば最初の 1 枚を表示、無ければカテゴリ絵文字のプレースホルダー。
@@ -49,14 +50,13 @@ export function ThreadThumbnail({
     );
   }
 
-  // フォールバック、カテゴリの絵文字プレースホルダー
+  // フォールバック、カテゴリアイコン（ri-* または絵文字）プレースホルダー
   const slugLook = CATEGORY_LOOKS[categorySlug ?? ""];
-  const emoji = categoryIcon ?? slugLook?.emoji ?? "📌";
+  const iconValue = categoryIcon ?? slugLook?.emoji ?? "ri-bookmark-line";
   const bg = slugLook?.bg ?? "#e8e3d6";
   return (
     <span
-      aria-hidden
-      className="shrink-0 inline-flex items-center justify-center rounded-lg"
+      className="shrink-0 inline-flex items-center justify-center rounded-lg text-foreground/70"
       style={{
         width: size,
         height: size,
@@ -64,7 +64,7 @@ export function ThreadThumbnail({
         fontSize: size * 0.5,
       }}
     >
-      {emoji}
+      <CategoryIcon icon={iconValue} />
     </span>
   );
 }

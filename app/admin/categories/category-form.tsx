@@ -8,6 +8,7 @@ import {
   TIER_VALUES,
   VIEW_LEVELS,
 } from "@/lib/validation/category";
+import { CATEGORY_ICON_GROUPS, CategoryIcon } from "@/components/category-icon";
 
 type Initial = {
   id?: number;
@@ -23,13 +24,8 @@ type Initial = {
   requires_tenure_months?: number;
 };
 
-// アイコン候補、運営が選びやすいように代表的な絵文字を並べる。
-// クリックで input に流し込めるようにする。
-const ICON_SUGGESTIONS = [
-  "🎬", "🎤", "📺", "🍬", "🪁", "💬", "🎒", "🥂",
-  "🌿", "🏠", "💴", "🍻", "🎖", "🌸", "📌", "🎨",
-  "📚", "⚾", "🎮", "🧸", "🌅", "🍵", "✈️", "🚗",
-] as const;
+// アイコン候補は components/category-icon.tsx の CATEGORY_ICON_GROUPS から取得。
+// テーマ別にグループ化された Remix Icon のクラス名（ri-*-line 系）。
 
 export function CategoryForm({
   action,
@@ -60,22 +56,25 @@ export function CategoryForm({
         />
       </Field>
 
-      <Field label="アイコン" hint="絵文字 1 つ、下のリストから選ぶか直接入力">
+      <Field
+        label="アイコン"
+        hint="下のリストから選択、または ri-*-line 形式のクラス名（Remix Icon）を直接入力。絵文字も可"
+      >
         <div className="flex items-stretch gap-2">
           <span
             aria-hidden
-            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] w-14 rounded border border-border bg-muted text-2xl"
+            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] w-14 rounded border border-border bg-muted text-2xl text-foreground/80"
           >
-            {icon || "📌"}
+            <CategoryIcon icon={icon} />
           </span>
           <input
             type="text"
             name="icon"
-            maxLength={10}
+            maxLength={40}
             value={icon}
             onChange={(e) => setIcon(e.target.value)}
-            placeholder="🎬 などを入力"
-            className="flex-1 min-w-0 min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background text-xl"
+            placeholder="ri-bookmark-line など"
+            className="flex-1 min-w-0 min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background font-mono text-sm"
           />
           {icon && (
             <button
@@ -87,21 +86,33 @@ export function CategoryForm({
             </button>
           )}
         </div>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {ICON_SUGGESTIONS.map((e) => (
-            <button
-              key={e}
-              type="button"
-              onClick={() => setIcon(e)}
-              aria-label={`アイコンを ${e} にする`}
-              className={`inline-flex items-center justify-center size-9 rounded border text-xl transition-colors ${
-                icon === e
-                  ? "border-primary bg-primary/10"
-                  : "border-border bg-background hover:bg-muted"
-              }`}
-            >
-              {e}
-            </button>
+
+        {/* テーマ別ピッカー */}
+        <div className="mt-3 max-h-72 overflow-y-auto rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+          {CATEGORY_ICON_GROUPS.map((group) => (
+            <div key={group.label}>
+              <p className="text-[11px] font-bold text-foreground/60 mb-1.5">
+                {group.label}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {group.icons.map((ri) => (
+                  <button
+                    key={ri}
+                    type="button"
+                    onClick={() => setIcon(ri)}
+                    title={ri}
+                    aria-label={`アイコンを ${ri} にする`}
+                    className={`inline-flex items-center justify-center size-9 rounded border text-xl transition-colors ${
+                      icon === ri
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-background text-foreground/75 hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <i className={ri} aria-hidden />
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </Field>
