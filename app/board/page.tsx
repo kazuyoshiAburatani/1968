@@ -162,7 +162,14 @@ export default async function BoardPage() {
                   : canPost(rank, c.access_level_post);
                 const latest = latestByCat.get(c.id);
                 const total = countByCat.get(c.id) ?? 0;
-                const look = CATEGORY_LOOKS[c.slug] ?? DEFAULT_LOOK;
+                // icon は DB（カテゴリ管理画面から編集可能）を優先、
+                // 未設定または未適用環境のフォールバックは旧 slug マップ→既定値の順
+                const slugLook = CATEGORY_LOOKS[c.slug];
+                const look = {
+                  emoji: c.icon ?? slugLook?.emoji ?? DEFAULT_LOOK.emoji,
+                  bg: slugLook?.bg ?? DEFAULT_LOOK.bg,
+                  ring: slugLook?.ring ?? DEFAULT_LOOK.ring,
+                };
                 return (
                   <li key={c.id}>
                     {viewable ? (

@@ -26,6 +26,14 @@ export const CategoryUpsertSchema = z.object({
     .trim()
     .min(1, "カテゴリ名を入力してください")
     .max(40, "カテゴリ名は 40 文字以内"),
+  // アイコン、絵文字 1 つを想定だが肌色変化等の多コードポイント絵文字も通すため
+  // 10 文字までを上限に。空文字は null として保存。
+  icon: z
+    .string()
+    .trim()
+    .max(10, "アイコンは 10 文字以内、絵文字 1 つを推奨")
+    .optional()
+    .transform((v) => (v === "" ? null : (v ?? null))),
   description: z
     .string()
     .trim()

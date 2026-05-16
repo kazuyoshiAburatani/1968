@@ -173,6 +173,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
                   <ThreadThumbnail
                     media={t.media}
                     categorySlug={category.slug}
+                    categoryIcon={category.icon}
                     size={64}
                   />
                   <div className="flex-1 min-w-0">

@@ -26,7 +26,7 @@ export default async function EditCategoryPage({
   const { data: cat } = await sb
     .from("categories")
     .select(
-      "id, slug, name, description, display_order, tier, access_level_view, access_level_post, posting_limit_per_day, requires_tenure_months",
+      "id, slug, name, icon, description, display_order, tier, access_level_view, access_level_post, posting_limit_per_day, requires_tenure_months",
     )
     .eq("id", numericId)
     .maybeSingle();
@@ -51,6 +51,7 @@ export default async function EditCategoryPage({
           id: cat.id as number,
           slug: cat.slug as string,
           name: cat.name as string,
+          icon: (cat.icon as string | null) ?? null,
           description: (cat.description as string | null) ?? null,
           display_order: cat.display_order as number,
           tier: cat.tier as "A" | "B" | "C" | "D",

@@ -22,10 +22,14 @@ const CATEGORY_LOOKS: Record<string, { emoji: string; bg: string }> = {
 export function ThreadThumbnail({
   media,
   categorySlug,
+  categoryIcon,
   size = 64,
 }: {
   media: MediaItem[] | null;
   categorySlug: string | null | undefined;
+  // カテゴリ管理画面で設定したアイコン、最優先で使う。
+  // 未指定なら旧 slug→emoji マップ、それも無ければ既定値（📌）。
+  categoryIcon?: string | null;
   size?: number;
 }) {
   // 最初の画像をサムネイル候補に
@@ -46,9 +50,9 @@ export function ThreadThumbnail({
   }
 
   // フォールバック、カテゴリの絵文字プレースホルダー
-  const look =
-    CATEGORY_LOOKS[categorySlug ?? ""] ??
-    ({ emoji: "📌", bg: "#e8e3d6" } as const);
+  const slugLook = CATEGORY_LOOKS[categorySlug ?? ""];
+  const emoji = categoryIcon ?? slugLook?.emoji ?? "📌";
+  const bg = slugLook?.bg ?? "#e8e3d6";
   return (
     <span
       aria-hidden
@@ -56,11 +60,11 @@ export function ThreadThumbnail({
       style={{
         width: size,
         height: size,
-        backgroundColor: look.bg,
+        backgroundColor: bg,
         fontSize: size * 0.5,
       }}
     >
-      {look.emoji}
+      {emoji}
     </span>
   );
 }

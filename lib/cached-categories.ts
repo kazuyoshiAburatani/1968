@@ -11,6 +11,7 @@ export type CachedCategory = {
   id: number;
   slug: string;
   name: string;
+  icon: string | null;
   description: string | null;
   display_order: number;
   tier: Tier;
@@ -39,9 +40,12 @@ export const fetchAllCategories = unstable_cache(
     // requires_founding / requires_supporter はマイグレーション未適用環境で
     // 列が無く、Supabase は例外ではなく { data: null, error: {...} } を返す。
     // エラーを検知したらフォールバッククエリでベース列のみ取得する。
+    // baseSelect は必ず存在する列だけ、未適用環境でのフォールバック用。
+    // icon, requires_founding, requires_supporter は後続マイグレーションで追加され、
+    // 列が無い場合は extendedSelect の SELECT が失敗するため base に退避する。
     const baseSelect =
       "id, slug, name, description, display_order, tier, access_level_view, access_level_post, posting_limit_per_day, requires_tenure_months";
-    const extendedSelect = `${baseSelect}, requires_founding, requires_supporter`;
+    const extendedSelect = `${baseSelect}, icon, requires_founding, requires_supporter`;
 
     let rows: Record<string, unknown>[] = [];
     const { data: extData, error: extError } = await client
@@ -72,6 +76,8 @@ export const fetchAllCategories = unstable_cache(
 
     return rows.map((r) => ({
       ...r,
+      // icon 列が未適用環境では undefined になるので null に正規化
+      icon: (r.icon as string | null | undefined) ?? null,
       requires_founding: r.requires_founding === true,
       requires_supporter: r.requires_supporter === true,
     })) as CachedCategory[];

@@ -28,7 +28,12 @@ type ThreadRow = {
   like_count: number;
   user_id: string;
   media: MediaItem[] | null;
-  categories: { slug: string; name: string; tier: Tier } | null;
+  categories: {
+    slug: string;
+    name: string;
+    tier: Tier;
+    icon: string | null;
+  } | null;
 };
 
 const TIER_BADGE: Record<Tier, string> = {
@@ -70,7 +75,7 @@ export default async function TimelinePage({ searchParams }: Props) {
   const { data, count } = await supabase
     .from("threads")
     .select(
-      "id, title, body, created_at, reply_count, like_count, user_id, media, categories(slug, name, tier)",
+      "id, title, body, created_at, reply_count, like_count, user_id, media, categories(slug, name, tier, icon)",
       { count: "exact" },
     )
     .order("created_at", { ascending: false })
@@ -121,6 +126,7 @@ export default async function TimelinePage({ searchParams }: Props) {
                   <ThreadThumbnail
                     media={t.media}
                     categorySlug={t.categories?.slug}
+                    categoryIcon={t.categories?.icon}
                     size={72}
                   />
                   <div className="flex-1 min-w-0">

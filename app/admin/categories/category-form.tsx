@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import {
   POST_LEVELS,
   TIER_LABELS,
@@ -10,6 +13,7 @@ type Initial = {
   id?: number;
   slug?: string;
   name?: string;
+  icon?: string | null;
   description?: string | null;
   display_order?: number;
   tier?: (typeof TIER_VALUES)[number];
@@ -18,6 +22,14 @@ type Initial = {
   posting_limit_per_day?: number | null;
   requires_tenure_months?: number;
 };
+
+// アイコン候補、運営が選びやすいように代表的な絵文字を並べる。
+// クリックで input に流し込めるようにする。
+const ICON_SUGGESTIONS = [
+  "🎬", "🎤", "📺", "🍬", "🪁", "💬", "🎒", "🥂",
+  "🌿", "🏠", "💴", "🍻", "🎖", "🌸", "📌", "🎨",
+  "📚", "⚾", "🎮", "🧸", "🌅", "🍵", "✈️", "🚗",
+] as const;
 
 export function CategoryForm({
   action,
@@ -28,6 +40,9 @@ export function CategoryForm({
   initial?: Initial;
   submitLabel: string;
 }) {
+  // アイコン入力、絵文字候補のクリック反映のため state で管理
+  const [icon, setIcon] = useState<string>(initial?.icon ?? "");
+
   return (
     <form action={action} className="mt-6 space-y-5">
       {initial?.id && (
@@ -43,6 +58,52 @@ export function CategoryForm({
           defaultValue={initial?.name ?? ""}
           className="w-full min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background"
         />
+      </Field>
+
+      <Field label="アイコン" hint="絵文字 1 つ、下のリストから選ぶか直接入力">
+        <div className="flex items-stretch gap-2">
+          <span
+            aria-hidden
+            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] w-14 rounded border border-border bg-muted text-2xl"
+          >
+            {icon || "📌"}
+          </span>
+          <input
+            type="text"
+            name="icon"
+            maxLength={10}
+            value={icon}
+            onChange={(e) => setIcon(e.target.value)}
+            placeholder="🎬 などを入力"
+            className="flex-1 min-w-0 min-h-[var(--spacing-tap)] px-3 rounded border border-border bg-background text-xl"
+          />
+          {icon && (
+            <button
+              type="button"
+              onClick={() => setIcon("")}
+              className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-3 rounded border border-border text-xs hover:bg-muted"
+            >
+              クリア
+            </button>
+          )}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {ICON_SUGGESTIONS.map((e) => (
+            <button
+              key={e}
+              type="button"
+              onClick={() => setIcon(e)}
+              aria-label={`アイコンを ${e} にする`}
+              className={`inline-flex items-center justify-center size-9 rounded border text-xl transition-colors ${
+                icon === e
+                  ? "border-primary bg-primary/10"
+                  : "border-border bg-background hover:bg-muted"
+              }`}
+            >
+              {e}
+            </button>
+          ))}
+        </div>
       </Field>
 
       <Field label="slug（URL に使う英小文字）" required hint="例 nostalgia-anime">

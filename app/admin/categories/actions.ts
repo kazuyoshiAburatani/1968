@@ -27,6 +27,7 @@ export async function createCategory(formData: FormData) {
   const parsed = CategoryUpsertSchema.safeParse({
     slug: formData.get("slug"),
     name: formData.get("name"),
+    icon: formData.get("icon") ?? "",
     description: formData.get("description") ?? "",
     display_order: formData.get("display_order"),
     tier: formData.get("tier"),
@@ -90,6 +91,7 @@ export async function updateCategory(formData: FormData) {
     id: formData.get("id"),
     slug: formData.get("slug"),
     name: formData.get("name"),
+    icon: formData.get("icon") ?? "",
     description: formData.get("description") ?? "",
     display_order: formData.get("display_order"),
     tier: formData.get("tier"),
