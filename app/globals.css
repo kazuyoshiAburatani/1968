@@ -1,21 +1,25 @@
 @import "tailwindcss";
 
-/* 1968 テーマ（墨・紺・生成り）
-   ・ページ全体（body）の背景はアイボリー #F8F4EC
+/* 1968 テーマ（teal + タン、2026 リフレッシュ）
+   ・ページ全体（body）の背景は明るいオフホワイト #FAFAFA
    ・罫線で囲まれたカード・入力欄・ヘッダー等の「サーフェス」は白 #FFFFFF
-   bg-background ユーティリティはこのサーフェス色を指す。
-   ページ背景色は --color-page に分離して body のみで参照する。 */
+   ・アクセントの teal は 50 代でも眩しくない落ち着いた色味（#2C9A9A）
+   ・副色にタン（#D4A373）、通知系にコーラル（#E76F51）
+   ・本文色は青みグレー（#264653）で長時間読みに耐えるコントラスト
+   bg-background ユーティリティは白サーフェス、bg-page が背景。 */
 @theme {
-  --color-page: #f8f4ec;
+  --color-page: #fafafa;
   --color-background: #ffffff;
-  --color-foreground: #1f1f1f;
-  --color-muted: #e8e0ce;
-  --color-border: #c9bfac;
-  --color-primary: #1e3a5f;
+  --color-foreground: #264653;
+  --color-muted: #f2ede4;
+  --color-border: #d9d3c7;
+  --color-primary: #2c9a9a;
   --color-primary-fg: #ffffff;
-  --color-accent: #8b6f3d;
+  --color-accent: #d4a373;
+  --color-notification: #e76f51;
 
   --font-sans: var(--font-noto-sans-jp), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-pacifico), var(--font-noto-sans-jp), cursive;
 
   /* タップ領域の最小サイズ（WCAG 準拠、本仕様では 44px） */
   --spacing-tap: 2.75rem;

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ImageHero } from "./image-hero";
 import { RecentThreadCards } from "./recent-thread-cards";
+import { StatsRow } from "./stats-row";
+import { MediaGalleryRail } from "./media-gallery-rail";
 
 // 未ログインのランディング、ノート + 湯呑みのイラストヒーローで
 // 「同年代と落ち着いて語らえる場」のブランド世界観を一目で伝える。
@@ -78,16 +80,24 @@ export async function HomeGuest() {
         </div>
       </section>
 
+      {/* コミュニティの実データ、ソーシャルプルーフ */}
+      <section className="px-4 py-6 max-w-6xl mx-auto">
+        <StatsRow />
+      </section>
+
       {/* 3 つの特徴 */}
       <section className="px-4 py-6 max-w-3xl mx-auto">
         <div className="grid sm:grid-cols-3 gap-3">
           {FEATURES.map((f) => (
             <div
               key={f.title}
-              className="rounded-2xl bg-muted/40 border border-border p-5 text-center"
+              className="rounded-2xl bg-background border border-border/60 shadow-sm p-5 text-center"
             >
-              <div className="text-3xl mb-2" aria-hidden>
-                {f.emoji}
+              <div
+                aria-hidden
+                className="mx-auto mb-3 w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center"
+              >
+                <i className={`${f.icon} text-2xl`} />
               </div>
               <h3 className="font-bold text-base mb-1.5 text-primary">
                 {f.title}
@@ -97,23 +107,26 @@ export async function HomeGuest() {
           ))}
         </div>
       </section>
+
+      {/* 思い出ギャラリー、投稿添付から自動生成 */}
+      <MediaGalleryRail />
     </div>
   );
 }
 
 const FEATURES = [
   {
-    emoji: "🤝",
+    icon: "ri-handshake-line",
     title: "同い年だけの安心感",
     body: "1968年生まれだけが参加できる、特別な閉じた場所です。",
   },
   {
-    emoji: "💬",
+    icon: "ri-chat-3-line",
     title: "本音で話せる 12 カテゴリ",
     body: "懐かしい話題から、今の暮らし・家族・お金まで。",
   },
   {
-    emoji: "🛡",
+    icon: "ri-shield-check-line",
     title: "本人確認済の安心運営",
     body: "身分証で年齢確認、なりすましのいない落ち着いた語らい。",
   },

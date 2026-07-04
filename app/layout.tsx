@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Noto_Sans_JP } from "next/font/google";
+import { Noto_Sans_JP, Pacifico } from "next/font/google";
 import Link from "next/link";
 
 // 全ページの Server Functions を東京リージョン（hnd1）で実行する。
@@ -24,6 +24,14 @@ const notoSansJp = Noto_Sans_JP({
   variable: "--font-noto-sans-jp",
   subsets: ["latin"],
   weight: ["400", "500", "700"],
+  display: "swap",
+});
+
+// ロゴ「1968」の装飾用、header やフッターだけで使う
+const pacifico = Pacifico({
+  variable: "--font-pacifico",
+  subsets: ["latin"],
+  weight: ["400"],
   display: "swap",
 });
 
@@ -150,7 +158,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="ja" className={notoSansJp.variable}>
+    <html lang="ja" className={`${notoSansJp.variable} ${pacifico.variable}`}>
       <head>
         {/* Remixicon、ダッシュボード等で使う軽量アイコンフォント */}
         <link
