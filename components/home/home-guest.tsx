@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { ImageHero } from "./image-hero";
-import { RecentThreadCards } from "./recent-thread-cards";
 import { StatsRow } from "./stats-row";
 import { MediaGalleryRail } from "./media-gallery-rail";
+import { TopicFeed } from "@/components/topics/topic-feed";
 
 // 未ログインのランディング、ノート + 湯呑みのイラストヒーローで
 // 「同年代と落ち着いて語らえる場」のブランド世界観を一目で伝える。
@@ -44,15 +44,15 @@ export async function HomeGuest() {
         }
       />
 
-      {/* 最近の話題 */}
-      <section className="px-0 sm:px-4 py-6 sm:py-10 max-w-2xl mx-auto">
-        <div className="px-4 sm:px-0 flex items-baseline justify-between mb-3">
-          <h2 className="font-bold text-lg">最近の話題</h2>
-          <Link href="/timeline" className="text-sm">
-            もっと見る →
+      {/* お題フィード、未ログインでも閲覧可、コメントは会員登録誘導 */}
+      <section className="px-4 py-6 sm:py-10 max-w-2xl mx-auto">
+        <div className="flex items-baseline justify-between mb-4">
+          <h2 className="font-bold text-lg">今週のお題</h2>
+          <Link href="/register" className="text-sm text-primary">
+            答えるには登録 →
           </Link>
         </div>
-        <RecentThreadCards limit={6} />
+        <TopicFeed />
       </section>
 
       {/* ベータ募集バナー */}

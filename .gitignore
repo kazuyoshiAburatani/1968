@@ -30,8 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# 資料、スクリーンショットや参考資料の置き場、Git 追跡しない
+# 資料・参考画像、スクリーンショットや参考資料の置き場、Git 追跡しない
 /資料/
+/参考画像/
 
 # env files (can opt-in for committing if needed)
 .env*

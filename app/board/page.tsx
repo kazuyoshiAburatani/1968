@@ -105,15 +105,39 @@ export default async function BoardPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-0 sm:px-4 py-6 sm:py-10">
+      {/* アーカイブ告知バナー、掲示板は主導線から外れて閲覧のみに */}
+      <div className="mx-4 sm:mx-0 mb-6 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 sm:p-5">
+        <div className="flex items-start gap-3">
+          <i
+            className="ri-archive-line text-2xl text-amber-800 mt-0.5"
+            aria-hidden
+          />
+          <div className="min-w-0">
+            <p className="text-sm sm:text-base font-bold text-amber-900">
+              掲示板は現在アーカイブ中です
+            </p>
+            <p className="mt-1 text-xs sm:text-sm text-amber-900/90 leading-6">
+              スレッド形式では気軽に参加しづらいという声が多かったため、
+              ホームの「お題フィード」を主導線に変更しました。
+              過去の投稿は引き続き閲覧できます、新規投稿は停止しています。
+            </p>
+            <p className="mt-3">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-1 text-sm font-medium text-amber-900 no-underline hover:underline"
+              >
+                → ホームでお題に答える
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+
       <header className="px-4 sm:px-0">
-        <h1 className="text-2xl font-bold">ひろば</h1>
+        <h1 className="text-2xl font-bold">ひろば（アーカイブ）</h1>
         <p className="mt-2 text-sm text-foreground/80">
-          12 のカテゴリで、同い年の方々と語り合えます。
-          {rank === "guest" &&
-            "今は 4 カテゴリをご覧いただけます。会員登録で 8 カテゴリに広がります。"}
-          {rank === "member" &&
-            "8 カテゴリを閲覧、段階A に投稿できます。1968 認証で全カテゴリが解放されます。"}
-          {rank === "verified" && "全カテゴリを自由に語れます。"}
+          12 のカテゴリで、同い年の方々が語り合ってきた場所です。
+          過去の投稿はいつでも読み返せます。
         </p>
       </header>
 

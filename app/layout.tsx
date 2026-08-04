@@ -295,13 +295,8 @@ function SiteHeader({
               管理
             </Link>
           )}
-          <Link
-            href="/board"
-            className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-3 rounded-full border border-border bg-background hover:bg-muted/40 no-underline text-sm font-medium text-foreground"
-            aria-label="掲示板トップへ"
-          >
-            掲示板TOP
-          </Link>
+          {/* 掲示板 12 カテゴリはアーカイブ扱いに、ホームは「お題フィード」主導。
+              ヘッダーからの直接導線は外し、ホームサイドバーからのみ辿れるようにする。 */}
           {userId ? (
             <Link
               href="/mypage"
