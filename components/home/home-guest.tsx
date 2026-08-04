@@ -3,6 +3,7 @@ import { ImageHero } from "./image-hero";
 import { StatsRow } from "./stats-row";
 import { MediaGalleryRail } from "./media-gallery-rail";
 import { TopicFeed } from "@/components/topics/topic-feed";
+import { PopularTopicsRail } from "@/components/topics/popular-topics-rail";
 
 // 未ログインのランディング、ノート + 湯呑みのイラストヒーローで
 // 「同年代と落ち着いて語らえる場」のブランド世界観を一目で伝える。
@@ -43,6 +44,11 @@ export async function HomeGuest() {
           </>
         }
       />
+
+      {/* 人気のお題、社会的証明として先に見せる */}
+      <section className="px-4 py-6 sm:py-10 max-w-5xl mx-auto">
+        <PopularTopicsRail />
+      </section>
 
       {/* お題フィード、未ログインでも閲覧可、コメントは会員登録誘導 */}
       <section className="px-4 py-6 sm:py-10 max-w-2xl mx-auto">

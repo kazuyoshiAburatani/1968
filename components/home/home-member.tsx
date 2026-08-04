@@ -4,6 +4,7 @@ import { StatsRow } from "@/components/home/stats-row";
 import { NewMembersRail } from "@/components/home/new-members-rail";
 import { MediaGalleryRail } from "@/components/home/media-gallery-rail";
 import { TopicFeed } from "@/components/topics/topic-feed";
+import { PopularTopicsRail } from "@/components/topics/popular-topics-rail";
 import { resolveBannerColor } from "@/lib/home-banner-colors";
 
 // 無料会員（member）向けダッシュボード、2026 リフレッシュ + 「お題ドリブン」化。
@@ -71,6 +72,9 @@ export async function HomeMember({
 
         {/* KPI カード 4 枚、実データ */}
         <StatsRow />
+
+        {/* 人気のお題、ランキング */}
+        <PopularTopicsRail />
 
         {/* 2 カラム、メイン(左) + サイドバー(右、lg のみ) */}
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">

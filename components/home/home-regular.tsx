@@ -5,6 +5,7 @@ import { StatsRow } from "@/components/home/stats-row";
 import { NewMembersRail } from "@/components/home/new-members-rail";
 import { MediaGalleryRail } from "@/components/home/media-gallery-rail";
 import { TopicFeed } from "@/components/topics/topic-feed";
+import { PopularTopicsRail } from "@/components/topics/popular-topics-rail";
 import { resolveBannerColor } from "@/lib/home-banner-colors";
 
 // 1968 認証済（verified）向けダッシュボード、お題ドリブン主軸版。
@@ -84,6 +85,9 @@ export async function HomeRegular({
 
         {/* KPI カード */}
         <StatsRow />
+
+        {/* 人気のお題 */}
+        <PopularTopicsRail />
 
         {/* 2 カラム */}
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">

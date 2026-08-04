@@ -1,13 +1,20 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { ResponseCard } from "./response-card";
+import { ResponseCard, type ResponseReply } from "./response-card";
 import { ResponseComposer } from "./response-composer";
 import type { MediaItem } from "@/lib/media";
 import type { ReactionType } from "@/lib/reactions";
 
-// お題フィード、ホームの主コンテンツ。
-// アクティブな topics を新しい順に走査し、各お題に紐づく最新レス数件を表示。
-// 各レスにはリアクション 6 種、ログイン中は自分の反応がハイライトされる。
+// お題フィード、ホーム主コンテンツ。
+// 複数のお題を新しい順に、各お題ごとに、
+// - お題ヘッダー + 総回答数
+// - Composer（最新お題のみ）
+// - トップレベル回答 N 件プレビュー、各回答の下に返信ツリー
+// - N 件以上なら「全ての答えを見る」で詳細ページへ
+//
+// パフォーマンス、topic 5 件 × 各 top-level 4 件 × 返信は取得トップの分だけ
+// batch 化した 4 クエリ（topics / top-level responses / replies / likes / profiles）
+// で描画までに 5〜6 回の Supabase 往復に抑える。
 
 type TopicRow = {
   id: string;
@@ -25,6 +32,7 @@ type ResponseRow = {
   media: MediaItem[];
   created_at: string;
   admin_edited_at: string | null;
+  parent_response_id: string | null;
 };
 
 type ProfileRow = {
@@ -40,10 +48,10 @@ type LikeRow = {
   user_id: string;
 };
 
-// 表示するお題数、フィード全体のスクロール長のバランス
-const TOPIC_LIMIT = 3;
-// 各お題ごとに表示するレス数
-const RESPONSE_LIMIT_PER_TOPIC = 6;
+// TOP に表示するお題数、フィードの垂直長のバランス
+const TOPIC_LIMIT = 5;
+// 各お題のトップレベル回答のプレビュー数
+const TOP_LEVEL_PREVIEW = 4;
 
 export async function TopicFeed() {
   const supabase = await createSupabaseServerClient();
@@ -51,7 +59,7 @@ export async function TopicFeed() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // ログイン中なら自分のプロフィールを取得（Composer 用）
+  // ログイン中なら自分のプロフィール（Composer 用）
   let myProfile: ProfileRow | null = null;
   if (user) {
     const { data } = await supabase
@@ -62,7 +70,7 @@ export async function TopicFeed() {
     myProfile = data as ProfileRow | null;
   }
 
-  // アクティブなお題を新しい順に
+  // 1. アクティブなお題
   const now = new Date().toISOString();
   const { data: topicsData } = await supabase
     .from("topics")
@@ -90,30 +98,73 @@ export async function TopicFeed() {
     );
   }
 
-  // 各お題のレスを一括取得（複数トピック分をまとめて 1 クエリ、あとで分配）
   const topicIds = topics.map((t) => t.id);
-  const { data: responsesData } = await supabase
+
+  // 2. トップレベル回答（parent NULL）を、各お題につき最新 N 件
+  //    複数トピック分をまとめて取得、アプリ側で分配
+  const { data: topLevelData } = await supabase
     .from("topic_responses")
     .select(
-      "id, topic_id, user_id, body, media, created_at, admin_edited_at",
+      "id, topic_id, user_id, body, media, created_at, admin_edited_at, parent_response_id",
     )
     .in("topic_id", topicIds)
+    .is("parent_response_id", null)
     .order("created_at", { ascending: false })
-    .limit(TOPIC_LIMIT * RESPONSE_LIMIT_PER_TOPIC * 2);
-  const responses = ((responsesData ?? []) as unknown) as ResponseRow[];
+    .limit(TOPIC_LIMIT * TOP_LEVEL_PREVIEW * 2);
+  const allTopLevel = ((topLevelData ?? []) as unknown) as ResponseRow[];
 
-  // トピックごとに分配、各 RESPONSE_LIMIT_PER_TOPIC 件まで
-  const responsesByTopic = new Map<string, ResponseRow[]>();
-  for (const r of responses) {
-    const list = responsesByTopic.get(r.topic_id) ?? [];
-    if (list.length < RESPONSE_LIMIT_PER_TOPIC) {
+  // トピックごとに TOP_LEVEL_PREVIEW 件まで
+  const topLevelByTopic = new Map<string, ResponseRow[]>();
+  for (const r of allTopLevel) {
+    const list = topLevelByTopic.get(r.topic_id) ?? [];
+    if (list.length < TOP_LEVEL_PREVIEW) {
       list.push(r);
-      responsesByTopic.set(r.topic_id, list);
+      topLevelByTopic.set(r.topic_id, list);
     }
   }
 
-  // 全ユーザーのプロフィールを一括取得
-  const userIds = Array.from(new Set(responses.map((r) => r.user_id)));
+  // 3. 上記トップレベルへの返信を一括で取得
+  const shownTopLevelIds = Array.from(topLevelByTopic.values())
+    .flat()
+    .map((r) => r.id);
+  let repliesData: ResponseRow[] = [];
+  if (shownTopLevelIds.length > 0) {
+    const { data } = await supabase
+      .from("topic_responses")
+      .select(
+        "id, topic_id, user_id, body, media, created_at, admin_edited_at, parent_response_id",
+      )
+      .in("parent_response_id", shownTopLevelIds)
+      .order("created_at", { ascending: true });
+    repliesData = ((data ?? []) as unknown) as ResponseRow[];
+  }
+  const repliesByParent = new Map<string, ResponseRow[]>();
+  for (const r of repliesData) {
+    const parent = r.parent_response_id;
+    if (!parent) continue;
+    const list = repliesByParent.get(parent) ?? [];
+    list.push(r);
+    repliesByParent.set(parent, list);
+  }
+
+  // 4. 各お題の総回答数（返信含む）
+  const { data: countData } = await supabase
+    .from("topic_responses")
+    .select("topic_id")
+    .in("topic_id", topicIds);
+  const totalCountByTopic = new Map<string, number>();
+  for (const r of countData ?? []) {
+    const tid = r.topic_id as string;
+    totalCountByTopic.set(tid, (totalCountByTopic.get(tid) ?? 0) + 1);
+  }
+
+  // 5. プロフィール一括取得（トップレベル + 返信の全 user_id）
+  const userIds = Array.from(
+    new Set([
+      ...allTopLevel.map((r) => r.user_id),
+      ...repliesData.map((r) => r.user_id),
+    ]),
+  );
   let profilesData: ProfileRow[] = [];
   if (userIds.length > 0) {
     const { data } = await supabase
@@ -124,15 +175,18 @@ export async function TopicFeed() {
   }
   const profileByUser = new Map(profilesData.map((p) => [p.user_id, p]));
 
-  // 全レスへの全リアクションを一括取得、target_id ごと reaction_type ごとに集計
-  const responseIds = responses.map((r) => r.id);
+  // 6. 全レス（トップレベル + 返信）の全リアクション一括取得
+  const allResponseIds = [
+    ...allTopLevel.map((r) => r.id),
+    ...repliesData.map((r) => r.id),
+  ];
   let likes: LikeRow[] = [];
-  if (responseIds.length > 0) {
+  if (allResponseIds.length > 0) {
     const { data } = await supabase
       .from("likes")
       .select("target_id, reaction_type, user_id")
       .eq("target_type", "topic_response")
-      .in("target_id", responseIds);
+      .in("target_id", allResponseIds);
     likes = ((data ?? []) as unknown) as LikeRow[];
   }
   const countsByResponse = new Map<
@@ -152,29 +206,36 @@ export async function TopicFeed() {
   return (
     <div className="space-y-8">
       {topics.map((t, i) => {
-        const list = responsesByTopic.get(t.id) ?? [];
+        const topLevel = topLevelByTopic.get(t.id) ?? [];
+        const totalCount = totalCountByTopic.get(t.id) ?? 0;
         return (
           <section key={t.id} className="space-y-3">
             {/* お題ヘッダー */}
             <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-5 sm:p-6">
               <div className="flex items-center gap-2 text-xs font-bold text-primary">
                 <i className="ri-chat-quote-line text-base" aria-hidden />
-                {i === 0 ? "今週のお題" : "過去のお題"}
+                {i === 0 ? "今週のお題" : "お題"}
               </div>
               <h2 className="mt-2 text-xl sm:text-2xl font-bold text-foreground leading-snug">
-                {t.title}
+                <Link
+                  href={`/topics/${t.id}`}
+                  className="text-foreground no-underline hover:underline"
+                >
+                  {t.title}
+                </Link>
               </h2>
               {t.body && (
                 <p className="mt-2 text-sm sm:text-base text-foreground/80 leading-7 whitespace-pre-wrap">
                   {t.body}
                 </p>
               )}
-              <div className="mt-2 text-xs text-foreground/50">
-                {list.length} 件の答え
+              <div className="mt-3 flex items-center gap-2 text-xs text-foreground/60">
+                <i className="ri-chat-3-line" aria-hidden />
+                <span>{totalCount} 件の答え</span>
               </div>
             </div>
 
-            {/* Composer、i === 0（最新のお題）だけ表示、過去お題は投稿不可 UI */}
+            {/* Composer は最新お題のみ、それ以外は詳細ページに任せて省略 */}
             {i === 0 && (
               <ResponseComposer
                 topicId={t.id}
@@ -184,20 +245,36 @@ export async function TopicFeed() {
               />
             )}
 
-            {/* レス一覧 */}
-            {list.length === 0 ? (
+            {/* 回答プレビュー */}
+            {topLevel.length === 0 ? (
               <p className="text-center text-sm text-foreground/60 py-6">
                 このお題にはまだ答えがありません
                 {i === 0 && "、一番乗りしませんか？"}
               </p>
             ) : (
               <div className="space-y-3">
-                {list.map((r) => {
+                {topLevel.map((r) => {
                   const p = profileByUser.get(r.user_id);
+                  const rawReplies = repliesByParent.get(r.id) ?? [];
+                  const replies: ResponseReply[] = rawReplies.map((rp) => {
+                    const rpProfile = profileByUser.get(rp.user_id);
+                    return {
+                      id: rp.id,
+                      nickname: rpProfile?.nickname ?? "会員",
+                      prefecture: rpProfile?.prefecture ?? null,
+                      avatarPath: rpProfile?.avatar_url,
+                      body: rp.body,
+                      createdAt: rp.created_at,
+                      reactionCounts: countsByResponse.get(rp.id) ?? {},
+                      myReaction: myReactionByResponse.get(rp.id) ?? null,
+                      adminEdited: !!rp.admin_edited_at,
+                    };
+                  });
                   return (
                     <ResponseCard
                       key={r.id}
                       responseId={r.id}
+                      topicId={t.id}
                       nickname={p?.nickname ?? "会員"}
                       prefecture={p?.prefecture ?? null}
                       avatarPath={p?.avatar_url}
@@ -206,18 +283,20 @@ export async function TopicFeed() {
                       createdAt={r.created_at}
                       reactionCounts={countsByResponse.get(r.id) ?? {}}
                       myReaction={myReactionByResponse.get(r.id) ?? null}
+                      replies={replies}
+                      loggedIn={!!user}
                       returnPath="/"
                       adminEdited={!!r.admin_edited_at}
                     />
                   );
                 })}
-                {list.length >= RESPONSE_LIMIT_PER_TOPIC && (
+                {totalCount > topLevel.length + repliesData.filter(rp => topLevel.some(tl => tl.id === rp.parent_response_id)).length && (
                   <div className="text-center">
                     <Link
                       href={`/topics/${t.id}`}
                       className="inline-flex items-center px-5 py-2 rounded-full border-2 border-primary text-primary text-sm font-medium hover:bg-primary hover:text-white transition-colors no-underline"
                     >
-                      このお題の全ての答えを見る →
+                      このお題の全ての答え（{totalCount} 件）を見る →
                     </Link>
                   </div>
                 )}

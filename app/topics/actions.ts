@@ -12,22 +12,37 @@ import { isValidReactionType, type ReactionType } from "@/lib/reactions";
 // 2. toggleReaction、リアクション付け外し（同じ種類なら削除、別種類なら差し替え、無ければ追加）
 
 // -------------------------------------------------
-// 1. お題への回答
+// 1. お題への回答（トップレベル or 返信）
 // -------------------------------------------------
+// parent_response_id が指定されていれば返信、無ければトップレベルの回答。
+// return_path で投稿後の遷移先を切り替え（お題詳細ページからの返信など）。
 const PostResponseSchema = z.object({
   topic_id: z.string().uuid(),
   body: z.string().trim().max(1000, "1000 文字以内で入力してください"),
+  parent_response_id: z.string().uuid().optional(),
+  return_path: z.string().default("/"),
 });
 
 export async function postTopicResponse(formData: FormData) {
+  const rawParent = formData.get("parent_response_id");
   const parsed = PostResponseSchema.safeParse({
     topic_id: formData.get("topic_id"),
     body: formData.get("body") ?? "",
+    parent_response_id:
+      typeof rawParent === "string" && rawParent.length > 0
+        ? rawParent
+        : undefined,
+    return_path: formData.get("return_path") ?? "/",
   });
+
+  const returnPath =
+    typeof formData.get("return_path") === "string"
+      ? (formData.get("return_path") as string)
+      : "/";
 
   if (!parsed.success) {
     redirect(
-      `/?error=${encodeURIComponent(
+      `${returnPath}?error=${encodeURIComponent(
         parsed.error.issues[0]?.message ?? "入力を確認してください",
       )}`,
     );
@@ -35,7 +50,9 @@ export async function postTopicResponse(formData: FormData) {
 
   const body = parsed.data.body;
   if (body.length === 0) {
-    redirect(`/?error=${encodeURIComponent("何か一言、書いてみてください")}`);
+    redirect(
+      `${parsed.data.return_path}?error=${encodeURIComponent("何か一言、書いてみてください")}`,
+    );
   }
 
   const supabase = await createSupabaseServerClient();
@@ -52,15 +69,22 @@ export async function postTopicResponse(formData: FormData) {
     user_id: user.id,
     body,
     media: [],
+    parent_response_id: parsed.data.parent_response_id ?? null,
   });
 
   if (error) {
     console.error("[topics/postResponse]", error.message);
-    redirect(`/?error=${encodeURIComponent("投稿に失敗しました")}`);
+    redirect(
+      `${parsed.data.return_path}?error=${encodeURIComponent("投稿に失敗しました")}`,
+    );
   }
 
-  revalidatePath("/");
-  redirect("/?posted=1");
+  revalidatePath(parsed.data.return_path);
+  // 返信ならその親カード付近にスクロールできるよう anchor 付き、それ以外は最上部
+  const anchor = parsed.data.parent_response_id
+    ? `#response-${parsed.data.parent_response_id}`
+    : "";
+  redirect(`${parsed.data.return_path}?posted=1${anchor}`);
 }
 
 // -------------------------------------------------

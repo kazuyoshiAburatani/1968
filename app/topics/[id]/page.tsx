@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { ResponseCard } from "@/components/topics/response-card";
+import { ResponseCard, type ResponseReply } from "@/components/topics/response-card";
 import { ResponseComposer } from "@/components/topics/response-composer";
 import type { MediaItem } from "@/lib/media";
 import type { ReactionType } from "@/lib/reactions";
@@ -33,6 +33,7 @@ type ResponseRow = {
   media: MediaItem[];
   created_at: string;
   admin_edited_at: string | null;
+  parent_response_id: string | null;
 };
 
 type ProfileRow = {
@@ -48,8 +49,7 @@ type LikeRow = {
   user_id: string;
 };
 
-// お題の詳細ページ、そのお題への全ての答えを表示。
-// トップの TopicFeed から「全ての答えを見る」で遷移。
+// お題詳細、そのお題の全レス（トップレベル + 返信）を返信ツリーで表示。
 export default async function TopicDetailPage({ params }: Props) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
@@ -78,15 +78,30 @@ export default async function TopicDetailPage({ params }: Props) {
     myProfile = data as ProfileRow | null;
   }
 
-  const { data: responsesData } = await supabase
+  // 全レスをまとめて取得、後でトップと返信に分ける
+  const { data: allData } = await supabase
     .from("topic_responses")
-    .select("id, user_id, body, media, created_at, admin_edited_at")
+    .select(
+      "id, user_id, body, media, created_at, admin_edited_at, parent_response_id",
+    )
     .eq("topic_id", id)
-    .order("created_at", { ascending: false })
-    .limit(200);
-  const responses = ((responsesData ?? []) as unknown) as ResponseRow[];
+    .order("created_at", { ascending: true })
+    .limit(500);
+  const all = ((allData ?? []) as unknown) as ResponseRow[];
 
-  const userIds = Array.from(new Set(responses.map((r) => r.user_id)));
+  const topLevel = all
+    .filter((r) => !r.parent_response_id)
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1)); // 新しい順に表示
+  const repliesByParent = new Map<string, ResponseRow[]>();
+  for (const r of all) {
+    if (!r.parent_response_id) continue;
+    const list = repliesByParent.get(r.parent_response_id) ?? [];
+    list.push(r);
+    repliesByParent.set(r.parent_response_id, list);
+  }
+
+  // プロフィール一括
+  const userIds = Array.from(new Set(all.map((r) => r.user_id)));
   let profilesData: ProfileRow[] = [];
   if (userIds.length > 0) {
     const { data } = await supabase
@@ -97,14 +112,15 @@ export default async function TopicDetailPage({ params }: Props) {
   }
   const profileByUser = new Map(profilesData.map((p) => [p.user_id, p]));
 
-  const responseIds = responses.map((r) => r.id);
+  // 全リアクション一括
+  const allIds = all.map((r) => r.id);
   let likes: LikeRow[] = [];
-  if (responseIds.length > 0) {
+  if (allIds.length > 0) {
     const { data } = await supabase
       .from("likes")
       .select("target_id, reaction_type, user_id")
       .eq("target_type", "topic_response")
-      .in("target_id", responseIds);
+      .in("target_id", allIds);
     likes = ((data ?? []) as unknown) as LikeRow[];
   }
   const countsByResponse = new Map<
@@ -145,8 +161,9 @@ export default async function TopicDetailPage({ params }: Props) {
             {topic.body}
           </p>
         )}
-        <div className="mt-3 text-xs text-foreground/50">
-          {responses.length} 件の答え
+        <div className="mt-3 flex items-center gap-2 text-xs text-foreground/60">
+          <i className="ri-chat-3-line" aria-hidden />
+          <span>{all.length} 件の答え</span>
         </div>
       </section>
 
@@ -157,18 +174,34 @@ export default async function TopicDetailPage({ params }: Props) {
         guest={!user}
       />
 
-      {responses.length === 0 ? (
+      {topLevel.length === 0 ? (
         <p className="text-center text-sm text-foreground/60 py-8">
           このお題にはまだ答えがありません、一番乗りしませんか？
         </p>
       ) : (
         <div className="space-y-3">
-          {responses.map((r) => {
+          {topLevel.map((r) => {
             const p = profileByUser.get(r.user_id);
+            const rawReplies = repliesByParent.get(r.id) ?? [];
+            const replies: ResponseReply[] = rawReplies.map((rp) => {
+              const rpProfile = profileByUser.get(rp.user_id);
+              return {
+                id: rp.id,
+                nickname: rpProfile?.nickname ?? "会員",
+                prefecture: rpProfile?.prefecture ?? null,
+                avatarPath: rpProfile?.avatar_url,
+                body: rp.body,
+                createdAt: rp.created_at,
+                reactionCounts: countsByResponse.get(rp.id) ?? {},
+                myReaction: myReactionByResponse.get(rp.id) ?? null,
+                adminEdited: !!rp.admin_edited_at,
+              };
+            });
             return (
               <ResponseCard
                 key={r.id}
                 responseId={r.id}
+                topicId={topic.id as string}
                 nickname={p?.nickname ?? "会員"}
                 prefecture={p?.prefecture ?? null}
                 avatarPath={p?.avatar_url}
@@ -177,6 +210,8 @@ export default async function TopicDetailPage({ params }: Props) {
                 createdAt={r.created_at}
                 reactionCounts={countsByResponse.get(r.id) ?? {}}
                 myReaction={myReactionByResponse.get(r.id) ?? null}
+                replies={replies}
+                loggedIn={!!user}
                 returnPath={returnPath}
                 adminEdited={!!r.admin_edited_at}
               />
