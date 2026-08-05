@@ -7,15 +7,18 @@ export const metadata: Metadata = {
   title: { default: "管理画面", template: "%s ・ 管理画面" },
 };
 
+// 運営の一日は「返す」から始まる。
+// 検証で定着の要になったのは、投稿に必ず返事が来ることだった。
+// したがって未返信キューを一番上に置き、毎日ここを空にする運用を前提にする。
 const NAV: Array<{ href: string; label: string; icon: string }> = [
+  { href: "/admin/replies", label: "未返信", icon: "ri-reply-line" },
   { href: "/admin/dashboard", label: "ダッシュボード", icon: "ri-dashboard-line" },
-  { href: "/admin/applications", label: "ベータ応募", icon: "ri-mail-open-line" },
-  { href: "/admin/verifications", label: "身分証審査", icon: "ri-shield-check-line" },
+  { href: "/admin/topics", label: "お題の配信", icon: "ri-chat-quote-line" },
+  { href: "/admin/polls", label: "二択の配信", icon: "ri-scales-3-line" },
+  { href: "/admin/letters", label: "お便り紹介", icon: "ri-mail-star-line" },
   { href: "/admin/reports", label: "違反報告", icon: "ri-alarm-warning-line" },
   { href: "/admin/users", label: "会員管理", icon: "ri-group-line" },
-  { href: "/admin/categories", label: "カテゴリ", icon: "ri-folder-2-line" },
-  { href: "/admin/topics", label: "今週のお題", icon: "ri-chat-quote-line" },
-  { href: "/admin/recommendations", label: "みんなの推し", icon: "ri-heart-3-line" },
+  { href: "/admin/applications", label: "創設メンバー招待", icon: "ri-mail-open-line" },
   { href: "/admin/audit-logs", label: "監査ログ", icon: "ri-history-line" },
 ];
 

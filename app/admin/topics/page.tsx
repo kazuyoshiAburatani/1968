@@ -1,291 +1,365 @@
 import type { Metadata } from "next";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
-import { fetchAllCategories } from "@/lib/cached-categories";
 import {
   TOPIC_AUDIENCE_LABELS,
   TOPIC_AUDIENCE_VALUES,
+  TOPIC_FORMAT_LABELS,
+  TOPIC_FORMAT_VALUES,
+  TOPIC_ERA_VALUES,
 } from "@/lib/validation/topic";
 import { createTopic, deleteTopic, updateTopic } from "./actions";
 
-export const metadata: Metadata = { title: "今週のお題" };
+export const metadata: Metadata = { title: "お題の配信" };
 
 type Topic = {
   id: string;
   title: string;
   body: string;
   audience: (typeof TOPIC_AUDIENCE_VALUES)[number];
-  related_category_id: number | null;
+  format: (typeof TOPIC_FORMAT_VALUES)[number];
+  blank_examples: string[];
+  era: string | null;
+  gender_lean: "male" | "female" | "both";
   published_at: string;
   expires_at: string | null;
   is_active: boolean;
-  created_at: string;
 };
 
 type Props = {
-  searchParams: Promise<{ saved?: string; error?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string; edit?: string }>;
 };
 
-function toLocalInput(iso: string | null | undefined): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
+// お題の配信管理。
+//
+// 運用上いちばん大事なのは「先の分まで仕込んでおく」こと。
+// 公開日時を未来にして保存しておけば、その日が来たら自動で出る。
+// 検証では、お題が途切れた週があるだけで習慣が切れることが分かっているので、
+// 常に 4 週間先まで埋まっている状態を保つ運用にしている。
 export default async function AdminTopicsPage({ searchParams }: Props) {
-  const { saved, error } = await searchParams;
+  const { saved, error, edit } = await searchParams;
   const sb = getSupabaseAdminClient();
 
-  const [{ data: topicsData }, cats] = await Promise.all([
-    sb
-      .from("topics")
-      .select(
-        "id, title, body, audience, related_category_id, published_at, expires_at, is_active, created_at",
-      )
-      .order("published_at", { ascending: false })
-      .limit(50),
-    fetchAllCategories(),
-  ]);
-  const topics = (topicsData ?? []) as Topic[];
+  const { data } = await sb
+    .from("topics")
+    .select(
+      "id, title, body, audience, format, blank_examples, era, gender_lean, published_at, expires_at, is_active",
+    )
+    .order("published_at", { ascending: false })
+    .limit(200);
+
+  const topics = ((data ?? []) as unknown) as Topic[];
+  const editing = edit ? topics.find((t) => t.id === edit) : undefined;
+
+  const now = new Date();
+  const upcoming = topics.filter(
+    (t) => t.is_active && new Date(t.published_at) > now,
+  );
+  const live = topics.filter(
+    (t) =>
+      t.is_active &&
+      new Date(t.published_at) <= now &&
+      (t.expires_at == null || new Date(t.expires_at) > now),
+  );
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold">今週のお題</h1>
-      <p className="mt-1 text-sm text-foreground/70">
-        運営からの話題提供。ホーム画面で目立つ位置に表示されます。
-      </p>
+    <div className="space-y-6">
+      <header>
+        <h1 className="text-2xl font-bold">お題の配信</h1>
+        <p className="mt-2 text-sm leading-7 text-foreground/70">
+          公開中 {live.length} 件、これから公開 {upcoming.length} 件。
+          {upcoming.length < 4 && (
+            <span className="ml-1 font-bold text-notification">
+              仕込みが 4 件を切っています。先の分を足してください。
+            </span>
+          )}
+        </p>
+      </header>
 
       {saved && (
-        <div className="mt-4 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 px-4 py-2.5 text-sm">
-          {saved === "created" ? "お題を作成しました。" : "お題を更新しました。"}
-        </div>
+        <p className="rounded-xl border border-primary/40 bg-primary/5 px-4 py-3 text-sm">
+          保存しました。
+        </p>
       )}
       {error && (
-        <div className="mt-4 rounded-lg border border-red-700/50 bg-red-50 text-red-900 px-4 py-2.5 text-sm">
-          {decodeURIComponent(error)}
-        </div>
+        <p className="rounded-xl border border-notification/40 bg-notification/10 px-4 py-3 text-sm">
+          {error}
+        </p>
       )}
 
-      {/* 新規作成フォーム */}
-      <details className="mt-6 rounded-xl border border-border bg-background p-4 open:shadow-sm">
-        <summary className="cursor-pointer font-bold">＋ 新しいお題を作る</summary>
-        <form action={createTopic} className="mt-4 space-y-4">
-          <TopicFields cats={cats} />
-          <div>
-            <button
-              type="submit"
-              className="inline-flex items-center min-h-[var(--spacing-tap)] px-5 rounded-full bg-primary text-white text-sm font-medium"
-            >
-              作成
-            </button>
-          </div>
-        </form>
-      </details>
+      <section className="rounded-2xl border border-border bg-background p-5">
+        <h2 className="text-lg font-bold">
+          {editing ? "お題を編集する" : "お題を追加する"}
+        </h2>
+        <TopicForm initial={editing} />
+      </section>
 
-      {/* 既存お題一覧 */}
-      <ul className="mt-8 space-y-4">
-        {topics.length === 0 && (
-          <li className="rounded-xl border border-border bg-background p-6 text-center text-foreground/70">
-            まだお題はありません。
-          </li>
-        )}
-        {topics.map((t) => {
-          const cat = cats.find((c) => c.id === t.related_category_id);
-          const isLive =
-            t.is_active &&
-            new Date(t.published_at) <= new Date() &&
-            (t.expires_at == null || new Date(t.expires_at) > new Date());
-          return (
-            <li
-              key={t.id}
-              className="rounded-xl border border-border bg-background p-4"
-            >
-              <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {isLive ? (
-                      <span className="text-[10px] font-bold text-emerald-900 bg-emerald-50 border border-emerald-300 px-1.5 py-px rounded">
-                        公開中
-                      </span>
-                    ) : t.is_active ? (
-                      <span className="text-[10px] font-bold text-foreground/60 bg-muted border border-border px-1.5 py-px rounded">
-                        予約 / 期限切れ
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-bold text-foreground/60 bg-muted border border-border px-1.5 py-px rounded">
-                        下書き
-                      </span>
-                    )}
-                    <span className="text-[10px] text-foreground/60">
-                      {TOPIC_AUDIENCE_LABELS[t.audience]}
-                    </span>
-                    {cat && (
-                      <span className="text-[10px] text-foreground/60">
-                        ・関連 {cat.name}
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-1 font-bold">{t.title}</p>
-                  {t.body && (
-                    <p className="mt-1 text-sm text-foreground/75 line-clamp-2 whitespace-pre-wrap">
-                      {t.body}
-                    </p>
-                  )}
-                  <p className="mt-2 text-xs text-foreground/60">
-                    公開、{new Date(t.published_at).toLocaleString("ja-JP")}
-                    {t.expires_at &&
-                      ` ・ 終了、${new Date(t.expires_at).toLocaleString("ja-JP")}`}
-                  </p>
-                </div>
-                <form action={deleteTopic}>
-                  <input type="hidden" name="id" value={t.id} />
-                  <button
-                    type="submit"
-                    className="inline-flex items-center px-3 py-1.5 rounded-full border border-rose-300 bg-rose-50 text-rose-900 text-xs hover:bg-rose-100"
-                  >
-                    削除
-                  </button>
-                </form>
-              </div>
-
-              <details className="mt-3">
-                <summary className="cursor-pointer text-xs text-foreground/70 underline">
-                  編集
-                </summary>
-                <form action={updateTopic} className="mt-3 space-y-3">
-                  <input type="hidden" name="id" value={t.id} />
-                  <TopicFields
-                    cats={cats}
-                    initial={{
-                      title: t.title,
-                      body: t.body,
-                      audience: t.audience,
-                      related_category_id: t.related_category_id,
-                      published_at: toLocalInput(t.published_at),
-                      expires_at: toLocalInput(t.expires_at),
-                      is_active: t.is_active,
-                    }}
-                  />
-                  <div>
-                    <button
-                      type="submit"
-                      className="inline-flex items-center min-h-[var(--spacing-tap)] px-5 rounded-full bg-primary text-white text-sm font-medium"
-                    >
-                      保存
-                    </button>
-                  </div>
-                </form>
-              </details>
+      <section>
+        <h2 className="text-lg font-bold">一覧</h2>
+        <ul className="mt-3 space-y-3">
+          {topics.length === 0 && (
+            <li className="rounded-xl border border-border bg-background p-6 text-center text-foreground/70">
+              まだお題はありません。
             </li>
-          );
-        })}
-      </ul>
+          )}
+          {topics.map((t) => {
+            const isLive =
+              t.is_active &&
+              new Date(t.published_at) <= now &&
+              (t.expires_at == null || new Date(t.expires_at) > now);
+            const isFuture = t.is_active && new Date(t.published_at) > now;
+            return (
+              <li
+                key={t.id}
+                className="rounded-xl border border-border bg-background p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                      <span
+                        className={
+                          "px-2 py-0.5 rounded-full font-bold " +
+                          (isLive
+                            ? "bg-primary/10 text-primary"
+                            : isFuture
+                              ? "bg-accent/20 text-accent"
+                              : "bg-muted text-foreground/60")
+                        }
+                      >
+                        {isLive ? "公開中" : isFuture ? "配信待ち" : "停止中"}
+                      </span>
+                      <span className="text-foreground/50">
+                        {TOPIC_FORMAT_LABELS[t.format]?.split("（")[0]}
+                      </span>
+                      {t.era && (
+                        <span className="text-foreground/50">{t.era}</span>
+                      )}
+                      <span className="text-foreground/50">
+                        {t.gender_lean === "male"
+                          ? "男性寄り"
+                          : t.gender_lean === "female"
+                            ? "女性寄り"
+                            : "男女共通"}
+                      </span>
+                    </div>
+                    <p className="mt-1.5 font-bold leading-7">{t.title}</p>
+                    <p className="mt-0.5 text-xs text-foreground/50">
+                      {new Date(t.published_at).toLocaleString("ja-JP", {
+                        timeZone: "Asia/Tokyo",
+                      })}
+                      公開
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <a
+                      href={`/admin/topics?edit=${t.id}`}
+                      className="text-sm no-underline hover:underline"
+                    >
+                      編集
+                    </a>
+                    <form action={deleteTopic}>
+                      <input type="hidden" name="id" value={t.id} />
+                      <button
+                        type="submit"
+                        className="text-sm text-foreground/50 hover:text-notification"
+                      >
+                        削除
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
     </div>
   );
 }
 
-function TopicFields({
-  cats,
-  initial,
-}: {
-  cats: Awaited<ReturnType<typeof fetchAllCategories>>;
-  initial?: {
-    title: string;
-    body: string;
-    audience: (typeof TOPIC_AUDIENCE_VALUES)[number];
-    related_category_id: number | null;
-    published_at: string;
-    expires_at: string;
-    is_active: boolean;
+function TopicForm({ initial }: { initial?: Topic }) {
+  const action = initial ? updateTopic : createTopic;
+  const toLocal = (iso: string | null) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
-}) {
-  const now = toLocalInput(new Date().toISOString());
+
   return (
-    <div className="space-y-3 text-sm">
+    <form action={action} className="mt-4 space-y-4">
+      {initial && <input type="hidden" name="id" value={initial.id} />}
+
       <div>
-        <label className="block text-xs font-bold mb-1">タイトル</label>
+        <label htmlFor="title" className="block text-sm font-bold mb-1">
+          お題
+        </label>
         <input
-          type="text"
+          id="title"
           name="title"
           required
-          maxLength={100}
-          defaultValue={initial?.title ?? ""}
+          maxLength={120}
+          defaultValue={initial?.title}
+          placeholder="初めて自分のお小遣いで買ったレコードやカセットは【　　】"
           className="w-full px-3 py-2 rounded border border-border bg-background"
-          placeholder="例、初任給、何に使いましたか？"
         />
+        <p className="mt-1 text-xs text-foreground/60">
+          穴埋めのときは【　　】を必ず入れてください。何を書けばよいかが一目で分かります。
+        </p>
       </div>
-      <div>
-        <label className="block text-xs font-bold mb-1">本文（任意、改行 OK）</label>
-        <textarea
-          name="body"
-          rows={3}
-          maxLength={2000}
-          defaultValue={initial?.body ?? ""}
-          className="w-full px-3 py-2 rounded border border-border bg-background"
-          placeholder="背景や、答えてほしい角度を書いておくと良い回答が集まりやすいです"
-        />
-      </div>
+
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-bold mb-1">配信対象</label>
+          <label htmlFor="format" className="block text-sm font-bold mb-1">
+            形式
+          </label>
           <select
+            id="format"
+            name="format"
+            defaultValue={initial?.format ?? "fill_blank"}
+            className="w-full px-3 py-2 rounded border border-border bg-background"
+          >
+            {TOPIC_FORMAT_VALUES.map((v) => (
+              <option key={v} value={v}>
+                {TOPIC_FORMAT_LABELS[v]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="audience" className="block text-sm font-bold mb-1">
+            公開先
+          </label>
+          <select
+            id="audience"
             name="audience"
             defaultValue={initial?.audience ?? "all"}
             className="w-full px-3 py-2 rounded border border-border bg-background"
           >
-            {TOPIC_AUDIENCE_VALUES.map((a) => (
-              <option key={a} value={a}>
-                {TOPIC_AUDIENCE_LABELS[a]}
+            {TOPIC_AUDIENCE_VALUES.map((v) => (
+              <option key={v} value={v}>
+                {TOPIC_AUDIENCE_LABELS[v]}
               </option>
             ))}
           </select>
         </div>
+      </div>
+
+      <div>
+        <label
+          htmlFor="blank_examples"
+          className="block text-sm font-bold mb-1"
+        >
+          回答例（1行に1つ、3つほど）
+        </label>
+        <textarea
+          id="blank_examples"
+          name="blank_examples"
+          rows={3}
+          defaultValue={(initial?.blank_examples ?? []).join("\n")}
+          placeholder={"ピンク・レディー「サウスポー」\n西城秀樹「ブーメランストリート」\nツイスト「宿無し」"}
+          className="w-full px-3 py-2 rounded border border-border bg-background"
+        />
+        <p className="mt-1 text-xs text-foreground/60">
+          入力欄のプレースホルダに出ます。具体的なほど筆が動きます。
+        </p>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-bold mb-1">関連カテゴリ（任意）</label>
+          <label htmlFor="era" className="block text-sm font-bold mb-1">
+            いつの話か
+          </label>
           <select
-            name="related_category_id"
-            defaultValue={initial?.related_category_id?.toString() ?? ""}
+            id="era"
+            name="era"
+            defaultValue={initial?.era ?? ""}
             className="w-full px-3 py-2 rounded border border-border bg-background"
           >
             <option value="">指定なし</option>
-            {cats.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
+            {TOPIC_ERA_VALUES.map((v) => (
+              <option key={v} value={v}>
+                {v}
               </option>
             ))}
           </select>
         </div>
+        <div>
+          <label htmlFor="gender_lean" className="block text-sm font-bold mb-1">
+            どちら寄りの話題か
+          </label>
+          <select
+            id="gender_lean"
+            name="gender_lean"
+            defaultValue={initial?.gender_lean ?? "both"}
+            className="w-full px-3 py-2 rounded border border-border bg-background"
+          >
+            <option value="both">男女共通</option>
+            <option value="male">男性寄り</option>
+            <option value="female">女性寄り</option>
+          </select>
+          <p className="mt-1 text-xs text-foreground/60">
+            男性寄りが続くと女性の投稿が止まります。交互になるよう仕込んでください。
+          </p>
+        </div>
       </div>
+
+      <div>
+        <label htmlFor="body" className="block text-sm font-bold mb-1">
+          補足（任意）
+        </label>
+        <textarea
+          id="body"
+          name="body"
+          rows={2}
+          defaultValue={initial?.body}
+          className="w-full px-3 py-2 rounded border border-border bg-background"
+        />
+      </div>
+
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-bold mb-1">公開日時</label>
+          <label htmlFor="published_at" className="block text-sm font-bold mb-1">
+            公開日時
+          </label>
           <input
-            type="datetime-local"
+            id="published_at"
             name="published_at"
+            type="datetime-local"
             required
-            defaultValue={initial?.published_at ?? now}
+            defaultValue={toLocal(initial?.published_at ?? new Date().toISOString())}
             className="w-full px-3 py-2 rounded border border-border bg-background"
           />
         </div>
         <div>
-          <label className="block text-xs font-bold mb-1">終了日時（任意）</label>
+          <label htmlFor="expires_at" className="block text-sm font-bold mb-1">
+            終了日時（任意）
+          </label>
           <input
-            type="datetime-local"
+            id="expires_at"
             name="expires_at"
-            defaultValue={initial?.expires_at ?? ""}
+            type="datetime-local"
+            defaultValue={toLocal(initial?.expires_at ?? null)}
             className="w-full px-3 py-2 rounded border border-border bg-background"
           />
         </div>
       </div>
-      <label className="flex items-center gap-2 text-xs">
+
+      <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
           name="is_active"
-          value="on"
-          defaultChecked={initial?.is_active ?? true}
+          defaultChecked={initial ? initial.is_active : true}
+          className="size-5"
         />
-        <span>有効化（公開する）</span>
+        有効にする
       </label>
-    </div>
+
+      <button
+        type="submit"
+        className="min-h-[var(--spacing-tap)] px-6 rounded-full bg-primary text-white font-bold"
+      >
+        {initial ? "更新する" : "追加する"}
+      </button>
+    </form>
   );
 }

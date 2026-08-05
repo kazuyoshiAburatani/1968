@@ -1,89 +1,73 @@
-// 会員ランク + 称号バッジ。
-// 2026-05-01 完全無料化以降は、ランク（member/verified）に加えて
-// 「創設メンバー」「年次応援団」を独立した称号として並べて表示する。
+// 投稿者に添える称号バッジ。
 //
-// 表示優先度（左から順）：
-//   ・運営AI（ランクの代わりに単独表示）
-//   ・1968認証済（verified の場合）
-//   ・創設メンバー（is_founding_member、画像バッジを使用）
-//   ・応援団（is_current_supporter）
+// 2026-08-05 のリニューアルで、身分証確認と課金を撤去したため
+// 「1968認証済」「応援団」は消滅した。残すのは 2 つだけ。
 //
-// guest / member は無記名扱いとし、バッジは付けない（課金色のない平等感）。
+//   運営      … 管理人からの返信であることを示す。
+//                必ず返事が来る場だと分かることが、投稿を続ける最大の理由になっていた
+//   創設メンバー … 立ち上げから場を温めてくれた人。種火メンバーの可視化
+//
+// 一般の会員にはバッジを付けない。等級が見えると気後れする人が出るため、
+// 「みんな同じ学年の一人」という水平な見え方を守る。
 
 import Image from "next/image";
 
-type Rank = "guest" | "member" | "verified";
-
 export function MembershipBadge({
-  rank,
+  isOperator,
   isFoundingMember,
-  isCurrentSupporter,
-  isAi,
   badgeSize = "sm",
-  compact = false,
 }: {
-  rank: Rank;
+  isOperator?: boolean;
   isFoundingMember?: boolean;
-  isCurrentSupporter?: boolean;
-  isAi?: boolean;
   /** 創設メンバーバッジ画像のサイズ。sm=20px、md=28px、lg=64px */
   badgeSize?: "sm" | "md" | "lg";
-  /** true なら「1968認証済」pill を非表示にし、特別バッジ（創設・応援団・運営AI）だけ表示。
-   * 投稿バブル内など、rank はカテゴリ権限で自明な場所で使う */
-  compact?: boolean;
 }) {
-  if (isAi) {
-    return (
-      <span className="inline-flex items-center gap-1">
-        <Pill bg="#eef0e8" fg="#3d6b4a" border="#3d6b4a">
-          運営AI
-        </Pill>
-      </span>
-    );
-  }
+  if (!isOperator && !isFoundingMember) return null;
 
-  const foundingPx = badgeSize === "lg" ? 64 : badgeSize === "md" ? 28 : 20;
+  const px = badgeSize === "lg" ? 64 : badgeSize === "md" ? 28 : 20;
 
   return (
-    <span className="inline-flex items-center gap-1.5 flex-wrap">
-      {!compact && rank === "verified" && (
-        <Pill bg="#f8f4ec" fg="#1e3a5f" border="#1e3a5f">
-          1968認証済
+    <span className="inline-flex items-center gap-1 align-middle">
+      {isOperator && (
+        <Pill bg="#e8f3f3" fg="#1f6b6b" border="#2c9a9a">
+          運営
         </Pill>
       )}
       {isFoundingMember && (
-        <Image
-          src="/badges/founding-member.svg"
-          alt="創設メンバー"
-          width={foundingPx}
-          height={foundingPx}
-          className="inline-block shrink-0 align-middle"
-          title="創設メンバー、ベータ期間からの応援に感謝"
-        />
-      )}
-      {isCurrentSupporter && (
-        <Pill bg="#fdebe8" fg="#a8463b" border="#c87d72">
-          応援団
-        </Pill>
+        <span
+          className="inline-flex items-center gap-1"
+          title="立ち上げから参加している創設メンバー"
+        >
+          <Image
+            src="/badges/founding.png"
+            alt="創設メンバー"
+            width={px}
+            height={px}
+            className="shrink-0"
+          />
+          {badgeSize !== "sm" && (
+            <span className="text-xs font-medium text-accent">創設メンバー</span>
+          )}
+        </span>
       )}
     </span>
   );
 }
 
 function Pill({
+  children,
   bg,
   fg,
   border,
-  children,
 }: {
+  children: React.ReactNode;
   bg: string;
   fg: string;
   border: string;
-  children: React.ReactNode;
 }) {
   return (
     <span
-      className="inline-flex items-center px-2 py-0.5 rounded-full border text-xs font-medium"
+      className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold leading-none border"
       style={{ backgroundColor: bg, color: fg, borderColor: border }}
     >
       {children}

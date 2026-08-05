@@ -1,17 +1,27 @@
 import { postTopicResponse } from "@/app/topics/actions";
 import { UserAvatar } from "@/components/user-avatar";
 import { publicAvatarUrl } from "@/lib/avatar";
+import { SubmitButton } from "@/components/submit-button";
 
-// お題への短文回答入力欄。
-// スレッドの新規作成と違い、タイトル無し・本文だけ。
-// 200 字を目安に、上限 1000 字。プレースホルダーで気軽さを演出。
+// お題への回答入力欄。
+//
+// 検証を踏まえた設計、
+//  ・ゲストにも最初から入力欄を開いておく。「登録してから書け」と言われた瞬間に離脱する
+//  ・書いたものは席づくりの間クッキーに預かり、席ができたら自動で投稿する
+//  ・穴埋め形式のときは、回答例をプレースホルダに出す。具体例があるほど筆が動く
+//  ・「あとから消せます」を明記する。慎重な人が最初の一歩を出す条件だった
+//  ・「長く書かなくていい」と添える。1 行で終わってよいと分かると書き出しやすい
 
 type Props = {
   topicId: string;
   nickname: string;
   avatarPath: string | null | undefined;
-  // ログインしていない場合はログイン導線に切り替える
   guest?: boolean;
+  /** 'fill_blank' なら穴埋め、'free' なら自由記述 */
+  format?: string;
+  /** 穴埋めの回答例。プレースホルダに使う */
+  examples?: string[];
+  returnPath?: string;
 };
 
 export function ResponseComposer({
@@ -19,22 +29,17 @@ export function ResponseComposer({
   nickname,
   avatarPath,
   guest = false,
+  format = "free",
+  examples = [],
+  returnPath = "/",
 }: Props) {
-  if (guest) {
-    return (
-      <div className="rounded-2xl border border-border/60 bg-muted/40 p-4 text-sm text-center">
-        <p className="text-foreground/70 mb-3">
-          お題に一言、答えるには会員登録（無料）が必要です。
-        </p>
-        <a
-          href="/register"
-          className="inline-flex items-center px-5 py-2 rounded-full bg-primary text-white text-sm font-medium no-underline hover:opacity-90"
-        >
-          会員登録（無料）
-        </a>
-      </div>
-    );
-  }
+  const isFill = format === "fill_blank";
+
+  const placeholder = isFill
+    ? examples.length > 0
+      ? `例、${examples.slice(0, 2).join(" ／ ")}`
+      : "【　】に入る言葉をどうぞ"
+    : "思い出したことを、一言どうぞ";
 
   return (
     <form
@@ -42,31 +47,42 @@ export function ResponseComposer({
       className="rounded-2xl border border-border/60 bg-background p-3 sm:p-4 shadow-sm"
     >
       <input type="hidden" name="topic_id" value={topicId} />
+      <input type="hidden" name="return_path" value={returnPath} />
+
       <div className="flex items-start gap-3">
-        <UserAvatar
-          name={nickname}
-          avatarUrl={publicAvatarUrl(avatarPath)}
-          size={40}
-        />
+        {!guest && (
+          <UserAvatar
+            name={nickname}
+            avatarUrl={publicAvatarUrl(avatarPath)}
+            size={40}
+          />
+        )}
         <div className="flex-1 min-w-0">
           <textarea
             name="body"
-            rows={2}
+            rows={isFill ? 2 : 3}
             maxLength={1000}
             required
-            placeholder="このお題について、一言どうぞ"
-            className="w-full resize-y rounded-lg border border-border bg-page px-3 py-2 text-sm sm:text-base leading-7 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            placeholder={placeholder}
+            className="w-full resize-y rounded-lg border border-border bg-page px-3 py-2 text-base leading-8 focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
-          <div className="mt-2 flex items-center justify-between gap-3">
-            <p className="text-xs text-foreground/50">
-              長く書かなくて OK、思いついたことだけで
+
+          {isFill && examples.length > 0 && (
+            <p className="mt-1.5 text-xs leading-6 text-foreground/60">
+              こんな答えでも十分です、
+              {examples.slice(0, 3).join("／")}
             </p>
-            <button
-              type="submit"
-              className="inline-flex items-center min-h-[36px] px-5 rounded-full bg-primary text-white text-sm font-medium hover:opacity-90"
-            >
-              投稿
-            </button>
+          )}
+
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs leading-6 text-foreground/60">
+              {guest
+                ? "書いたあと、ニックネームと生まれた日だけ伺います（30秒）。文章はそのまま残ります。"
+                : "一行で十分です。書いたものは、あとから自分で消せます。"}
+            </p>
+            <SubmitButton className="min-h-[var(--spacing-tap)] px-6 rounded-full bg-primary text-white text-base font-bold hover:opacity-90">
+              {guest ? "書いてみる" : "送る"}
+            </SubmitButton>
           </div>
         </div>
       </div>

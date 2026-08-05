@@ -2,36 +2,107 @@
 
 # 1968（イチキューロクハチ）プロジェクト仕様書
 
+最終更新、2026-08-05。
+この版で、掲示板・DM・身分証確認・課金を全面撤去し、参加ハードルを最小化する構成へ移行した。
+判断の根拠は `docs/施策検証レポート-2026-08.md`（1968年生まれ 6 ペルソナによる仮想ロープレ検証）にある。
+仕様を変える前に、必ずそのレポートを読むこと。
+
 ## プロジェクト概要
 
 正式サービス名、1968（読み、イチキューロクハチ）
-サブタイトル、1968年生まれ限定コミュニティ
+サブタイトル、1968年に生まれた学年の、語らいの場
 運営者、油谷和好
 ドメイン、1968.love
 GitHubリポジトリ、https://github.com/kazuyoshiAburatani/1968.git
 
-1968は、1968年（昭和43年）生まれの人だけが参加できる、閉鎖的な会員制コミュニティWebアプリ。同い年だけが集まる安心感と希少性を軸に、介護・夫婦・健康・お金など人には聞きにくい話題を本音で話し合える場を提供する。
+1968は、1968年に生まれた学年（昭和43年度生まれ）だけが集まる場。
+同じ年に同じテレビを見ていた人にしか通じない話を、短い言葉で交わすためのサービス。
+
+## この版で何を変えたか、なぜ変えたか
+
+2026年8月、実在しそうな 1968年生まれ 6 名（男女3名ずつ、地域・生活時間・警戒心を分散）の
+ペルソナを立て、当時のサイトと 10 個の施策案をロールプレイで検証した。結果、
+
+- 当時のサイトは 6 人中 6 人が 90 秒以内に離脱した（初回参加スコア平均 0.5 / 10）
+- 死因は 3 つ
+  1. 「回答 0 件・会員 2 名」という過疎が可視化されていたこと
+  2. 投稿にメール認証登録が必須だったこと
+  3. 「身分証」の文字が警戒を確定させたこと
+
+そこで、合格した施策だけを残し、それ以外を撤去した。
+
+### 撤去したもの
+
+| 撤去したもの | 理由 |
+| --- | --- |
+| 掲示板 12 カテゴリ（threads / replies / categories） | スレッド＋タイトル形式は 50 代には重く、検証で一度も使われなかった |
+| DM（messages） | 6 ペルソナ全員が未使用。恋愛目的の勧誘リスクだけが残る |
+| 身分証確認（verifications） | 最も課金意欲の高い層を弾いていた。「身分証の写真を送れ」はフィッシングの手口そのもの |
+| 課金（Stripe / subscriptions / supporters） | 無料で人が集まる状態づくりに全振りする |
+| メール＋パスワード登録 | パスワードを作らせた時点で離脱する |
+
+### 残した・作ったもの（検証で合格した施策のみ）
+
+| 施策 | 役割 | 検証スコア（初回 / 継続） |
+| --- | --- | --- |
+| 二択の派閥投票（polls） | 入口。1タップ・登録不要・即座に得票率 | 8.8 / 6.3、6人全員が参加 |
+| 穴埋め一行お題（topics.format = fill_blank） | 入口。1行だけ書けば終わり | 7.2 / 5.3 |
+| 運営返信（topic_responses.is_operator）＋お便り紹介（featured_at） | 定着の本命。ラジオのハガキ採用方式 | 4.5 / 8.3 |
+| 今日は何の日＋LINE配信（timeline_events） | 再訪。サイトを思い出さない層に届く唯一の経路 | 6.3 / 7.3 |
+| あなたの1968年表（/nenpyo） | 拡散。学年ベース計算が信頼の踏み絵 | 8.0 / 2.0 |
+| 昭和43年度生まれ検定（/kentei） | 拡散。6問・男女半々 | 7.0 / 2.2 |
+| 企画記事「あの店・あの商品、今どうなってる？」（stories） | 唯一、自発的な長文と会員同士の返信が出た | 7.2 / 6.7 |
+| 30秒の匿名登録（/join） | 上記すべての点火装置 | 7.5 / 5.8 |
+
+写真投稿（案G）は初回 4.7 で不合格。常連が 10 人育った第 2 フェーズで再検討する。
 
 ## 事業要件
 
-- ターゲット、1968年1月1日〜12月31日生まれの男女
-- 収益モデル、単一プランの月額サブスクリプション
-- 正会員、月額480円／年額4800円（年額は月額×10、実質2ヶ月分割引）
-- 無料会員、サブスク不要で登録のみ、投稿制限付きで利用可
-- 想定会員数、初年度500名、3年目で5000名
+- ターゲット、昭和43年度生まれ（1968年4月2日〜1969年4月1日）＋1968年1月1日〜4月1日生まれ
+- 収益モデル、当面なし。全機能無料
+- 想定会員数、初年度500名（mixi の生まれ年コミュニティが 20 年で数百〜数千人規模なので妥当な線）
+
+### 早生まれ問題（最重要）
+
+検証で最大の構造欠陥として出たのがこれ。「1968年生まれ限定」と名乗ると、
+
+- 1969年1〜3月生まれの同級生（同じ学年）が入会できない
+- 年表や配信の「あなたが○歳のとき」が学年とズレる
+- 自分年表をシェアしたい相手（同学年のグループ）が対象外になる
+
+という 3 つの形で当事者を弾く。3月生まれと12月生まれのペルソナは揃って
+「学年計算が合っていれば信頼が上がり、間違っていれば永久離脱」と述べた。
+
+対応として、
+
+- 受け入れ範囲を 1968年1月1日〜1969年4月1日に拡張
+- 学年（年度）は `profiles.school_year` 生成列と `lib/school-year.ts` の両方で計算する。
+  **式が 2 か所にあるので、片方だけ直さないこと**
+- 表示は年齢ではなく学年で組む。在学期間の外だけ年齢を使う
+
+### 日付の扱い（必ず守る）
+
+サーバは UTC で動く。`getFullYear()` などのローカル時刻ゲッタを使うと、
+日本時間の 4月1日 が UTC では 3月31日 と読まれ、年度判定が丸ごと 1 年ずれる。
+
+- 暦日は必ず UTC 深夜の `Date` で表す（`civilDate` / `parseCivilDate`）
+- 読み出しは必ず `getUTC*` を使う
+- 「今日」は `todayInTokyo()` で取る
+
+`tests/school-year.test.ts` にこの退行を防ぐテストがある。
 
 ## 技術スタック
 
-- フロントエンド、Next.js 16（App Router、Turbopackデフォルト）＋TypeScript
-- React、19.2系（Next.js 16同梱）
-- スタイル、Tailwind CSS v4（`@theme`ベースの新設定方式）
+- フロントエンド、Next.js 16（App Router、Turbopack）＋TypeScript
+- React、19.2系
+- スタイル、Tailwind CSS v4（`@theme` ベース）
 - データベース・認証・ストレージ、Supabase
-- 決済、Stripe（サブスクリプション）
-- ホスティング、Vercel
-- CDN・セキュリティ、Cloudflare（フェーズ8で DNS をムームーから移管予定）
+- ホスティング、Vercel（`preferredRegion = hnd1`）
 - メール配信、Resend
 - エラー監視、Sentry
 - パッケージマネージャ、npm
+
+Stripe は撤去済み。依存関係からも外してある。
 
 ### Next.js 16 の注意点（学習データとのズレ）
 
@@ -40,263 +111,184 @@ GitHubリポジトリ、https://github.com/kazuyoshiAburatani/1968.git
 - `middleware.ts` は `proxy.ts` に改名済み、エッジランタイム非対応
 - `revalidateTag` は第2引数に `cacheLife` プロファイル必須
 - Parallel Routes のスロットは `default.js` が必須
-- `next/image` は `images.remotePatterns` を使用、`images.domains` は非推奨
+- `next/image` は `images.remotePatterns` を使用
 - `next lint` は廃止、ESLint CLI を直接使う
-- AMP、`serverRuntimeConfig`/`publicRuntimeConfig` は削除済み
+- React Compiler の lint ルールが有効。Server Component の本体で
+  `Date.now()` や `Math.random()` を直接呼ぶとエラーになる。モジュール側の関数に逃がす
 
-## 会員構成（2層モデル）
+## 会員構成（2 層）
 
-過去に準会員（月180円）を置いていた 3 層構成を廃止し、無料会員と正会員のシンプルな 2 層に再編する（2026-04-24 更新）。課金色が強くならないように、準会員プランは削除し、正会員のみ有料とする。
+### ゲスト（未登録）
 
-### ゲスト（未登録、匿名）
-- 段階A の 4 カテゴリのみ閲覧可、段階B・C・D はカード自体をグレーアウトして存在だけ提示
-- 投稿不可、プロフィール閲覧不可、DM 不可
-- 「会員登録」のサブ CTA で登録へ誘導（強引な課金アピールはしない）
+読むことと、以下の参加が登録なしでできる。ここを削ると全部が死ぬ。
 
-### 無料会員（member、登録済み・無料）
-- メール認証と生年月日登録が完了した登録ユーザー
-- 閲覧、段階A＋B の 8 カテゴリ（段階C・D はカードをグレーアウト）
-- 投稿、段階A のみ、1日3件まで
-- 投稿表示には「会員」バッジを表示して正会員と区別する
-- DM 不可、オフ会参加不可
+- 二択投票（1タップ、得票率が見える）
+- 検定を受ける
+- 自分年表をつくる
+- 記事を読む
+- **お題への回答を書き始めること**（送信時に下書きを預かり、席づくりのあと自動投稿する）
 
-### 正会員（regular、月額480円／年額4800円）
-- 月額480円の支払いと身分証による本人確認が完了したユーザー
-- 閲覧、全12カテゴリ完全閲覧
-- 投稿、全カテゴリ投稿自由（日次上限なし）
-- 投稿表示には「正会員」バッジ
-- DM 可、オフ会参加可（入会3カ月以上）
-- 「本人確認済」バッジ表示（身分証確認後）
+### 会員（member）
 
-## 掲示板カテゴリ（12個）
+ニックネームと生年月日だけの 30 秒登録（Supabase 匿名認証）で全員これになる。
 
-### 段階A、ゲスト閲覧可・無料会員投稿可（1日3件）
-1. 昭和43年の記憶
-2. 青春時代・バブル入社組
-3. 今ハマっている趣味
-4. 雑談・ひとりごと
+- 投稿・返信・リアクションができる
+- あとからメールを紐付けると、機種変更しても同じ席に戻れる
+- バッジは付けない。等級が見えると気後れする人が出る
 
-### 段階B、無料会員から閲覧可、正会員のみ投稿可
-5. 地元・出身地
-6. 仕事・キャリアの今
-7. 子ども・孫のこと
-8. 夫婦・パートナー
+「創設メンバー」だけはランクではなく称号として残し、種火メンバーの可視化に使う。
 
-### 段階C、正会員のみ閲覧・投稿可
-9. 親のこと・介護
-10. 健康・体のこと
-11. お金・老後資金
+## 認証
 
-### 段階D、正会員のみ、入会3カ月以上で参加
-12. オフ会・集まり
+- 主軸は Supabase の**匿名サインイン**。`/join` でニックネーム＋生年月日だけを受ける
+- **Supabase ダッシュボード → Authentication → Sign In / Providers で匿名サインインを
+  有効にしないと `/join` が動かない**（ローカルは `supabase/config.toml` で有効化済み）
+- メールは任意。マイページから紐付けると引き継ぎ用のログイン手段になる
+- 旧メール＋パスワード登録（/register）は `/join` へ恒久転送
+- ログイン（/login）はメール登録済みの人のための入口として残す
 
 ## データベース設計
 
 ### users
-- id（UUID、auth.users.id と同値）
-- email（auth.users から複製、検索用）
-- created_at
-- status、審査中／有効／停止／退会
-- membership_rank、member（無料会員）／regular（正会員）、guest はアプリ側でセッションなし時の扱い
-- stripe_customer_id
-- 注、password_hash は auth.users 側で管理するため public.users には持たない
-
-### admins（運営スタッフ）
-- id（UUID、users.id とは別管理）
-- user_id（users.id、任意リンク）
-- email
-- role、super_admin／moderator／support
-- mfa_enabled、二段階認証必須
-- created_at
-- last_login_at
+id / email（nullable、匿名は null）/ status / membership_rank（'member' のみ）/
+is_ai_persona / is_beta_tester / is_founding_member / founding_member_since /
+last_notifications_seen_at / created_at
 
 ### profiles
-- user_id（users.id）
-- nickname（必須）
-- birth_year、1968固定（DB制約）
-- birth_month
-- birth_day
-- gender
-- prefecture、都道府県のみ
-- hometown、出身地の市区町村まで
-- school、卒業した学校（任意）
-- occupation、職業区分
-- introduction、自己紹介200字
-- avatar_url
-- bio_visible、プロフィールの公開範囲設定
+user_id / nickname / birth_year / birth_month / birth_day / birth_date（生成列）/
+**school_year（生成列、年度）** / gender / prefecture / hometown / school / occupation /
+introduction / avatar_url / bio_visible / home_banner_color / founding_directory_listed
 
-### verifications（身分証審査）
-- user_id
-- document_type、マイナカード／保険証／免許証
-- submitted_at
-- verified_at
-- verified_by（admins.id）
-- status、未審査／承認／却下
-- image_storage_path、30日後にnull化
-- rejection_reason
+birth_year の制約は 1968 全体と 1969年1月1日〜4月1日。
 
-### categories
-- id
-- name
-- description
-- display_order
-- access_level_view、ゲスト／準会員／正会員
-- access_level_post、準会員／正会員
-- posting_limit_per_day、投稿上限（準会員向け）
+### topics（お題）
+id / title / body / **format（'fill_blank' | 'free'）** / **blank_examples（回答例の配列）** /
+era / gender_lean / audience（'all' | 'founding'）/ published_at / expires_at / is_active / created_by
 
-### threads
-- id
-- category_id
-- user_id
-- title
-- body
-- created_at
-- updated_at
-- view_count
-- reply_count
-- is_locked
+未来日時で仕込んでおくと、その日に自動で公開される。常に 4 週間先まで埋めておく運用。
 
-### replies
-- id
-- thread_id
-- user_id
-- body
-- created_at
-- parent_reply_id（ネスト対応）
+### topic_responses（お題への回答と返信）
+id / topic_id / user_id / body / media / parent_response_id /
+**is_operator（運営返信）** / **featured_at・featured_note（お便り紹介）** /
+admin_edited_at / admin_edited_by
+
+### polls / poll_votes（二択投票）
+polls、id / question / option_a / option_b / blurb / era / gender_lean /
+published_at / expires_at / is_active / sort_index
+
+poll_votes、poll_id / voter_key / user_id / choice / comment
+
+voter_key は httpOnly クッキーでサーバが発行する。
+**poll_votes への書き込みポリシーは意図的に作っていない。**
+投票は Server Action の service_role 経由のみ。anon に直接 insert を許すと票の水増しが容易になる。
+
+### quiz_questions / quiz_attempts（検定）
+question / choices / answer_index / explanation / era / gender_lean。
+出題は `lib/quiz.ts` が 6 問・男女 3 問ずつで組む。
+
+### timeline_events（年表・今日は何の日）
+event_date / title / note / genre / gender_lean。自分年表と毎朝配信の共通データ源。
+
+### stories（企画記事）
+slug / title / lead / body / hero_image_url / **topic_id** / published_at / is_active。
+読者投稿は専用テーブルを作らず、記事に紐づく topic 経由で topic_responses に入る。
 
 ### likes
-- user_id
-- target_type、thread／reply
-- target_id
-- created_at
+target_type は 'topic_response' のみ。reaction_type は 6 種類。
 
-### reports（違反報告）
-- reporter_id
-- target_type
-- target_id
-- reason
-- status、未対応／対応中／完了
-- handled_at
-- handled_by（admins.id）
-
-### messages（DM、正会員のみ）
-- id
-- sender_id
-- receiver_id
-- body
-- created_at
-- read_at
-
-### subscriptions（課金）
-- user_id
-- stripe_subscription_id
-- plan_type、associate_monthly／associate_yearly／regular_monthly／regular_yearly
-- status、active／past_due／canceled
-- started_at
-- canceled_at
-
-### topics（今週のお題）
-- id
-- title
-- body
-- published_at、配信開始日時
-- expires_at、掲載終了日時（任意）
-- created_by（admins.id）
-- is_active
-
-### audit_logs（運営監査）
-- admin_id（admins.id）
-- action
-- target_type
-- target_id
-- timestamp
-- ip_address
+### 運営系
+admins / reports / audit_logs / beta_applications（創設メンバー招待に転用）
 
 ## 画面一覧
 
-### 公開画面（未ログイン）
-1. トップページ（サービス紹介、価格、入会案内）
-2. ゲスト用掲示板（段階Aの限定表示、スレッドごとに先頭3返信まで）
-3. ログイン
-4. 新規登録
-5. パスワードリセット
-6. 利用規約
-7. プライバシーポリシー
-8. 特商法表示
+### 公開（未登録でも見える）
+- `/` ホーム（二択 → 今日は何の日 → 穴埋めお題 → 年表・検定 → 記事 → お便り）
+- `/topics/[id]` お題詳細
+- `/nenpyo` あなたの1968年表
+- `/kentei` 昭和43年度生まれ検定
+- `/stories`, `/stories/[slug]` 企画記事
+- `/today` 今日は何の日
+- `/letters` お便り紹介
+- `/timeline` みんなの新着
+- `/join` 席をつくる（30秒登録）、`/join/done`
+- `/login` メール登録者のログイン
+- `/terms`, `/privacy`, `/tokushoho`
 
-### 準会員・正会員共通
-9. ホーム（新着投稿、今週のお題、お知らせ）
-10. 掲示板カテゴリ一覧
-11. カテゴリ別スレッド一覧
-12. スレッド詳細・返信
-13. 投稿作成・編集
-14. 自分のプロフィール編集
-15. 他会員のプロフィール表示
-16. マイページ（課金状況、プラン変更、退会、通知設定）
-17. 身分証アップロード（準会員→正会員昇格時）
+### 会員
+- `/mypage` マイページ（引き継ぎ設定、書いたもの）
+- `/mypage/profile` プロフィール編集
+- `/mypage/leave` 退会
+- `/notifications` お知らせ
+- `/u/[id]` 他会員のプロフィール
 
-### 正会員限定
-18. DM一覧・DM詳細
-19. オフ会一覧・申込（入会3カ月以上）
+### 管理画面
+- `/admin/replies` **未返信キュー（毎日ここを空にする）**
+- `/admin/dashboard` ダッシュボード
+- `/admin/topics` お題の配信
+- `/admin/polls` 二択の配信
+- `/admin/letters` お便り紹介
+- `/admin/reports` 違反報告
+- `/admin/users` 会員管理
+- `/admin/applications` 創設メンバー招待
+- `/admin/audit-logs` 監査ログ
 
-### 管理画面（運営専用）
-20. 会員管理（一覧、検索、ステータス変更）
-21. 身分証確認画面
-22. 違反報告管理
-23. お知らせ投稿
-24. 今週のお題配信（topics テーブル管理）
-25. 売上・会員数ダッシュボード
-26. 監査ログ閲覧
+## 運営の型（コードと同じくらい重要）
 
-## セキュリティ要件（必須）
+1. **未返信をゼロにする。** 投稿には 24 時間以内に運営から返す。
+   返信は相手が書いた固有名詞を必ず拾い、こちらの記憶を返す。
+   「素敵な思い出ですね！」は一発でテンプレと見抜かれ、逆効果になる。
+2. **お題と二択を 4 週間先まで仕込む。** 途切れた週があるだけで習慣が切れる。
+3. **男女ネタを交互に出す。** 男性寄りが続くと女性の参加がまとめて止まる。
+   管理画面が偏りを警告する。
+4. **お便り紹介は週 1〜3 件、書き手が入れ替わるように選ぶ。**
+   同じ人ばかり載せると「常連の場」と見なされて他の人が書かなくなる。
+5. **「回答 0 件」を人目に晒さない。** 立ち上げ期は種火メンバー（同級生・知人 30 名、
+   男女半々・地域分散）に先に入ってもらい、場が温まってから広げる。
+
+## セキュリティ要件
 
 ### 認証と権限
-- Supabase Authのマジックリンク方式を推奨
 - 行レベルセキュリティ（RLS）を全テーブルに適用
 - 管理者アカウント（admins）は二段階認証必須
-
-### 身分証画像の取り扱い
-- アップロードは暗号化保存（Supabase Storage）
-- 確認後30日以内に完全削除（image_storage_path を null 化＋Storage から削除）
-- GPS位置情報は自動削除
-- 運営の確認担当者（admins.role=moderator 以上）のみアクセス可能
+- poll_votes / quiz_attempts への書き込みは service_role のみ
+- トリガー関数（handle_new_auth_user、sync_user_email）は anon / authenticated から実行不可
 
 ### 通信と保存
 - HTTPS必須、TLS1.3、HSTS有効化
-- 機密データはアプリケーション側でAES-256追加暗号化
 - 全データは日次自動バックアップ（Supabase Pro）
 
+### 画像を扱う場合の注意（未実装、写真投稿を入れるときに必須）
+- 投稿画像の EXIF・GPS を投稿時に除去し、その旨を画面に明記する。
+  慎重な層はこの記載の有無を見て投稿するかどうかを決める
+
 ### 攻撃対策
-- Cloudflare WAFで一般的な攻撃をブロック（DNS 移管後）
-- ログイン試行回数制限（5回失敗で30分ロック）
-- 投稿数・DM送信数のレート制限
+- Cloudflare WAF（DNS 移管後）
+- 投稿レート制限
 - XSS、CSRF、SQLインジェクション対策（標準ライブラリ使用）
 
 ### 監視とログ
 - 管理画面アクセスは全て audit_logs に記録
 - Sentryでエラー検知
-- 不審なアクセスパターンを自動アラート
 
 ## 法的要件
 
 ### 特定商取引法に基づく表示
+現在すべて無料のため、特定商取引法上の通信販売にはあたらない。
+運営者情報は引き続き掲示する。
 
-- 販売事業者、油谷和好
+- 運営者、油谷和好
 - 所在地、〒542-0081 大阪府大阪市中央区南船場3丁目2番22号おおきに南船場ビル205
 - 電話番号、0722003799
 - メールアドレス、support@1968.love
-- 販売価格、正会員 月額480円／年額4800円（無料会員は課金なし）
-- 支払い方法、クレジットカード（Stripe）
-- 解約、マイページからいつでも解約可能
-- 返金ポリシー、原則返金なし（虚偽申告発覚時は返金なく退会処分）
+
+課金を再開する場合は、価格・支払い方法・解約・返金の記載を戻すこと。
 
 ### 個人情報保護
 - 個人情報保護法に準拠
-- 要配慮個人情報の適切な取り扱い
+- 身分証の取得はしない。要配慮個人情報を集めない設計を維持する
 - 漏洩時の72時間以内報告フロー
 
 ### 利用規約の重要項目
-- 虚偽申告は返金なく退会処分
 - 政治・宗教・陰謀論の投稿禁止
 - 恋愛目的・交際相手探しの禁止
 - 商品宣伝・営業目的の禁止
@@ -308,86 +300,28 @@ GitHubリポジトリ、https://github.com/kazuyoshiAburatani/1968.git
 - 50代後半、男女比は半々程度
 - スマホ閲覧が7割、PC閲覧3割
 - リテラシーは中程度、mixi世代
+- 可処分時間は人により大きく違う。5分しか無い人でも参加できる形を必ず用意する
 
 ### デザイン方針
 - フォントサイズ、本文16px以上
 - 行間、1.7〜1.8倍
 - タップ領域、最低44×44px
 - コントラスト比、WCAG AA準拠
-- 色調、墨・紺・生成り系の落ち着いたトーン
+- 色調、teal（#2C9A9A）＋タン（#D4A373）の落ち着いたトーン
 - 若者向けの派手色（ピンク、蛍光色）は使用禁止
-- 日本語フォント、Noto Sans JP 等の読みやすい和文フォントを使用
+- 日本語フォント、Noto Sans JP
+
+### やってはいけない UI
+- 投稿直後・投票直後に会員登録のモーダルを被せる（「結局これが目的か」と信頼が崩れる）
+- 書いた文章を捨てて登録画面へ飛ばす（二度と書いてもらえない）
+- 投票前に得票率を見せる（素直な回答が歪む）
+- 「0件」を目立つ位置に出す
 
 ### トーン＆マナー
 - 敬語ベース、親しみやすさはニュアンスで
 - 「おじさん・おばさん」などの加齢を揶揄する表現は禁止
-- 昭和の懐かしさを感じる言葉遣い（例、「会報」「集まり」「語らい」）
-
-## 開発の進め方（フェーズ別）
-
-### フェーズ1、環境構築とHello World（1週間）
-- Next.js 16プロジェクト雛形確認
-- 共通レイアウト（ヘッダー、フッター、フォント、配色トーン）
-- Supabaseプロジェクト連携、疎通確認
-- 環境変数運用ルール（.env.local／.env.example）
-- GitHubリポジトリ初期プッシュ
-- Vercelデプロイ、カスタムドメイン（1968.love）設定
-
-### フェーズ2、認証と会員管理（2週間）
-- メール＋マジックリンク認証（パスワードレス、50代配慮で最もシンプルな方式）
-- ユーザープロフィール作成・編集
-- 会員ランク管理（ゲスト／準会員／正会員）、新規登録直後は `pending` 仮状態、フェーズ4でクレカ課金成功時に `associate` へ昇格
-- スキーマは3層構造、`auth.users`（Supabase管理）＋ `public.users`（status/rank/stripe_id）＋ `public.profiles`（個人情報）
-- スキーマ管理は Supabase CLI＋マイグレーションファイル（`supabase/migrations/*.sql`）を git 管理
-- RLS ポリシーを全テーブルに定義（テーブル作成と同時）
-- `proxy.ts`（Next.js 16 仕様、旧 middleware）でセッションリフレッシュ
-- Vitest 導入、主要ロジックのテスト必須
-
-### フェーズ3、掲示板機能（3週間）
-- カテゴリは DB テーブル＋マイグレーションで12件を seed、access_level_view/post と posting_limit_per_day も列として保持
-- スレッド・返信の本文はプレーンテキスト＋改行保持、URL は自動リンク化、装飾記法は使わない
-- 投稿に画像・動画のメディア添付を許可、Supabase Storage にバケットを作って RLS で保護、サムネイル生成は最小限
-- 返信ネストは DB に parent_reply_id を持たせるが、UI は1階層表示（@相手ニックネーム形式で引用）
-- ゲスト閲覧制限はスレッドごとの投稿順先頭3返信まで、以降は会員登録訴求 UI
-- いいねはカウントのみ公開、誰が押したかは本人のみ閲覧
-- 投稿レート制限は DB 側、Server Action で categories.posting_limit_per_day を参照して24時間以内の投稿数をカウント
-- スレッド一覧・詳細の更新に Supabase Realtime を使い、新着を自動反映
-- 違反報告ボタンだけ UI として用意、処理画面はフェーズ6
-
-### フェーズ4、決済統合（2週間）
-- Stripeサブスクリプション設定
-- 登録フロー
-- 請求管理、退会処理
-- 準会員→正会員のプラン変更フロー
-
-### フェーズ5、身分証確認（2週間）
-- 画像アップロード
-- 管理画面での確認
-- 30日後自動削除バッチ
-- プラン変更＋身分証承認の両方完了で正会員昇格
-
-### フェーズ6、管理画面（1週間）
-- 会員一覧・検索
-- 違反報告管理
-- 今週のお題配信
-- ダッシュボード
-
-### フェーズ7、通知・メール（1週間）
-- 登録確認、決済確認、お題配信（Resend）
-
-### フェーズ8、セキュリティ強化（2週間）
-- RLS徹底確認
-- DNS のムームー→Cloudflare 移管
-- Cloudflare WAF 設定
-- レート制限
-
-### フェーズ9、法務対応（並行）
-- 規約類整備
-
-### フェーズ10、セキュリティ診断と公開（2週間）
-- 外部診断
-- 修正
-- 本番公開
+- 昭和の懐かしさを感じる言葉遣い（例、「会報」「集まり」「語らい」「席」）
+- 検定などで低い点を「偽物」と突き放さない。その人が持つもう一方の記憶へ話を渡す
 
 ## Claude Codeへの指示方針
 
@@ -396,22 +330,19 @@ GitHubリポジトリ、https://github.com/kazuyoshiAburatani/1968.git
 2. セキュリティに関わる実装は、必ず公式ドキュメントを参照してから書く
 3. Supabase RLSポリシーは、テーブル作成と同時に必ず定義する
 4. 環境変数（.env.local）はGitHubに絶対コミットしない
-5. テストコード（Vitest）を主要機能には必ず書く
-6. Next.js 16 の破壊的変更は本ファイル「Next.js 16 の注意点」節と `node_modules/next/dist/docs/` を常に参照
-
-### 作業の粒度
-- 1回の作業は最大でも「1機能」に留める
-- 複雑な機能は、さらに小さいタスクに分解してから実装する
-- 「掲示板を作って」のような大雑把な指示ではなく、「スレッド一覧画面を作って」のように具体化する
+5. テストコード（Vitest）を主要機能には必ず書く。とくに学年計算と日付の扱い
+6. Next.js 16 の破壊的変更は本ファイルの該当節と `node_modules/next/dist/docs/` を常に参照
+7. 参加ハードルを上げる変更を入れるときは、`docs/施策検証レポート-2026-08.md` の
+   該当箇所を読み、なぜその壁を撤去したのかを確認してからにする
 
 ### コーディング規約
 - 変数・関数名は英語、コメントは日本語
 - ファイル名はケバブケース（例、user-profile.tsx）
-- コンポーネントはPascalCase（例、UserProfile）
-- 関数はcamelCase
+- コンポーネントはPascalCase、関数はcamelCase
 
 ### 禁止事項
 - any型の多用
 - 認証なしのAPI公開
 - 個人情報のコンソール出力
 - 同期的な重い処理
+- Server Component 本体での `Date.now()` / `Math.random()` 直呼び

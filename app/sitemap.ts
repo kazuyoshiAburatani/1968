@@ -1,42 +1,65 @@
 import type { MetadataRoute } from "next";
-import { fetchAllCategories } from "@/lib/cached-categories";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSiteUrl } from "@/lib/site-url";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://1968.love";
-
-// 動的サイトマップ。固定ページに加えて、
-// 12 のカテゴリ詳細ページを公開対象として含める。
-// スレッド詳細はベータ運用のため、本格運用後に追加検討。
-
+// サイトマップ。掲示板カテゴリを撤去し、
+// 検索から入ってきた人が最初に触るべき入口（二択・年表・検定・企画記事）を上位に置く。
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const base = getSiteUrl();
   const now = new Date();
 
-  const fixedRoutes: MetadataRoute.Sitemap = [
-    { url: `${SITE}/`, lastModified: now, changeFrequency: "daily", priority: 1.0 },
-    { url: `${SITE}/beta`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
-    { url: `${SITE}/board`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
-    { url: `${SITE}/timeline`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
-    { url: `${SITE}/founding-members`, lastModified: now, changeFrequency: "weekly", priority: 0.5 },
-    { url: `${SITE}/picks`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
-    { url: `${SITE}/login`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${SITE}/register`, lastModified: now, changeFrequency: "yearly", priority: 0.5 },
-    { url: `${SITE}/terms`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
-    { url: `${SITE}/privacy`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
-    { url: `${SITE}/tokushoho`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+  const staticEntries: MetadataRoute.Sitemap = [
+    { url: `${base}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
+    { url: `${base}/nenpyo`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${base}/kentei`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${base}/stories`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${base}/today`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
+    { url: `${base}/letters`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
+    { url: `${base}/join`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${base}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${base}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${base}/tokushoho`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
   ];
 
-  // カテゴリ詳細
-  let categoryRoutes: MetadataRoute.Sitemap = [];
   try {
-    const cats = await fetchAllCategories();
-    categoryRoutes = cats.map((c) => ({
-      url: `${SITE}/board/${c.slug}`,
-      lastModified: now,
+    const supabase = await createSupabaseServerClient();
+    const nowIso = now.toISOString();
+
+    const [{ data: stories }, { data: topics }] = await Promise.all([
+      supabase
+        .from("stories")
+        .select("slug, updated_at")
+        .eq("is_active", true)
+        .lte("published_at", nowIso),
+      supabase
+        .from("topics")
+        .select("id, updated_at")
+        .eq("is_active", true)
+        .lte("published_at", nowIso)
+        .order("published_at", { ascending: false })
+        .limit(100),
+    ]);
+
+    const storyEntries: MetadataRoute.Sitemap = (
+      (stories ?? []) as { slug: string; updated_at: string }[]
+    ).map((s) => ({
+      url: `${base}/stories/${s.slug}`,
+      lastModified: new Date(s.updated_at),
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    }));
+
+    const topicEntries: MetadataRoute.Sitemap = (
+      (topics ?? []) as { id: string; updated_at: string }[]
+    ).map((t) => ({
+      url: `${base}/topics/${t.id}`,
+      lastModified: new Date(t.updated_at),
       changeFrequency: "daily" as const,
       priority: 0.7,
     }));
-  } catch (e) {
-    console.error("[sitemap] failed to fetch categories:", e);
-  }
 
-  return [...fixedRoutes, ...categoryRoutes];
+    return [...staticEntries, ...storyEntries, ...topicEntries];
+  } catch {
+    return staticEntries;
+  }
 }

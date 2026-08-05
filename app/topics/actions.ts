@@ -6,25 +6,31 @@ import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isValidReactionType, type ReactionType } from "@/lib/reactions";
+import { saveDraft } from "@/lib/draft";
 
-// お題まわりの Server Actions、
-// 1. postTopicResponse、お題への短文回答を投稿
-// 2. toggleReaction、リアクション付け外し（同じ種類なら削除、別種類なら差し替え、無ければ追加）
+// お題まわりの Server Actions。
+//  1. postTopicResponse   お題への短文回答（未登録なら下書きを預かって席づくりへ）
+//  2. toggleReaction      リアクションの付け外し
+//  3. featureResponse     運営が「今週のお便り」に採用する
+//  4. deleteOwnResponse   本人が自分の投稿を消す
 
 // -------------------------------------------------
-// 1. お題への回答（トップレベル or 返信）
+// 1. お題への回答
 // -------------------------------------------------
-// parent_response_id が指定されていれば返信、無ければトップレベルの回答。
-// return_path で投稿後の遷移先を切り替え（お題詳細ページからの返信など）。
 const PostResponseSchema = z.object({
   topic_id: z.string().uuid(),
-  body: z.string().trim().max(1000, "1000 文字以内で入力してください"),
+  body: z.string().trim().max(1000, "1000文字以内でお願いします"),
   parent_response_id: z.string().uuid().optional(),
   return_path: z.string().default("/"),
 });
 
 export async function postTopicResponse(formData: FormData) {
   const rawParent = formData.get("parent_response_id");
+  const returnPath =
+    typeof formData.get("return_path") === "string"
+      ? (formData.get("return_path") as string)
+      : "/";
+
   const parsed = PostResponseSchema.safeParse({
     topic_id: formData.get("topic_id"),
     body: formData.get("body") ?? "",
@@ -32,13 +38,8 @@ export async function postTopicResponse(formData: FormData) {
       typeof rawParent === "string" && rawParent.length > 0
         ? rawParent
         : undefined,
-    return_path: formData.get("return_path") ?? "/",
+    return_path: returnPath,
   });
-
-  const returnPath =
-    typeof formData.get("return_path") === "string"
-      ? (formData.get("return_path") as string)
-      : "/";
 
   if (!parsed.success) {
     redirect(
@@ -60,8 +61,16 @@ export async function postTopicResponse(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // 未登録でも書けるようにする。書いた文章はクッキーに預け、席づくりが済んだら自動で投稿する。
+  // ここで文章を捨てて登録画面に飛ばすと、二度と書いてもらえない。
   if (!user) {
-    redirect("/login?error=required");
+    await saveDraft({
+      topicId: parsed.data.topic_id,
+      body,
+      returnPath: parsed.data.return_path,
+      parentResponseId: parsed.data.parent_response_id,
+    });
+    redirect("/join?draft=1");
   }
 
   const { error } = await supabase.from("topic_responses").insert({
@@ -80,7 +89,6 @@ export async function postTopicResponse(formData: FormData) {
   }
 
   revalidatePath(parsed.data.return_path);
-  // 返信ならその親カード付近にスクロールできるよう anchor 付き、それ以外は最上部
   const anchor = parsed.data.parent_response_id
     ? `#response-${parsed.data.parent_response_id}`
     : "";
@@ -88,15 +96,9 @@ export async function postTopicResponse(formData: FormData) {
 }
 
 // -------------------------------------------------
-// 2. リアクション付け外し
+// 2. リアクション
 // -------------------------------------------------
-// 挙動、
-// - 現在の自分の反応を確認
-// - 無ければ追加
-// - 同じ種類なら削除（トグル OFF）
-// - 別種類なら上書き（差し替え、UPDATE 相当だが PK 変わらないので UPSERT 的に）
 const ToggleReactionSchema = z.object({
-  target_type: z.enum(["topic_response", "thread", "reply"]),
   target_id: z.string().uuid(),
   reaction_type: z
     .string()
@@ -106,18 +108,13 @@ const ToggleReactionSchema = z.object({
 
 export async function toggleReaction(formData: FormData) {
   const parsed = ToggleReactionSchema.safeParse({
-    target_type: formData.get("target_type"),
     target_id: formData.get("target_id"),
     reaction_type: formData.get("reaction_type"),
     return_path: formData.get("return_path") ?? "/",
   });
 
   if (!parsed.success) {
-    redirect(
-      `/?error=${encodeURIComponent(
-        parsed.error.issues[0]?.message ?? "リアクションに失敗しました",
-      )}`,
-    );
+    redirect(`/?error=${encodeURIComponent("リアクションに失敗しました")}`);
   }
 
   const supabase = await createSupabaseServerClient();
@@ -125,44 +122,42 @@ export async function toggleReaction(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // リアクションだけは未登録でも押したい気持ちが強いが、
+  // 誰が押したかを 1 人 1 回に保つには席が要る。席づくりは 30 秒で終わる。
   if (!user) {
-    redirect("/login?error=required");
+    redirect("/join");
   }
 
-  // 現在の反応を確認、target_type + target_id + user_id の一意
   const { data: existing } = await supabase
     .from("likes")
     .select("reaction_type")
-    .eq("target_type", parsed.data.target_type)
+    .eq("target_type", "topic_response")
     .eq("target_id", parsed.data.target_id)
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const currentType = (existing?.reaction_type as ReactionType | undefined) ??
-    null;
+  const currentType =
+    (existing?.reaction_type as ReactionType | undefined) ?? null;
 
   if (currentType === parsed.data.reaction_type) {
-    // 同じボタンを再度、削除（トグル OFF）
     await supabase
       .from("likes")
       .delete()
-      .eq("target_type", parsed.data.target_type)
+      .eq("target_type", "topic_response")
       .eq("target_id", parsed.data.target_id)
       .eq("user_id", user.id);
   } else if (currentType) {
-    // 別種類、上書き。RLS 経由の update は複雑なので admin client で確実に。
     const sbAdmin = getSupabaseAdminClient();
     await sbAdmin
       .from("likes")
       .update({ reaction_type: parsed.data.reaction_type })
-      .eq("target_type", parsed.data.target_type)
+      .eq("target_type", "topic_response")
       .eq("target_id", parsed.data.target_id)
       .eq("user_id", user.id);
   } else {
-    // 新規、追加
     await supabase.from("likes").insert({
       user_id: user.id,
-      target_type: parsed.data.target_type,
+      target_type: "topic_response",
       target_id: parsed.data.target_id,
       reaction_type: parsed.data.reaction_type,
     });
@@ -170,4 +165,87 @@ export async function toggleReaction(formData: FormData) {
 
   revalidatePath(parsed.data.return_path);
   redirect(parsed.data.return_path);
+}
+
+// -------------------------------------------------
+// 3. 「今週のお便り」への採用（運営のみ）
+// -------------------------------------------------
+// ラジオのハガキ採用にあたる承認装置。
+// 検証では、採用された瞬間に「（家族に）おい、俺の投稿が載っとるぞ」という反応が出て、
+// ここで初めて課金してもいいという心理が生まれていた。
+const FeatureSchema = z.object({
+  response_id: z.string().uuid(),
+  note: z.string().trim().max(300).optional(),
+  unfeature: z.enum(["0", "1"]).default("0"),
+  return_path: z.string().default("/admin/letters"),
+});
+
+export async function featureResponse(formData: FormData) {
+  const parsed = FeatureSchema.safeParse({
+    response_id: formData.get("response_id"),
+    note: formData.get("note") ?? undefined,
+    unfeature: formData.get("unfeature") ?? "0",
+    return_path: formData.get("return_path") ?? "/admin/letters",
+  });
+
+  if (!parsed.success) redirect("/admin/letters?error=invalid");
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: admin } = await supabase
+    .from("admins")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!admin) redirect("/");
+
+  const sbAdmin = getSupabaseAdminClient();
+  await sbAdmin
+    .from("topic_responses")
+    .update(
+      parsed.data.unfeature === "1"
+        ? { featured_at: null, featured_note: null }
+        : {
+            featured_at: new Date().toISOString(),
+            featured_note: parsed.data.note ?? null,
+          },
+    )
+    .eq("id", parsed.data.response_id);
+
+  revalidatePath(parsed.data.return_path);
+  revalidatePath("/letters");
+  redirect(parsed.data.return_path);
+}
+
+// -------------------------------------------------
+// 4. 自分の投稿を消す
+// -------------------------------------------------
+// 「あとから消せる」と明記されていることが、慎重な人が最初の一歩を出す条件だった。
+export async function deleteOwnResponse(formData: FormData) {
+  const id = formData.get("response_id");
+  const returnPath =
+    typeof formData.get("return_path") === "string"
+      ? (formData.get("return_path") as string)
+      : "/";
+
+  if (typeof id !== "string") redirect(returnPath);
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/join");
+
+  await supabase
+    .from("topic_responses")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  revalidatePath(returnPath);
+  redirect(returnPath);
 }

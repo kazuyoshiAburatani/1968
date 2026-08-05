@@ -3,19 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// モバイル（< md）でのみ画面下部に表示する LINE 風のタブナビ。
-// シニア向けに 1 タブあたり最低 64px の高さ、アイコン＋日本語ラベル。
-// タップターゲットは Apple HIG / Google Material 推奨の 44px 以上を確保。
+// モバイル下部のタブ。1968 のリニューアル後の主要導線に合わせて組み直した。
+// 掲示板とトーク（DM）は撤去したので、代わりに読みものと年表を出している。
+// 1 タブあたり 64px 以上、アイコンと日本語ラベルを併記する方針は維持。
 
 type Item = {
   href: string;
-  icon: string; // remixicon class（例 "ri-home-5-line"）
+  icon: string;
   iconActive: string;
   label: string;
-  matchPrefix?: string; // 配下パスもアクティブ扱い（例 /board と /board/xxx）
+  matchPrefix?: string;
 };
 
-const ITEMS: Item[] = [
+const BASE_ITEMS: Item[] = [
   {
     href: "/",
     icon: "ri-home-5-line",
@@ -23,19 +23,22 @@ const ITEMS: Item[] = [
     label: "ホーム",
   },
   {
-    href: "/board",
-    icon: "ri-chat-3-line",
-    iconActive: "ri-chat-3-fill",
-    label: "ひろば",
-    matchPrefix: "/board",
+    href: "/stories",
+    icon: "ri-book-open-line",
+    iconActive: "ri-book-open-fill",
+    label: "読みもの",
+    matchPrefix: "/stories",
   },
   {
-    href: "/messages",
-    icon: "ri-mail-line",
-    iconActive: "ri-mail-fill",
-    label: "トーク",
-    matchPrefix: "/messages",
+    href: "/nenpyo",
+    icon: "ri-time-line",
+    iconActive: "ri-time-fill",
+    label: "年表",
+    matchPrefix: "/nenpyo",
   },
+];
+
+const MEMBER_TAIL: Item[] = [
   {
     href: "/notifications",
     icon: "ri-notification-3-line",
@@ -52,25 +55,49 @@ const ITEMS: Item[] = [
   },
 ];
 
-// このパスではタブバーを非表示にする（フォーム集中、認証画面、LP など）
-const HIDDEN_PREFIXES = [
-  "/login",
-  "/register",
-  "/onboarding",
-  "/auth",
-  "/beta",
+const GUEST_TAIL: Item[] = [
+  {
+    href: "/kentei",
+    icon: "ri-award-line",
+    iconActive: "ri-award-fill",
+    label: "検定",
+    matchPrefix: "/kentei",
+  },
+  {
+    href: "/join",
+    icon: "ri-user-add-line",
+    iconActive: "ri-user-add-fill",
+    label: "席をつくる",
+    matchPrefix: "/join",
+  },
 ];
 
-export function MobileTabBar({ unreadCount = 0 }: { unreadCount?: number }) {
+// フォームに集中してほしい画面ではタブを隠す
+const HIDDEN_PREFIXES = ["/login", "/join", "/auth", "/beta"];
+
+export function MobileTabBar({
+  unreadCount = 0,
+  loggedIn = false,
+}: {
+  unreadCount?: number;
+  loggedIn?: boolean;
+}) {
   const pathname = usePathname() ?? "/";
 
-  if (HIDDEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+  if (
+    HIDDEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))
+  ) {
     return null;
   }
 
+  const items = [...BASE_ITEMS, ...(loggedIn ? MEMBER_TAIL : GUEST_TAIL)];
+
   const isActive = (item: Item) => {
     if (item.matchPrefix) {
-      return pathname === item.matchPrefix || pathname.startsWith(item.matchPrefix + "/");
+      return (
+        pathname === item.matchPrefix ||
+        pathname.startsWith(item.matchPrefix + "/")
+      );
     }
     return pathname === item.href;
   };
@@ -81,10 +108,9 @@ export function MobileTabBar({ unreadCount = 0 }: { unreadCount?: number }) {
       className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 pb-[env(safe-area-inset-bottom)]"
     >
       <ul className="grid grid-cols-5">
-        {ITEMS.map((item) => {
+        {items.map((item) => {
           const active = isActive(item);
-          const showBadge =
-            item.href === "/notifications" && unreadCount > 0;
+          const showBadge = item.href === "/notifications" && unreadCount > 0;
           return (
             <li key={item.href}>
               <Link
@@ -105,7 +131,7 @@ export function MobileTabBar({ unreadCount = 0 }: { unreadCount?: number }) {
                   {showBadge && (
                     <span
                       aria-label={`未読 ${unreadCount} 件`}
-                      className="absolute -top-1 -right-3 min-w-[16px] h-4 px-1 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center leading-none"
+                      className="absolute -top-1 -right-3 min-w-[16px] h-4 px-1 rounded-full bg-notification text-white text-[10px] font-bold flex items-center justify-center leading-none"
                     >
                       {unreadCount > 99 ? "99+" : unreadCount}
                     </span>

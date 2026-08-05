@@ -146,8 +146,8 @@ export default async function LoginPage({ searchParams }: Props) {
 
       <p className="mt-8 text-sm text-center">
         アカウントをお持ちでない方は{" "}
-        <Link href="/register" className="font-medium">
-          新規登録
+        <Link href="/join" className="font-medium">
+          席をつくる
         </Link>
       </p>
     </div>

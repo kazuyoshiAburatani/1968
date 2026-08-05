@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchNotifications, isUnread } from "@/lib/notifications";
-import { EmptyState } from "@/components/empty-state";
 import { UserAvatar } from "@/components/user-avatar";
 import { NotificationsMarkSeen } from "@/components/notifications-mark-seen";
 
@@ -11,9 +10,7 @@ export const metadata: Metadata = {
 };
 
 function formatRelative(iso: string): string {
-  const now = Date.now();
-  const t = new Date(iso).getTime();
-  const diff = Math.max(0, now - t);
+  const diff = Math.max(0, Date.now() - new Date(iso).getTime());
   const min = Math.floor(diff / 60_000);
   if (min < 1) return "たった今";
   if (min < 60) return `${min}分前`;
@@ -35,15 +32,17 @@ export default async function NotificationsPage() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12">
         <h1 className="text-2xl font-bold">お知らせ</h1>
-        <p className="mt-3 text-sm text-foreground/70">
-          お知らせの確認には、会員登録とログインが必要です。
+        <p className="mt-3 text-base leading-8 text-foreground/70">
+          お返事が届いたことをお知らせするには、席が必要です。
+          <br />
+          ニックネームと生まれた日だけ、30秒で終わります。
         </p>
         <p className="mt-6">
           <Link
-            href="/register"
-            className="inline-flex items-center min-h-[var(--spacing-tap)] px-5 rounded-full bg-primary text-white no-underline font-medium"
+            href="/join"
+            className="inline-flex items-center min-h-[52px] px-6 rounded-full bg-primary text-white no-underline font-bold"
           >
-            会員登録（無料）
+            席をつくる
           </Link>
         </p>
       </div>
@@ -55,231 +54,89 @@ export default async function NotificationsPage() {
   });
 
   return (
-    <div className="mx-auto max-w-2xl px-0 sm:px-4 py-6 sm:py-10">
+    <div className="mx-auto max-w-2xl px-4 py-6 sm:py-10">
       <NotificationsMarkSeen />
-      <header className="px-4 sm:px-0 flex items-baseline justify-between">
-        <h1 className="text-2xl font-bold">お知らせ</h1>
-        <span className="text-xs text-foreground/60">{items.length} 件</span>
-      </header>
+      <h1 className="text-2xl font-bold">お知らせ</h1>
 
       {items.length === 0 ? (
-        <EmptyState
-          variant="notifications"
-          title="まだお知らせはありません"
-          description="返信、いいね、ダイレクトメッセージが届くと、こちらに表示されます。"
-        />
+        <div className="mt-6 rounded-2xl border border-border/60 bg-muted/40 p-6">
+          <p className="text-base leading-8 text-foreground/80">
+            まだお知らせはありません。
+            <br />
+            お題に一言書くと、どなたかから返事が届きます。
+          </p>
+          <Link
+            href="/"
+            className="mt-4 inline-flex items-center min-h-[var(--spacing-tap)] px-5 rounded-full bg-primary text-white text-sm font-bold no-underline"
+          >
+            今週のお題を見る
+          </Link>
+        </div>
       ) : (
-        <ul className="mt-4 divide-y divide-border border-y border-border bg-background sm:rounded-xl sm:border">
-          {items.map((it, idx) => {
-            const unread = isUnread(it, lastSeenAt);
+        <ul className="mt-5 space-y-2">
+          {items.map((n) => {
+            const unread = isUnread(n, lastSeenAt);
             return (
-              <li key={`${it.kind}-${idx}`}>
-                <NotificationRow
-                  item={it}
-                  unread={unread}
-                  formatRelative={formatRelative}
-                />
+              <li key={n.id}>
+                <Link
+                  href={`/topics/${n.topicId}#response-${n.responseId}`}
+                  className={
+                    "flex items-start gap-3 rounded-2xl border p-4 no-underline transition-colors " +
+                    (unread
+                      ? "border-primary/40 bg-primary/5"
+                      : "border-border/60 bg-background hover:bg-muted/40")
+                  }
+                >
+                  {n.kind === "reply" ? (
+                    <UserAvatar
+                      name={n.actorName}
+                      avatarUrl={n.actorAvatarUrl}
+                      size={40}
+                    />
+                  ) : (
+                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/15">
+                      <i
+                        className={
+                          n.kind === "featured"
+                            ? "ri-mail-star-line text-accent text-lg"
+                            : "ri-heart-3-line text-accent text-lg"
+                        }
+                        aria-hidden
+                      />
+                    </span>
+                  )}
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm leading-7 text-foreground">
+                      {n.kind === "reply" && (
+                        <>
+                          <span className="font-bold">{n.actorName}</span>
+                          {n.isOperator && (
+                            <span className="ml-1 text-xs font-bold text-primary">
+                              （運営）
+                            </span>
+                          )}
+                          さんから返事が届きました
+                        </>
+                      )}
+                      {n.kind === "featured" &&
+                        "あなたの投稿が「今週のお便り」に選ばれました"}
+                      {n.kind === "reaction" &&
+                        `あなたの投稿に「${n.reactionLabel}」が付きました`}
+                    </p>
+                    <p className="mt-0.5 text-sm text-foreground/60 line-clamp-2">
+                      {n.excerpt}
+                    </p>
+                    <p className="mt-1 text-xs text-foreground/40">
+                      {formatRelative(n.createdAt)}
+                    </p>
+                  </div>
+                </Link>
               </li>
             );
           })}
         </ul>
       )}
-
-      <p className="mt-8 px-4 text-xs text-foreground/60 text-center">
-        過去 50 件まで表示しています。
-      </p>
     </div>
-  );
-}
-
-import type { Notification } from "@/lib/notifications";
-
-function NotificationRow({
-  item,
-  unread,
-  formatRelative,
-}: {
-  item: Notification;
-  unread: boolean;
-  formatRelative: (iso: string) => string;
-}) {
-  if (item.kind === "reply_to_thread") {
-    const href = `/board/${item.categorySlug}/${item.threadId}#reply-${item.replyId}`;
-    return (
-      <Row
-        href={href}
-        unread={unread}
-        avatar={
-          <UserAvatar
-            name={item.actorName}
-            avatarUrl={item.actorAvatar}
-            isAi={item.actorIsAi}
-            size={44}
-          />
-        }
-        title={
-          <>
-            <strong>{item.actorName}</strong> さんがあなたのスレッドに返信しました
-          </>
-        }
-        meta={`「${item.threadTitle}」`}
-        body={item.bodyExcerpt}
-        time={formatRelative(item.createdAt)}
-        icon="ri-reply-line"
-        actorIsAi={item.actorIsAi}
-      />
-    );
-  }
-
-  if (item.kind === "like_on_thread") {
-    const href = `/board/${item.categorySlug}/${item.threadId}`;
-    return (
-      <Row
-        href={href}
-        unread={unread}
-        avatar={
-          <UserAvatar
-            name={item.actorName}
-            avatarUrl={item.actorAvatar}
-            isAi={item.actorIsAi}
-            size={44}
-          />
-        }
-        title={
-          <>
-            <strong>{item.actorName}</strong> さんがあなたのスレッドにいいねしました
-          </>
-        }
-        meta={`「${item.threadTitle}」`}
-        time={formatRelative(item.createdAt)}
-        icon="ri-heart-fill"
-        iconColor="text-rose-600"
-        actorIsAi={item.actorIsAi}
-      />
-    );
-  }
-
-  if (item.kind === "like_on_reply") {
-    const href = `/board/${item.categorySlug}/${item.threadId}#reply-${item.replyId}`;
-    return (
-      <Row
-        href={href}
-        unread={unread}
-        avatar={
-          <UserAvatar
-            name={item.actorName}
-            avatarUrl={item.actorAvatar}
-            isAi={item.actorIsAi}
-            size={44}
-          />
-        }
-        title={
-          <>
-            <strong>{item.actorName}</strong> さんがあなたの返信にいいねしました
-          </>
-        }
-        meta={`「${item.threadTitle}」内の返信`}
-        time={formatRelative(item.createdAt)}
-        icon="ri-heart-fill"
-        iconColor="text-rose-600"
-        actorIsAi={item.actorIsAi}
-      />
-    );
-  }
-
-  // dm_received
-  const href = `/messages/${item.peerId}`;
-  return (
-    <Row
-      href={href}
-      unread={unread}
-      avatar={
-        <UserAvatar
-          name={item.peerName}
-          avatarUrl={item.peerAvatar}
-          isAi={item.peerIsAi}
-          size={44}
-        />
-      }
-      title={
-        <>
-          <strong>{item.peerName}</strong> さんから新しいメッセージ
-        </>
-      }
-      body={item.bodyExcerpt}
-      time={formatRelative(item.createdAt)}
-      icon="ri-mail-line"
-      iconColor="text-primary"
-      actorIsAi={item.peerIsAi}
-    />
-  );
-}
-
-function Row({
-  href,
-  unread,
-  avatar,
-  title,
-  meta,
-  body,
-  time,
-  icon,
-  iconColor,
-  actorIsAi,
-}: {
-  href: string;
-  unread: boolean;
-  avatar: React.ReactNode;
-  title: React.ReactNode;
-  meta?: string;
-  body?: string;
-  time: string;
-  icon: string;
-  iconColor?: string;
-  actorIsAi: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`flex items-start gap-3 px-4 py-3.5 no-underline hover:bg-muted/40 active:bg-muted/70 transition-colors ${
-        unread ? "bg-primary/5" : ""
-      }`}
-    >
-      <div className="relative shrink-0">
-        {avatar}
-        <span
-          className={`absolute -bottom-1 -right-1 inline-flex items-center justify-center size-5 rounded-full bg-background border border-border shadow-sm ${iconColor ?? "text-foreground/70"}`}
-        >
-          <i className={`${icon} text-xs`} aria-hidden />
-        </span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-baseline justify-between gap-2">
-          <p className="text-sm text-foreground line-clamp-1 flex-1">
-            {title}
-            {actorIsAi && (
-              <span className="ml-1.5 align-middle inline-block px-1 py-px rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
-                運営AI
-              </span>
-            )}
-          </p>
-          <span className="text-xs text-foreground/60 shrink-0">{time}</span>
-        </div>
-        {meta && (
-          <p className="mt-0.5 text-xs text-foreground/70 truncate">{meta}</p>
-        )}
-        {body && (
-          <p className="mt-0.5 text-sm text-foreground/70 line-clamp-1">
-            {body}
-          </p>
-        )}
-      </div>
-      {unread && (
-        <span
-          aria-label="未読"
-          className="shrink-0 size-2 rounded-full bg-primary mt-2"
-        />
-      )}
-    </Link>
   );
 }

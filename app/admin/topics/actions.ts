@@ -11,16 +11,23 @@ function fail(message: string): never {
   redirect(`/admin/topics?error=${encodeURIComponent(message)}`);
 }
 
-export async function createTopic(formData: FormData) {
-  const parsed = TopicUpsertSchema.safeParse({
+function readForm(formData: FormData) {
+  return {
     title: formData.get("title"),
     body: formData.get("body") ?? "",
     audience: formData.get("audience") ?? "all",
-    related_category_id: formData.get("related_category_id") ?? null,
+    format: formData.get("format") ?? "fill_blank",
+    blank_examples: formData.get("blank_examples") ?? "",
+    era: formData.get("era") ?? "",
+    gender_lean: formData.get("gender_lean") ?? "both",
     published_at: formData.get("published_at"),
     expires_at: formData.get("expires_at") ?? "",
     is_active: formData.get("is_active") ?? undefined,
-  });
+  };
+}
+
+export async function createTopic(formData: FormData) {
+  const parsed = TopicUpsertSchema.safeParse(readForm(formData));
   if (!parsed.success) {
     fail(parsed.error.issues[0]?.message ?? "入力内容を確認してください");
   }
@@ -28,10 +35,9 @@ export async function createTopic(formData: FormData) {
   const { admin } = await requireAdmin();
   const sb = getSupabaseAdminClient();
 
-  const { error } = await sb.from("topics").insert({
-    ...parsed.data,
-    created_by: admin.id,
-  });
+  const { error } = await sb
+    .from("topics")
+    .insert({ ...parsed.data, created_by: admin.id });
   if (error) {
     console.error("[admin/topics/create]", error.message);
     fail("お題の作成に失敗しました");
@@ -42,20 +48,12 @@ export async function createTopic(formData: FormData) {
   redirect("/admin/topics?saved=created");
 }
 
-const UpdateSchema = TopicUpsertSchema.extend({
-  id: z.string().uuid(),
-});
+const UpdateSchema = TopicUpsertSchema.extend({ id: z.string().uuid() });
 
 export async function updateTopic(formData: FormData) {
   const parsed = UpdateSchema.safeParse({
     id: formData.get("id"),
-    title: formData.get("title"),
-    body: formData.get("body") ?? "",
-    audience: formData.get("audience") ?? "all",
-    related_category_id: formData.get("related_category_id") ?? null,
-    published_at: formData.get("published_at"),
-    expires_at: formData.get("expires_at") ?? "",
-    is_active: formData.get("is_active") ?? undefined,
+    ...readForm(formData),
   });
   if (!parsed.success) {
     fail(parsed.error.issues[0]?.message ?? "入力内容を確認してください");

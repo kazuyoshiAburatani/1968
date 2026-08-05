@@ -16,7 +16,6 @@ import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { NavProgress } from "@/components/nav-progress";
 import { UserAvatar } from "@/components/user-avatar";
 import { publicAvatarUrl } from "@/lib/avatar";
-import type { Rank } from "@/lib/auth/permissions";
 import "./globals.css";
 
 // 和文UIの可読性重視、weight は 400/500/700 を使用
@@ -37,11 +36,11 @@ const pacifico = Pacifico({
 
 export const metadata: Metadata = {
   title: {
-    default: "1968 | 1968年生まれ限定コミュニティ",
+    default: "1968 | 1968年に生まれた学年の、語らいの場",
     template: "%s | 1968",
   },
   description:
-    "1968年（昭和43年）生まれだけが参加できる、同い年の会員制コミュニティ。介護・夫婦・健康・お金など、人には聞きにくい話題を本音で語り合える場。アニメ・歌謡曲・駄菓子の懐かしい思い出から、暮らし・家族の今まで全12カテゴリ。",
+    "1968年に生まれた学年（昭和43年度生まれ）だけの語らいの場。今週の二択、穴埋めのお題、自分の年表、昭和43年度生まれ検定。読むだけなら登録は要りません。",
   applicationName: "1968",
   authors: [{ name: "油谷和好", url: "https://1968.love" }],
   creator: "油谷和好",
@@ -49,6 +48,8 @@ export const metadata: Metadata = {
   keywords: [
     "1968年生まれ",
     "昭和43年生まれ",
+    "昭和43年度生まれ",
+    "昭和レトロ",
     "同年代コミュニティ",
     "50代",
     "シニアSNS",
@@ -68,9 +69,9 @@ export const metadata: Metadata = {
     shortcut: ["/favicon.ico"],
   },
   openGraph: {
-    title: "1968 | 1968年生まれ限定コミュニティ",
+    title: "1968 | 1968年に生まれた学年の、語らいの場",
     description:
-      "同い年だけが集まる安心感と希少性を軸に、本音で話せる会員制コミュニティ。完全無料、ベータテスター30名募集中。創設メンバーには 8 つの永久特典。",
+      "同じ年に同じテレビを見ていた人としか通じない話を、ここでしています。完全無料。ニックネームと生まれた日だけ、30秒で参加できます。",
     url: "https://1968.love",
     siteName: "1968",
     locale: "ja_JP",
@@ -86,9 +87,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "1968 | 1968年生まれ限定コミュニティ",
+    title: "1968 | 1968年に生まれた学年の、語らいの場",
     description:
-      "1968年（昭和43年）生まれだけの会員制コミュニティ。ベータテスター30名募集中。",
+      "1968年に生まれた学年だけの語らいの場。今週の二択に、指一本でどうぞ。",
     images: ["/og/og-tagline.png"],
   },
   robots: {
@@ -128,12 +129,10 @@ export default async function RootLayout({
   } = await supabase.auth.getUser();
   const userId = authUser?.id ?? null;
 
-  let rank: Rank = "guest";
   let nickname: string | null = null;
   let avatarUrl: string | null = null;
   let isAdmin = false;
   let isFoundingMember = false;
-  let isCurrentSupporter = false;
   let unreadCount = 0;
 
   if (userId) {
@@ -145,15 +144,13 @@ export default async function RootLayout({
         avatar_url: string | null;
         is_admin: boolean;
         is_founding_member: boolean;
-        is_supporter: boolean;
+        school_year: number | null;
         unread_count: number;
       }>();
-    rank = ((data?.membership_rank as Rank | undefined) ?? "member") as Rank;
     nickname = data?.nickname ?? null;
     avatarUrl = publicAvatarUrl(data?.avatar_url ?? null);
     isAdmin = data?.is_admin === true;
     isFoundingMember = data?.is_founding_member === true;
-    isCurrentSupporter = data?.is_supporter === true;
     unreadCount = Number(data?.unread_count ?? 0);
   }
 
@@ -179,7 +176,7 @@ export default async function RootLayout({
                   "@type": "Organization",
                   "@id": "https://1968.love/#organization",
                   name: "1968",
-                  alternateName: "1968年生まれ限定コミュニティ",
+                  alternateName: "昭和43年度生まれの語らいの場",
                   url: "https://1968.love",
                   logo: "https://1968.love/logo/icon-512.png",
                   founder: {
@@ -188,7 +185,7 @@ export default async function RootLayout({
                   },
                   email: "support@1968.love",
                   description:
-                    "1968年（昭和43年）生まれの人だけが参加できる、同い年の会員制オンラインコミュニティ。",
+                    "1968年に生まれた学年（昭和43年度生まれ）だけが参加できる、同学年のオンラインの集まり。",
                   address: {
                     "@type": "PostalAddress",
                     streetAddress: "南船場3丁目2番22号おおきに南船場ビル205",
@@ -211,7 +208,7 @@ export default async function RootLayout({
                   url: "https://1968.love",
                   name: "1968",
                   description:
-                    "1968年生まれだけが参加できる会員制コミュニティ。",
+                    "1968年に生まれた学年だけの語らいの場。",
                   publisher: { "@id": "https://1968.love/#organization" },
                   inLanguage: "ja-JP",
                 },
@@ -223,18 +220,16 @@ export default async function RootLayout({
           <NavProgress />
         </Suspense>
         <SiteHeader
-          rank={rank}
           userId={userId}
           nickname={nickname}
           avatarUrl={avatarUrl}
           isAdmin={isAdmin}
           isFoundingMember={isFoundingMember}
-          isCurrentSupporter={isCurrentSupporter}
         />
         {/* モバイル時はタブバー分の下部余白を確保 */}
         <main className="flex-1 w-full pb-20 md:pb-0">{children}</main>
         <SiteFooter />
-        <MobileTabBar unreadCount={unreadCount} />
+        <MobileTabBar unreadCount={unreadCount} loggedIn={!!userId} />
         <CookieConsent />
         <Analytics />
       </body>
@@ -243,21 +238,17 @@ export default async function RootLayout({
 }
 
 function SiteHeader({
-  rank,
   userId,
   nickname,
   avatarUrl,
   isAdmin,
   isFoundingMember,
-  isCurrentSupporter,
 }: {
-  rank: Rank;
   userId: string | null;
   nickname: string | null;
   avatarUrl: string | null;
   isAdmin: boolean;
   isFoundingMember: boolean;
-  isCurrentSupporter: boolean;
 }) {
   return (
     <header className="border-b border-border bg-background">
@@ -308,11 +299,7 @@ function SiteHeader({
                 avatarUrl={avatarUrl}
                 size={32}
               />
-              <MembershipBadge
-                rank={rank}
-                isFoundingMember={isFoundingMember}
-                isCurrentSupporter={isCurrentSupporter}
-              />
+              <MembershipBadge isFoundingMember={isFoundingMember} />
               <span className="font-medium text-foreground max-w-[6rem] truncate hidden sm:inline">
                 {nickname ?? "マイページ"}
               </span>
@@ -326,10 +313,10 @@ function SiteHeader({
                 ログイン
               </Link>
               <Link
-                href="/register"
+                href="/join"
                 className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-4 rounded-full bg-primary text-white text-sm font-medium hover:opacity-90 no-underline"
               >
-                入会する
+                席をつくる
               </Link>
             </>
           )}
@@ -347,17 +334,29 @@ function SiteFooter() {
           <div>
             <p className="font-bold text-base mb-2">1968</p>
             <p className="text-foreground/80">
-              1968年生まれ限定コミュニティ
+              1968年に生まれた学年の、語らいの場
             </p>
           </div>
           <div>
             <p className="font-bold mb-2">案内</p>
             <ul className="space-y-1">
               <li>
-                <Link href="/timeline">みんなの新着</Link>
+                <Link href="/stories">あの店・あの商品、今どうなってる？</Link>
               </li>
               <li>
-                <Link href="/beta">ベータテスター募集中</Link>
+                <Link href="/nenpyo">あなたの1968年表</Link>
+              </li>
+              <li>
+                <Link href="/kentei">昭和43年度生まれ検定</Link>
+              </li>
+              <li>
+                <Link href="/today">今日は何の日</Link>
+              </li>
+              <li>
+                <Link href="/letters">お便り紹介</Link>
+              </li>
+              <li>
+                <Link href="/timeline">みんなの新着</Link>
               </li>
               <li>
                 <Link href="/terms">利用規約</Link>

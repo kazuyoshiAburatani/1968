@@ -1,24 +1,22 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Rank } from "@/lib/auth/permissions";
 
-// 現在の閲覧ユーザーのランク + 称号フラグを取得するユーティリティ。
-// 未ログインは guest、public.users が無ければ member（既定値）として扱う。
-//
-// 運営（admins テーブル登録ユーザー）は users.verified の状態に関わらず
-// 自動で verified 扱いとし、isAdmin=true。
-// 創設メンバー / 応援団 のフラグも併せて返し、ラウンジアクセス可否の UI 判定に使う。
-//
-// マイグレーション未適用環境（is_founding_member 列なし、supporters テーブルなし）でも
-// クラッシュしないよう、各クエリを try/catch で吸収する。
-export async function getCurrentRank(
-  supabase: SupabaseClient,
-): Promise<{
+// 現在の閲覧者のランクと称号を取得する。
+// 未ログインは guest、ログイン済みは一律 member。
+// 匿名サインイン（ニックネーム＋生年月日だけの 30 秒登録）でも member として扱う。
+
+export type CurrentUser = {
   rank: Rank;
   userId: string | null;
   isAdmin: boolean;
   isFoundingMember: boolean;
-  isCurrentSupporter: boolean;
-}> {
+  /** 匿名登録のまま（メール未設定）かどうか。引き継ぎ案内の出し分けに使う。 */
+  isAnonymous: boolean;
+};
+
+export async function getCurrentRank(
+  supabase: SupabaseClient,
+): Promise<CurrentUser> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -29,58 +27,26 @@ export async function getCurrentRank(
       userId: null,
       isAdmin: false,
       isFoundingMember: false,
-      isCurrentSupporter: false,
+      isAnonymous: false,
     };
   }
 
-  // 主クエリ、必須フィールドのみ。レアな列に依存させない
   const [{ data: publicUser }, { data: adminRow }] = await Promise.all([
     supabase
       .from("users")
-      .select("membership_rank")
-      .eq("id", user.id)
-      .maybeSingle(),
-    supabase
-      .from("admins")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle(),
-  ]);
-
-  const isAdmin = !!adminRow;
-  const rawRank = ((publicUser?.membership_rank as Rank | undefined) ??
-    "member") as Rank;
-  const rank: Rank = isAdmin ? "verified" : rawRank;
-
-  // 創設メンバーフラグ、未適用なら false
-  let isFoundingMember = false;
-  try {
-    const { data } = await supabase
-      .from("users")
       .select("is_founding_member")
       .eq("id", user.id)
-      .maybeSingle();
-    isFoundingMember = data?.is_founding_member === true;
-  } catch {
-    /* 列未適用、無視 */
-  }
+      .maybeSingle(),
+    supabase.from("admins").select("id").eq("user_id", user.id).maybeSingle(),
+  ]);
 
-  // 当年の応援団フラグ、テーブル未適用なら false
-  let isCurrentSupporter = false;
-  try {
-    const tokyoYear = new Date(
-      new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }),
-    ).getFullYear();
-    const { data } = await supabase
-      .from("supporters")
-      .select("year")
-      .eq("user_id", user.id)
-      .eq("year", tokyoYear)
-      .maybeSingle();
-    isCurrentSupporter = !!data;
-  } catch {
-    /* テーブル未適用、無視 */
-  }
-
-  return { rank, userId: user.id, isAdmin, isFoundingMember, isCurrentSupporter };
+  return {
+    rank: "member",
+    userId: user.id,
+    isAdmin: !!adminRow,
+    isFoundingMember: publicUser?.is_founding_member === true,
+    // Supabase は匿名ユーザーに is_anonymous を立てる。
+    // メールを紐付けて本登録すると false になる。
+    isAnonymous: user.is_anonymous === true || !user.email,
+  };
 }

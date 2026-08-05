@@ -76,7 +76,7 @@ export async function sendBetaInvitation(args: { to: string; name: string }) {
       "おめでとうございます、ご参加を心よりお待ちしておりました。",
       "",
       "以下の URL から、会員登録のお手続きをお願いします。",
-      `${SITE_URL}/register`,
+      `${SITE_URL}/join`,
       "",
       "ご登録後、運営側でベータ特典（正会員プラン 1 年無料）を",
       "付与しますので、しばらくお待ちください。",

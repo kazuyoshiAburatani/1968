@@ -1,26 +1,30 @@
-import Link from "next/link";
-import Image from "next/image";
 import { UserAvatar } from "@/components/user-avatar";
-import { publicAvatarUrl } from "@/lib/avatar";
-import { getMediaUrl, type MediaItem } from "@/lib/media";
+import { MembershipBadge } from "@/components/membership-badge";
+import { RichText } from "@/components/rich-text";
 import { ReactionRow } from "./reaction-row";
-import { postTopicResponse } from "@/app/topics/actions";
+import { postTopicResponse, deleteOwnResponse } from "@/app/topics/actions";
 import type { ReactionType } from "@/lib/reactions";
 
-// お題への 1 レス表示、返信ツリー対応。
-// 親カードの下に返信リスト（インデント表示）と、開閉式の返信フォームを持つ。
-// details/summary で JS 無しでも開閉できる。
+// お題への回答カード。
+//
+// ここで表現しなければならないこと、
+//  ・運営からの返信は一目で分かること（必ず返事が来る場だと伝わる）
+//  ・「今週のお便り」に採用された投稿が誇らしく見えること
+//  ・返信欄が常に開いていること。「返信」を押してから書く一手間で会話が止まる
+//  ・自分の投稿は自分で消せること
 
 export type ResponseReply = {
   id: string;
   nickname: string;
   prefecture: string | null;
-  avatarPath: string | null | undefined;
+  avatarUrl: string | null;
   body: string;
   createdAt: string;
   reactionCounts: Partial<Record<ReactionType, number>>;
   myReaction: ReactionType | null;
-  adminEdited?: boolean;
+  isOperator: boolean;
+  isFoundingMember: boolean;
+  isMine: boolean;
 };
 
 type Props = {
@@ -28,232 +32,224 @@ type Props = {
   topicId: string;
   nickname: string;
   prefecture: string | null;
-  avatarPath: string | null | undefined;
+  avatarUrl: string | null;
   body: string;
-  media: MediaItem[];
   createdAt: string;
   reactionCounts: Partial<Record<ReactionType, number>>;
   myReaction: ReactionType | null;
-  replies?: ResponseReply[];
-  loggedIn?: boolean;
-  returnPath?: string;
-  adminEdited?: boolean;
+  replies: ResponseReply[];
+  loggedIn: boolean;
+  returnPath: string;
+  isOperator: boolean;
+  isFoundingMember: boolean;
+  isMine: boolean;
+  featuredAt: string | null;
+  featuredNote: string | null;
 };
-
-function formatRelative(iso: string): string {
-  const now = Date.now();
-  const t = new Date(iso).getTime();
-  const diff = Math.max(0, now - t);
-  const min = Math.floor(diff / 60_000);
-  if (min < 1) return "たった今";
-  if (min < 60) return `${min}分前`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}時間前`;
-  const day = Math.floor(hr / 24);
-  if (day < 7) return `${day}日前`;
-  const d = new Date(iso);
-  return `${d.getMonth() + 1}月${d.getDate()}日`;
-}
 
 export function ResponseCard({
   responseId,
   topicId,
   nickname,
   prefecture,
-  avatarPath,
+  avatarUrl,
   body,
-  media,
   createdAt,
   reactionCounts,
   myReaction,
-  replies = [],
-  loggedIn = false,
-  returnPath = "/",
-  adminEdited,
+  replies,
+  loggedIn,
+  returnPath,
+  isOperator,
+  isFoundingMember,
+  isMine,
+  featuredAt,
+  featuredNote,
 }: Props) {
-  const images = media.filter((m) => m.type === "image");
-
   return (
     <article
       id={`response-${responseId}`}
-      className="rounded-2xl border border-border/60 bg-background p-4 sm:p-5 shadow-sm scroll-mt-20"
+      className={
+        "rounded-2xl border bg-background p-4 scroll-mt-20 " +
+        (featuredAt
+          ? "border-accent/60 ring-1 ring-accent/30"
+          : "border-border/60")
+      }
     >
-      <header className="flex items-center gap-3">
-        <UserAvatar
-          name={nickname}
-          avatarUrl={publicAvatarUrl(avatarPath)}
-          size={40}
-        />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Link
-              href={`/u/${encodeURIComponent(nickname)}`}
-              className="text-sm sm:text-base font-semibold text-foreground no-underline hover:underline"
-            >
-              {nickname}
-            </Link>
-            {prefecture && (
-              <span className="text-xs text-foreground/60">{prefecture}</span>
-            )}
-          </div>
-          <div className="text-xs text-foreground/50">
-            {formatRelative(createdAt)}
-            {adminEdited && (
-              <>
-                <span className="mx-1.5">・</span>
-                <span className="text-amber-800">運営により編集済み</span>
-              </>
+      {featuredAt && (
+        <div className="mb-3 flex items-start gap-2 rounded-xl bg-accent/10 px-3 py-2">
+          <i className="ri-mail-star-line text-accent text-lg shrink-0" aria-hidden />
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-accent">今週のお便りに採用</p>
+            {featuredNote && (
+              <p className="mt-0.5 text-xs leading-6 text-foreground/70">
+                {featuredNote}
+              </p>
             )}
           </div>
         </div>
-      </header>
-
-      {body && (
-        <p className="mt-3 text-sm sm:text-base leading-7 text-foreground whitespace-pre-wrap break-words">
-          {body}
-        </p>
       )}
 
-      {images.length > 0 && (
-        <div
-          className={
-            "mt-3 grid gap-2 " +
-            (images.length === 1
-              ? "grid-cols-1"
-              : images.length === 2
-                ? "grid-cols-2"
-                : "grid-cols-3")
-          }
-        >
-          {images.slice(0, 4).map((m) => (
-            <div
-              key={m.path}
-              className="relative aspect-square rounded-lg overflow-hidden bg-muted"
-            >
-              <Image
-                src={getMediaUrl(m.path)}
-                alt="添付画像"
-                fill
-                sizes="(min-width: 768px) 33vw, 50vw"
-                className="object-cover"
-                unoptimized
-              />
-            </div>
-          ))}
-        </div>
-      )}
+      <Header
+        nickname={nickname}
+        prefecture={prefecture}
+        avatarUrl={avatarUrl}
+        createdAt={createdAt}
+        isOperator={isOperator}
+        isFoundingMember={isFoundingMember}
+      />
 
-      <div className="mt-4">
+      <div className="mt-2.5 text-base leading-8 text-foreground">
+        <RichText text={body} />
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <ReactionRow
-          targetType="topic_response"
           targetId={responseId}
           counts={reactionCounts}
           myReaction={myReaction}
           returnPath={returnPath}
         />
+        {isMine && (
+          <form action={deleteOwnResponse}>
+            <input type="hidden" name="response_id" value={responseId} />
+            <input type="hidden" name="return_path" value={returnPath} />
+            <button
+              type="submit"
+              className="text-xs text-foreground/50 hover:text-notification underline-offset-2 hover:underline"
+            >
+              消す
+            </button>
+          </form>
+        )}
       </div>
 
-      {/* 返信ツリー、常時表示（数が少ないうちはそれで十分） */}
       {replies.length > 0 && (
-        <ul className="mt-4 space-y-3 border-l-2 border-primary/20 pl-3 sm:pl-4 ml-2 sm:ml-4">
+        <ul className="mt-3 space-y-2 border-l-2 border-border/60 pl-3 sm:pl-4">
           {replies.map((r) => (
             <li
               key={r.id}
               id={`response-${r.id}`}
-              className="scroll-mt-20"
+              className={
+                "rounded-xl px-3 py-2.5 scroll-mt-20 " +
+                (r.isOperator ? "bg-primary/5" : "bg-muted/40")
+              }
             >
-              <div className="flex items-start gap-2.5">
-                <UserAvatar
-                  name={r.nickname}
-                  avatarUrl={publicAvatarUrl(r.avatarPath)}
-                  size={32}
+              <Header
+                nickname={r.nickname}
+                prefecture={r.prefecture}
+                avatarUrl={r.avatarUrl}
+                createdAt={r.createdAt}
+                isOperator={r.isOperator}
+                isFoundingMember={r.isFoundingMember}
+                small
+              />
+              <div className="mt-1.5 text-base leading-8">
+                <RichText text={r.body} />
+              </div>
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                <ReactionRow
+                  targetId={r.id}
+                  counts={r.reactionCounts}
+                  myReaction={r.myReaction}
+                  returnPath={returnPath}
                 />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Link
-                      href={`/u/${encodeURIComponent(r.nickname)}`}
-                      className="text-sm font-semibold text-foreground no-underline hover:underline"
+                {r.isMine && (
+                  <form action={deleteOwnResponse}>
+                    <input type="hidden" name="response_id" value={r.id} />
+                    <input type="hidden" name="return_path" value={returnPath} />
+                    <button
+                      type="submit"
+                      className="text-xs text-foreground/50 hover:text-notification"
                     >
-                      {r.nickname}
-                    </Link>
-                    {r.prefecture && (
-                      <span className="text-xs text-foreground/60">
-                        {r.prefecture}
-                      </span>
-                    )}
-                    <span className="text-xs text-foreground/50">
-                      ・{formatRelative(r.createdAt)}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm leading-7 whitespace-pre-wrap break-words">
-                    {r.body}
-                  </p>
-                  {r.adminEdited && (
-                    <p className="mt-0.5 text-[11px] text-amber-800">
-                      運営により編集済み
-                    </p>
-                  )}
-                  <div className="mt-2">
-                    <ReactionRow
-                      targetType="topic_response"
-                      targetId={r.id}
-                      counts={r.reactionCounts}
-                      myReaction={r.myReaction}
-                      returnPath={returnPath}
-                    />
-                  </div>
-                </div>
+                      消す
+                    </button>
+                  </form>
+                )}
               </div>
             </li>
           ))}
         </ul>
       )}
 
-      {/* 返信フォーム、details/summary で開閉、JS 不要 */}
-      {loggedIn && (
-        <details className="mt-3 group">
-          <summary className="cursor-pointer list-none text-xs text-primary font-medium inline-flex items-center gap-1 hover:underline">
-            <i
-              className="ri-reply-line text-sm group-open:hidden"
-              aria-hidden
-            />
-            <i
-              className="ri-close-line text-sm hidden group-open:inline"
-              aria-hidden
-            />
-            <span className="group-open:hidden">返信する</span>
-            <span className="hidden group-open:inline">閉じる</span>
-          </summary>
-          <form
-            action={postTopicResponse}
-            className="mt-2 pl-3 sm:pl-4 ml-2 sm:ml-4 border-l-2 border-primary/20"
-          >
-            <input type="hidden" name="topic_id" value={topicId} />
-            <input
-              type="hidden"
-              name="parent_response_id"
-              value={responseId}
-            />
-            <input type="hidden" name="return_path" value={returnPath} />
-            <textarea
-              name="body"
-              rows={2}
-              maxLength={500}
-              required
-              placeholder={`${nickname} さんへ返信…`}
-              className="w-full resize-y rounded-lg border border-border bg-page px-3 py-2 text-sm leading-6 focus:outline-none focus:ring-2 focus:ring-primary/40"
-            />
-            <div className="mt-2 flex justify-end">
-              <button
-                type="submit"
-                className="inline-flex items-center min-h-[36px] px-4 rounded-full bg-primary text-white text-xs font-medium hover:opacity-90"
-              >
-                返信を送る
-              </button>
-            </div>
-          </form>
-        </details>
-      )}
+      {/* 返信欄は常に開けておく。「返信」を押させる一手間で会話が止まる */}
+      <form
+        action={postTopicResponse}
+        className="mt-3 flex flex-col sm:flex-row gap-2"
+      >
+        <input type="hidden" name="topic_id" value={topicId} />
+        <input type="hidden" name="parent_response_id" value={responseId} />
+        <input type="hidden" name="return_path" value={returnPath} />
+        <input
+          type="text"
+          name="body"
+          maxLength={1000}
+          placeholder={`${nickname}さんに一言`}
+          className="flex-1 min-h-[var(--spacing-tap)] rounded-lg border border-border bg-page px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary/40"
+        />
+        <button
+          type="submit"
+          className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-5 rounded-full border border-border text-sm font-medium hover:bg-muted"
+        >
+          {loggedIn ? "返す" : "返してみる"}
+        </button>
+      </form>
     </article>
   );
+}
+
+function Header({
+  nickname,
+  prefecture,
+  avatarUrl,
+  createdAt,
+  isOperator,
+  isFoundingMember,
+  small = false,
+}: {
+  nickname: string;
+  prefecture: string | null;
+  avatarUrl: string | null;
+  createdAt: string;
+  isOperator: boolean;
+  isFoundingMember: boolean;
+  small?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2 min-w-0">
+      <UserAvatar name={nickname} avatarUrl={avatarUrl} size={small ? 28 : 36} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span
+            className={
+              "font-bold truncate " + (small ? "text-sm" : "text-base")
+            }
+          >
+            {nickname}
+          </span>
+          <MembershipBadge
+            isOperator={isOperator}
+            isFoundingMember={isFoundingMember}
+          />
+        </div>
+        <p className="text-xs text-foreground/50">
+          {prefecture && <span className="mr-1.5">{prefecture}</span>}
+          <time dateTime={createdAt}>{formatJa(createdAt)}</time>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function formatJa(iso: string): string {
+  const d = new Date(iso);
+  const now = Date.now();
+  const diffMin = Math.floor((now - d.getTime()) / 60000);
+  if (diffMin < 1) return "たった今";
+  if (diffMin < 60) return `${diffMin}分前`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `${diffH}時間前`;
+  const diffD = Math.floor(diffH / 24);
+  if (diffD < 7) return `${diffD}日前`;
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
 }

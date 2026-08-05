@@ -1,58 +1,44 @@
 import { z } from "zod";
 import { PREFECTURES } from "@/lib/prefectures";
 import { BANNER_COLOR_KEYS } from "@/lib/home-banner-colors";
+import { isAcceptedBirthday } from "@/lib/school-year";
 
-// オンボーディング時の入力スキーマ、生年月日は 1968 固定 + 月日選択。
-export const OnboardingSchema = z.object({
+// 登録時の入力スキーマ。
+//
+// 2026-08-05 のリニューアルで、必須項目はニックネームと生年月日の 2 つだけになった。
+// 「30 秒で終わること」が最優先で、都道府県も職業も自己紹介もあとから任意で足せばよい。
+// 検証では、項目が増えるほど途中離脱が増え、特にパスワード欄が致命傷になっていた。
+//
+// 生年は 1968 固定をやめ、1968年1月1日〜1969年4月1日を受け入れる。
+// 昭和43年度生まれ（＝1968年に生まれた学年）の早生まれの同級生を弾かないため。
+export const JoinSchema = z.object({
   nickname: z
     .string()
     .trim()
-    .min(1, "ニックネームは必須です")
-    .max(30, "30文字以内で入力してください"),
+    .min(1, "ニックネームを入れてください")
+    .max(30, "30文字以内でお願いします"),
+  birth_year: z.coerce.number().int().min(1968).max(1969),
   birth_month: z.coerce.number().int().min(1).max(12),
   birth_day: z.coerce.number().int().min(1).max(31),
-  gender: z
-    .enum(["male", "female", "other", "prefer_not_to_say", ""])
-    .optional()
-    .transform((v) => (v === "" ? undefined : v)),
-  prefecture: z
-    .string()
-    .optional()
-    .transform((v) => (v === "" || v == null ? undefined : v))
-    .refine(
-      (v) => v == null || PREFECTURES.includes(v as (typeof PREFECTURES)[number]),
-      { message: "都道府県の値が不正です" },
-    ),
-  hometown: z
-    .string()
-    .trim()
-    .max(100)
-    .optional()
-    .transform((v) => (v === "" ? undefined : v)),
-  school: z
-    .string()
-    .trim()
-    .max(100)
-    .optional()
-    .transform((v) => (v === "" ? undefined : v)),
-  occupation: z
-    .string()
-    .trim()
-    .max(50)
-    .optional()
-    .transform((v) => (v === "" ? undefined : v)),
-  introduction: z
-    .string()
-    .trim()
-    .max(200, "自己紹介は200文字以内でお願いします")
-    .optional()
-    .transform((v) => (v === "" ? undefined : v)),
-  bio_visible: z
-    .enum(["public", "members_only", "private"])
-    .default("members_only"),
 });
 
-// マイページからの編集スキーマ、生年月日は変更不可。空入力は null に正規化。
+/** 生年月日が受け入れ範囲かどうかを、エラー文言つきで判定する。 */
+export function checkBirthday(
+  year: number,
+  month: number,
+  day: number,
+): { ok: true } | { ok: false; message: string } {
+  if (!isAcceptedBirthday(year, month, day)) {
+    return {
+      ok: false,
+      message:
+        "この集まりは、1968年に生まれた学年（昭和43年度、1968年4月2日〜1969年4月1日生まれ）と、1968年生まれの方が対象です。",
+    };
+  }
+  return { ok: true };
+}
+
+// マイページからの編集スキーマ。生年月日は変更不可。空入力は null に正規化。
 export const ProfileUpdateSchema = z.object({
   nickname: z.string().trim().min(1, "ニックネームは必須です").max(30),
   gender: z
@@ -96,24 +82,11 @@ export const ProfileUpdateSchema = z.object({
     .enum(BANNER_COLOR_KEYS as [string, ...string[]])
     .optional()
     .transform((v) => (v == null || v === "default" ? null : v)),
-  // チェックボックスは "on" or undefined で来る、boolean に正規化
   founding_directory_listed: z
     .union([z.literal("on"), z.literal(""), z.undefined()])
     .optional()
     .transform((v) => v === "on"),
 });
 
-// 存在する暦日かどうかを判定する（2月31日などを弾く）。
-// DB 側の生成カラムでも弾かれるが、UX 改善のためサーバ側でも検証する。
-export function isValidCalendarDate(
-  year: number,
-  month: number,
-  day: number,
-): boolean {
-  const d = new Date(year, month - 1, day);
-  return (
-    d.getFullYear() === year &&
-    d.getMonth() === month - 1 &&
-    d.getDate() === day
-  );
-}
+// 旧 API との互換のため残す。実体は school-year 側の実装を使う。
+export { isValidCalendarDate } from "@/lib/school-year";

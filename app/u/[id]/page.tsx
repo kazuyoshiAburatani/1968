@@ -25,7 +25,7 @@ export default async function UserProfilePage({
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "nickname, birth_month, birth_day, gender, prefecture, hometown, school, occupation, introduction, bio_visible, avatar_url",
+      "nickname, birth_year, birth_month, birth_day, gender, prefecture, hometown, school, occupation, introduction, bio_visible, avatar_url",
     )
     .eq("user_id", id)
     .maybeSingle();
@@ -40,28 +40,18 @@ export default async function UserProfilePage({
     if (profile.bio_visible === "private") {
       notFound();
     }
-    if (
-      profile.bio_visible === "members_only" &&
-      rank !== "member" &&
-      rank !== "verified"
-    ) {
+    if (profile.bio_visible === "members_only" && rank !== "member") {
       notFound();
     }
   }
 
-  // DM 可否、自分自身は除外、双方 regular かつ相手が AI でない
+  // DM は撤去したので、ここで見るのは表示用のフラグだけ。
   const { data: peerInfo } = await supabase
     .from("member_display")
-    .select("user_id, membership_rank, is_ai_persona")
+    .select("user_id, is_ai_persona, is_founding_member")
     .eq("user_id", id)
     .maybeSingle();
-  const peerRank = peerInfo?.membership_rank as
-    | "member"
-    | "verified"
-    | undefined;
   const peerIsAi = peerInfo?.is_ai_persona === true;
-  const canDm =
-    !isSelf && rank === "verified" && peerRank === "verified" && !peerIsAi;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -80,19 +70,11 @@ export default async function UserProfilePage({
           <div className="min-w-0">
             <h1 className="text-2xl font-bold truncate">{profile.nickname}</h1>
             <p className="mt-1 text-sm text-foreground/60">
-              1968年{profile.birth_month}月{profile.birth_day}日生まれ
+              {profile.birth_year}年{profile.birth_month}月{profile.birth_day}
+              日生まれ
             </p>
           </div>
         </div>
-        {canDm && (
-          <Link
-            href={`/messages/${id}`}
-            className="inline-flex items-center gap-2 min-h-[var(--spacing-tap)] px-4 rounded-full border border-primary text-primary bg-background hover:bg-muted no-underline text-sm font-medium shrink-0"
-          >
-            <i className="ri-mail-send-line" aria-hidden />
-            メッセージを送る
-          </Link>
-        )}
       </header>
 
       {profile.introduction && (

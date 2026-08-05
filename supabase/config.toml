@@ -173,7 +173,11 @@ refresh_token_reuse_interval = 10
 # Allow/disallow new user signups to your project.
 enable_signup = true
 # Allow/disallow anonymous sign-ins to your project.
-enable_anonymous_sign_ins = false
+# 匿名サインインを有効にする。
+# 「ニックネームと生まれた日だけ、30秒で席をつくる」導線の土台。
+# 本番プロジェクトでも Dashboard → Authentication → Sign In / Providers で
+# 同じ設定を有効にしないと /join が動かない。
+enable_anonymous_sign_ins = true
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.

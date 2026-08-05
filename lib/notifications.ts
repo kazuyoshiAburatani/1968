@@ -1,58 +1,61 @@
-import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAuthorInfo } from "@/lib/author-info";
+import { REACTION_META, type ReactionType } from "@/lib/reactions";
 
-// 通知は専用テーブルではなく、その都度 replies / likes / messages を集約して算出する。
-// パフォーマンスは limit を抑えてカバー、規模が大きくなったら notifications テーブルへ移行する。
+// お知らせ。
+//
+// 撤去した掲示板と DM を外し、いまの構成で「自分に向けて起きたこと」だけに絞った。
+//   1. 自分の投稿への返信（運営からの返信を含む）
+//   2. お便り紹介への採用
+//   3. 自分の投稿へのリアクション
+//
+// とくに 1 と 2 が重要で、検証では「返事が来たことに気づけるかどうか」で
+// 定着スコアが 8 と 3 のあいだを行き来した。通知が届かなければ、
+// 返信という施策そのものが存在しないのと同じになる。
 
 export type Notification =
   | {
-      kind: "reply_to_thread";
-      replyId: string;
-      threadId: string;
-      threadTitle: string;
-      categorySlug: string;
-      actorId: string;
-      actorName: string;
-      actorAvatar: string | null;
-      actorIsAi: boolean;
-      bodyExcerpt: string;
+      kind: "reply";
+      id: string;
       createdAt: string;
+      topicId: string;
+      responseId: string;
+      actorName: string;
+      actorAvatarUrl: string | null;
+      isOperator: boolean;
+      excerpt: string;
     }
   | {
-      kind: "like_on_thread";
-      threadId: string;
-      threadTitle: string;
-      categorySlug: string;
-      actorId: string;
-      actorName: string;
-      actorAvatar: string | null;
-      actorIsAi: boolean;
+      kind: "featured";
+      id: string;
       createdAt: string;
+      topicId: string;
+      responseId: string;
+      excerpt: string;
+      note: string | null;
     }
   | {
-      kind: "like_on_reply";
-      replyId: string;
-      threadId: string;
-      threadTitle: string;
-      categorySlug: string;
-      actorId: string;
-      actorName: string;
-      actorAvatar: string | null;
-      actorIsAi: boolean;
+      kind: "reaction";
+      id: string;
       createdAt: string;
-    }
-  | {
-      kind: "dm_received";
-      messageId: string;
-      peerId: string;
-      peerName: string;
-      peerAvatar: string | null;
-      peerIsAi: boolean;
-      bodyExcerpt: string;
-      createdAt: string;
+      topicId: string;
+      responseId: string;
+      reaction: ReactionType;
+      reactionLabel: string;
+      excerpt: string;
     };
 
-import { publicAvatarUrl } from "@/lib/avatar";
+type ResponseRow = {
+  id: string;
+  topic_id: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+  parent_response_id: string | null;
+  is_operator: boolean;
+  featured_at: string | null;
+  featured_note: string | null;
+};
 
 export async function fetchNotifications(
   supabase: SupabaseClient,
@@ -61,269 +64,135 @@ export async function fetchNotifications(
 ): Promise<{ items: Notification[]; lastSeenAt: string | null }> {
   const limit = opts.limit ?? 50;
 
-  // 1. 最終既読時刻を取得
-  const { data: u } = await supabase
+  const { data: userRow } = await supabase
     .from("users")
     .select("last_notifications_seen_at")
     .eq("id", userId)
     .maybeSingle();
   const lastSeenAt =
-    (u?.last_notifications_seen_at as string | null | undefined) ?? null;
+    (userRow?.last_notifications_seen_at as string | null) ?? null;
 
-  // 2. 自分のスレッドへの返信、自分以外
-  const { data: myThreads } = await supabase
-    .from("threads")
-    .select("id, title, categories(slug)")
-    .eq("user_id", userId);
-  const myThreadList = (myThreads ?? []) as unknown as Array<{
-    id: string;
-    title: string;
-    categories: { slug: string } | null;
-  }>;
+  // 自分の投稿
+  const { data: mineData } = await supabase
+    .from("topic_responses")
+    .select(
+      "id, topic_id, user_id, body, created_at, parent_response_id, is_operator, featured_at, featured_note",
+    )
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(200);
+  const mine = ((mineData ?? []) as unknown) as ResponseRow[];
 
-  let replyRows: Array<{
-    id: string;
-    thread_id: string;
-    user_id: string;
-    body: string;
-    created_at: string;
-  }> = [];
-  if (myThreadList.length > 0) {
-    const threadIds = myThreadList.map((t) => t.id);
-    const { data } = await supabase
-      .from("replies")
-      .select("id, thread_id, user_id, body, created_at")
-      .in("thread_id", threadIds)
-      .neq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(limit);
-    replyRows = (data ?? []) as typeof replyRows;
-  }
+  if (mine.length === 0) return { items: [], lastSeenAt };
 
-  // 3. 自分のスレッド／返信へのいいね、自分以外
-  const { data: myReplies } = await supabase
-    .from("replies")
-    .select("id, thread_id")
-    .eq("user_id", userId);
-  const myReplyList = (myReplies ?? []) as Array<{
-    id: string;
-    thread_id: string;
-  }>;
+  const mineById = new Map(mine.map((r) => [r.id, r]));
+  const mineIds = mine.map((r) => r.id);
 
-  const myThreadIds = myThreadList.map((t) => t.id);
-  const myReplyIds = myReplyList.map((r) => r.id);
-  const allTargets = [
-    ...myThreadIds.map((id) => ({ type: "thread", id })),
-    ...myReplyIds.map((id) => ({ type: "reply", id })),
-  ];
-
-  let likeRows: Array<{
-    user_id: string;
-    target_type: string;
-    target_id: string;
-    created_at: string;
-  }> = [];
-  if (allTargets.length > 0) {
-    const allIds = allTargets.map((t) => t.id);
-    const { data } = await supabase
-      .from("likes")
-      .select("user_id, target_type, target_id, created_at")
-      .in("target_id", allIds)
-      .neq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(limit);
-    likeRows = (data ?? []) as typeof likeRows;
-  }
-
-  // 4. 自分宛の DM、相手の最新メッセージ
-  const { data: dmRows } = await supabase
-    .from("messages")
-    .select("id, sender_id, body, created_at")
-    .eq("receiver_id", userId)
+  // 1. 自分の投稿への返信
+  const { data: replyData } = await supabase
+    .from("topic_responses")
+    .select(
+      "id, topic_id, user_id, body, created_at, parent_response_id, is_operator, featured_at, featured_note",
+    )
+    .in("parent_response_id", mineIds)
+    .neq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(limit);
-  const dmList = (dmRows ?? []) as Array<{
-    id: string;
-    sender_id: string;
-    body: string;
+  const replies = ((replyData ?? []) as unknown) as ResponseRow[];
+
+  // 3. 自分の投稿へのリアクション
+  const { data: likeData } = await supabase
+    .from("likes")
+    .select("user_id, target_id, reaction_type, created_at")
+    .eq("target_type", "topic_response")
+    .in("target_id", mineIds)
+    .neq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  type LikeRow = {
+    user_id: string;
+    target_id: string;
+    reaction_type: ReactionType;
     created_at: string;
-  }>;
+  };
+  const likes = ((likeData ?? []) as unknown) as LikeRow[];
 
-  // 5. 関連ユーザー情報（プロフィール＋ AI フラグ）まとめ取り
-  const actorIds = new Set<string>();
-  for (const r of replyRows) actorIds.add(r.user_id);
-  for (const l of likeRows) actorIds.add(l.user_id);
-  for (const m of dmList) actorIds.add(m.sender_id);
+  const authors = await fetchAuthorInfo(
+    supabase,
+    replies.map((r) => r.user_id),
+  );
 
-  const profileMap = new Map<
-    string,
-    { nickname: string; avatar: string | null }
-  >();
-  const aiSet = new Set<string>();
-  if (actorIds.size > 0) {
-    const ids = Array.from(actorIds);
-    const [{ data: profs }, { data: meta }] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("user_id, nickname, avatar_url")
-        .in("user_id", ids),
-      supabase
-        .from("member_display")
-        .select("user_id, is_ai_persona")
-        .in("user_id", ids),
-    ]);
-    for (const p of profs ?? []) {
-      profileMap.set(p.user_id as string, {
-        nickname: p.nickname as string,
-        avatar: publicAvatarUrl(p.avatar_url as string | null),
-      });
-    }
-    for (const m of meta ?? []) {
-      if (m.is_ai_persona === true) aiSet.add(m.user_id as string);
-    }
-  }
-
-  const threadMap = new Map(myThreadList.map((t) => [t.id, t]));
-  const replyToThreadMap = new Map(myReplyList.map((r) => [r.id, r.thread_id]));
-
-  // 6. ノーマライズして 1 つの配列に
   const items: Notification[] = [];
 
-  for (const r of replyRows) {
-    const t = threadMap.get(r.thread_id);
-    if (!t) continue;
-    const actor = profileMap.get(r.user_id);
+  for (const r of replies) {
+    const parent = r.parent_response_id
+      ? mineById.get(r.parent_response_id)
+      : undefined;
     items.push({
-      kind: "reply_to_thread",
-      replyId: r.id,
-      threadId: r.thread_id,
-      threadTitle: t.title,
-      categorySlug: t.categories?.slug ?? "",
-      actorId: r.user_id,
-      actorName: actor?.nickname ?? "（匿名）",
-      actorAvatar: actor?.avatar ?? null,
-      actorIsAi: aiSet.has(r.user_id),
-      bodyExcerpt: r.body.replace(/\s+/g, " ").slice(0, 80),
+      kind: "reply",
+      id: `reply-${r.id}`,
       createdAt: r.created_at,
+      topicId: parent?.topic_id ?? r.topic_id,
+      responseId: r.id,
+      actorName: authors.get(r.user_id)?.nickname ?? "名無しの同級生",
+      actorAvatarUrl: authors.get(r.user_id)?.avatarUrl ?? null,
+      isOperator: r.is_operator === true,
+      excerpt: excerptOf(r.body),
     });
   }
 
-  for (const l of likeRows) {
-    const actor = profileMap.get(l.user_id);
-    if (l.target_type === "thread") {
-      const t = threadMap.get(l.target_id);
-      if (!t) continue;
-      items.push({
-        kind: "like_on_thread",
-        threadId: l.target_id,
-        threadTitle: t.title,
-        categorySlug: t.categories?.slug ?? "",
-        actorId: l.user_id,
-        actorName: actor?.nickname ?? "（匿名）",
-        actorAvatar: actor?.avatar ?? null,
-        actorIsAi: aiSet.has(l.user_id),
-        createdAt: l.created_at,
-      });
-    } else if (l.target_type === "reply") {
-      const tid = replyToThreadMap.get(l.target_id);
-      if (!tid) continue;
-      const t = threadMap.get(tid);
-      // 自分のスレッドの自分の返信、または他人スレッドの自分の返信、いずれか
-      let title = t?.title ?? "";
-      let slug = t?.categories?.slug ?? "";
-      if (!t) {
-        // 他人のスレッドにある自分の返信、その親スレッドを取得
-        const { data: parentThread } = await supabase
-          .from("threads")
-          .select("title, categories(slug)")
-          .eq("id", tid)
-          .maybeSingle();
-        const pt = parentThread as unknown as
-          | { title: string; categories: { slug: string } | null }
-          | null;
-        title = pt?.title ?? "";
-        slug = pt?.categories?.slug ?? "";
-      }
-      items.push({
-        kind: "like_on_reply",
-        replyId: l.target_id,
-        threadId: tid,
-        threadTitle: title,
-        categorySlug: slug,
-        actorId: l.user_id,
-        actorName: actor?.nickname ?? "（匿名）",
-        actorAvatar: actor?.avatar ?? null,
-        actorIsAi: aiSet.has(l.user_id),
-        createdAt: l.created_at,
-      });
-    }
-  }
-
-  for (const m of dmList) {
-    const peer = profileMap.get(m.sender_id);
+  for (const r of mine) {
+    if (!r.featured_at) continue;
     items.push({
-      kind: "dm_received",
-      messageId: m.id,
-      peerId: m.sender_id,
-      peerName: peer?.nickname ?? "（不明な方）",
-      peerAvatar: peer?.avatar ?? null,
-      peerIsAi: aiSet.has(m.sender_id),
-      bodyExcerpt: m.body.replace(/\s+/g, " ").slice(0, 80),
-      createdAt: m.created_at,
+      kind: "featured",
+      id: `featured-${r.id}`,
+      createdAt: r.featured_at,
+      topicId: r.topic_id,
+      responseId: r.id,
+      excerpt: excerptOf(r.body),
+      note: r.featured_note,
     });
   }
 
-  // 7. 新しい順にソートして上限カット
-  items.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
+  for (const l of likes) {
+    const target = mineById.get(l.target_id);
+    if (!target) continue;
+    items.push({
+      kind: "reaction",
+      id: `reaction-${l.target_id}-${l.user_id}-${l.reaction_type}`,
+      createdAt: l.created_at,
+      topicId: target.topic_id,
+      responseId: l.target_id,
+      reaction: l.reaction_type,
+      reactionLabel: REACTION_META[l.reaction_type]?.label ?? "リアクション",
+      excerpt: excerptOf(target.body),
+    });
+  }
+
+  items.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 
   return { items: items.slice(0, limit), lastSeenAt };
 }
 
-export function isUnread(item: Notification, lastSeenAt: string | null): boolean {
+export function isUnread(
+  item: Notification,
+  lastSeenAt: string | null,
+): boolean {
   if (!lastSeenAt) return true;
-  return new Date(item.createdAt).getTime() > new Date(lastSeenAt).getTime();
+  return item.createdAt > lastSeenAt;
 }
 
-// ヘッダーやタブバーに表示する未読数のみを軽量に算出する。
-// 全ての通知種別を厳密に集約するのは重いため、頻度の高い「自分宛 DM」と
-// 「自分のスレッドへの新着返信」だけを対象にカウント。
 export async function fetchUnreadNotificationsCount(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<number> {
-  const { data: u } = await supabase
-    .from("users")
-    .select("last_notifications_seen_at")
-    .eq("id", userId)
-    .maybeSingle();
-  const lastSeenAt =
-    (u?.last_notifications_seen_at as string | null | undefined) ?? null;
+  const { items, lastSeenAt } = await fetchNotifications(supabase, userId, {
+    limit: 100,
+  });
+  return items.filter((i) => isUnread(i, lastSeenAt)).length;
+}
 
-  const since = lastSeenAt ?? "1970-01-01T00:00:00.000Z";
-
-  const { data: myThreads } = await supabase
-    .from("threads")
-    .select("id")
-    .eq("user_id", userId);
-  const threadIds = (myThreads ?? []).map((t) => t.id as string);
-
-  const [{ count: dmCount }, { count: replyCount }] = await Promise.all([
-    supabase
-      .from("messages")
-      .select("id", { count: "exact", head: true })
-      .eq("receiver_id", userId)
-      .gt("created_at", since),
-    threadIds.length > 0
-      ? supabase
-          .from("replies")
-          .select("id", { count: "exact", head: true })
-          .in("thread_id", threadIds)
-          .neq("user_id", userId)
-          .gt("created_at", since)
-      : Promise.resolve({ count: 0 }),
-  ]);
-
-  return (dmCount ?? 0) + (replyCount ?? 0);
+function excerptOf(body: string, max = 60): string {
+  const flat = body.replace(/\s+/g, " ").trim();
+  return flat.length > max ? flat.slice(0, max) + "…" : flat;
 }

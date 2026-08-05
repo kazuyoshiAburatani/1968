@@ -1,94 +1,73 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { createReport } from "@/app/actions/report";
+import { useState } from "react";
+import { reportResponse } from "@/app/reports/actions";
 
-type Props = {
-  targetType: "thread" | "reply";
+// 違反報告ボタン。
+// 押した瞬間に通報されるのではなく、理由を選ばせてから送る。
+// 「荒れたら報告できる」と分かっていることが、慎重な人が読み書きを続ける前提になる。
+
+const REASONS = [
+  "宣伝・勧誘のように見える",
+  "恋愛や交際の相手探しに見える",
+  "政治・宗教・陰謀論の話題",
+  "人を傷つける書き方",
+  "個人情報が書かれている",
+  "その他",
+];
+
+export function ReportButton({
+  targetId,
+  returnPath,
+}: {
   targetId: string;
-};
-
-export function ReportButton({ targetType, targetId }: Props) {
-  const router = useRouter();
+  returnPath: string;
+}) {
   const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState("");
-  const [state, setState] = useState<"idle" | "sent" | "error">("idle");
-  const [pending, startTransition] = useTransition();
-
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!reason.trim()) return;
-
-    startTransition(async () => {
-      const result = await createReport({ targetType, targetId, reason });
-      if (!result.ok) {
-        if (result.reason === "auth") {
-          router.push("/login");
-          return;
-        }
-        setState("error");
-        return;
-      }
-      setState("sent");
-      setReason("");
-      setTimeout(() => setOpen(false), 1200);
-    });
-  }
 
   if (!open) {
     return (
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-xs text-foreground/50 hover:text-foreground/80 underline"
+        className="text-xs text-foreground/40 hover:text-foreground/70"
       >
-        通報
+        報告する
       </button>
     );
   }
 
   return (
-    <div className="mt-3 rounded border border-border bg-muted/40 p-3">
-      {state === "sent" ? (
-        <p className="text-sm">通報を受け付けました。ご協力ありがとうございます。</p>
-      ) : (
-        <form onSubmit={onSubmit}>
-          <p className="text-sm font-medium">通報理由</p>
-          <textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            maxLength={500}
-            rows={3}
-            placeholder="具体的な内容をご記入ください（500文字以内）"
-            className="mt-2 w-full px-3 py-2 text-sm rounded border border-border bg-background"
-            required
-          />
-          {state === "error" && (
-            <p className="mt-2 text-sm text-red-800">送信に失敗しました。もう一度お試しください。</p>
-          )}
-          <div className="mt-2 flex gap-2">
-            <button
-              type="submit"
-              disabled={pending || !reason.trim()}
-              className="min-h-[var(--spacing-tap)] px-4 rounded-full bg-primary text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
-            >
-              送信
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                setState("idle");
-                setReason("");
-              }}
-              className="min-h-[var(--spacing-tap)] px-4 rounded-full border border-border text-sm"
-            >
-              キャンセル
-            </button>
-          </div>
-        </form>
-      )}
-    </div>
+    <form
+      action={reportResponse}
+      className="mt-2 rounded-xl border border-border bg-muted/40 p-3"
+    >
+      <input type="hidden" name="target_id" value={targetId} />
+      <input type="hidden" name="return_path" value={returnPath} />
+      <p className="text-xs font-bold">気になる点を選んでください</p>
+      <div className="mt-2 space-y-1.5">
+        {REASONS.map((r) => (
+          <label key={r} className="flex items-center gap-2 text-sm">
+            <input type="radio" name="reason" value={r} required className="size-4" />
+            <span>{r}</span>
+          </label>
+        ))}
+      </div>
+      <div className="mt-3 flex gap-2">
+        <button
+          type="submit"
+          className="min-h-[36px] px-4 rounded-full bg-notification text-white text-sm font-medium"
+        >
+          運営に知らせる
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="min-h-[36px] px-4 rounded-full border border-border text-sm"
+        >
+          やめる
+        </button>
+      </div>
+    </form>
   );
 }
