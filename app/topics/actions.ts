@@ -98,23 +98,32 @@ export async function postTopicResponse(formData: FormData) {
 // -------------------------------------------------
 // 2. リアクション
 // -------------------------------------------------
+// 速度について。
+// 以前は <form action={...}> ＋ revalidatePath ＋ redirect で組んでいたため、
+// スタンプを 1 つ押すたびにホーム全体が再描画され、数秒待たされていた。
+// リアクションは「文章を書く気力が残っていない人の唯一の参加手段」なので、
+// ここが重いと、その人たちの参加が丸ごと失われる。
+//
+// いまは表示をクライアント側で即座に切り替え、この Action は保存だけを担う。
+// redirect も revalidatePath もしない（ページは毎回動的に描画されるので不要）。
+export type ReactionResult =
+  | { ok: true }
+  | { ok: false; needsJoin?: boolean; message?: string };
+
 const ToggleReactionSchema = z.object({
-  target_id: z.string().uuid(),
-  reaction_type: z
+  targetId: z.string().uuid(),
+  reactionType: z
     .string()
     .refine(isValidReactionType, "リアクション種別が不正です"),
-  return_path: z.string().default("/"),
 });
 
-export async function toggleReaction(formData: FormData) {
-  const parsed = ToggleReactionSchema.safeParse({
-    target_id: formData.get("target_id"),
-    reaction_type: formData.get("reaction_type"),
-    return_path: formData.get("return_path") ?? "/",
-  });
-
+export async function toggleReaction(
+  targetId: string,
+  reactionType: string,
+): Promise<ReactionResult> {
+  const parsed = ToggleReactionSchema.safeParse({ targetId, reactionType });
   if (!parsed.success) {
-    redirect(`/?error=${encodeURIComponent("リアクションに失敗しました")}`);
+    return { ok: false, message: "リアクションできませんでした" };
   }
 
   const supabase = await createSupabaseServerClient();
@@ -125,46 +134,49 @@ export async function toggleReaction(formData: FormData) {
   // リアクションだけは未登録でも押したい気持ちが強いが、
   // 誰が押したかを 1 人 1 回に保つには席が要る。席づくりは 30 秒で終わる。
   if (!user) {
-    redirect("/join");
+    return { ok: false, needsJoin: true };
   }
 
   const { data: existing } = await supabase
     .from("likes")
     .select("reaction_type")
     .eq("target_type", "topic_response")
-    .eq("target_id", parsed.data.target_id)
+    .eq("target_id", parsed.data.targetId)
     .eq("user_id", user.id)
     .maybeSingle();
 
   const currentType =
     (existing?.reaction_type as ReactionType | undefined) ?? null;
 
-  if (currentType === parsed.data.reaction_type) {
+  if (currentType === parsed.data.reactionType) {
     await supabase
       .from("likes")
       .delete()
       .eq("target_type", "topic_response")
-      .eq("target_id", parsed.data.target_id)
+      .eq("target_id", parsed.data.targetId)
       .eq("user_id", user.id);
   } else if (currentType) {
     const sbAdmin = getSupabaseAdminClient();
     await sbAdmin
       .from("likes")
-      .update({ reaction_type: parsed.data.reaction_type })
+      .update({ reaction_type: parsed.data.reactionType })
       .eq("target_type", "topic_response")
-      .eq("target_id", parsed.data.target_id)
+      .eq("target_id", parsed.data.targetId)
       .eq("user_id", user.id);
   } else {
-    await supabase.from("likes").insert({
+    const { error } = await supabase.from("likes").insert({
       user_id: user.id,
       target_type: "topic_response",
-      target_id: parsed.data.target_id,
-      reaction_type: parsed.data.reaction_type,
+      target_id: parsed.data.targetId,
+      reaction_type: parsed.data.reactionType,
     });
+    if (error) {
+      console.error("[topics/toggleReaction]", error.message);
+      return { ok: false, message: "リアクションできませんでした" };
+    }
   }
 
-  revalidatePath(parsed.data.return_path);
-  redirect(parsed.data.return_path);
+  return { ok: true };
 }
 
 // -------------------------------------------------

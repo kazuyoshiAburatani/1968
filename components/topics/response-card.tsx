@@ -3,6 +3,7 @@ import { MembershipBadge } from "@/components/membership-badge";
 import { RichText } from "@/components/rich-text";
 import { ReactionRow } from "./reaction-row";
 import { postTopicResponse, deleteOwnResponse } from "@/app/topics/actions";
+import { SubmitButton } from "@/components/submit-button";
 import type { ReactionType } from "@/lib/reactions";
 
 // お題への回答カード。
@@ -187,12 +188,13 @@ export function ResponseCard({
           placeholder={`${nickname}さんに一言`}
           className="flex-1 min-h-[var(--spacing-tap)] rounded-lg border border-border bg-page px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
-        <button
-          type="submit"
-          className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-5 rounded-full border border-border text-sm font-medium hover:bg-muted"
+        <SubmitButton
+          variant="outline"
+          pendingText="送信中"
+          className="min-h-[var(--spacing-tap)] px-5 text-sm"
         >
           {loggedIn ? "返す" : "返してみる"}
-        </button>
+        </SubmitButton>
       </form>
     </article>
   );

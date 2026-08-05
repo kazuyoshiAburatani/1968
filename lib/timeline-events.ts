@@ -4,7 +4,6 @@ import {
   milestonesFor,
   schoolYearOfBirth,
   parseCivilDate,
-  todayInTokyo,
   nendoOfDate,
 } from "@/lib/school-year";
 
@@ -31,39 +30,28 @@ export type PersonalEvent = {
   milestone: boolean;
 };
 
-/** 今日（日本時間）と同じ月日の出来事。 */
+/**
+ * 今日（日本時間）と同じ月日の出来事。
+ *
+ * 以前はアプリ側で全 120 件を取ってから絞り込んでいたが、
+ * ホームを開くたびに毎回 120 行が流れてくるのは無駄なので、
+ * 絞り込みはデータベース側の today_events に寄せてある。
+ * 同じ月日が無い日は、同じ月の出来事で補う（毎日ひとつは必ず出す）。
+ */
 export async function loadTodayEvents(
   supabase: SupabaseClient,
   limit = 3,
 ): Promise<TimelineEvent[]> {
-  const today = todayInTokyo();
-  const month = today.getUTCMonth() + 1;
-  const day = today.getUTCDate();
-
-  // 式インデックスを効かせるため、月日だけで絞る RPC ではなく範囲条件を並べる。
-  // 件数が 120 件程度なので、全件取ってアプリ側で絞っても実害はない。
-  const { data } = await supabase
-    .from("timeline_events")
-    .select("id, event_date, title, note, genre, gender_lean")
-    .eq("is_active", true);
-
-  const all = ((data ?? []) as unknown) as TimelineEvent[];
-  const sameDay = all.filter((e) => {
-    const d = parseCivilDate(e.event_date);
-    return d.getUTCMonth() + 1 === month && d.getUTCDate() === day;
+  const { data, error } = await supabase.rpc("today_events", {
+    p_limit: limit,
   });
 
-  if (sameDay.length > 0) return sameDay.slice(0, limit);
+  if (error) {
+    console.error("[timeline/today]", error.message);
+    return [];
+  }
 
-  // ぴったり同じ日が無い日も多いので、同じ月の出来事で代替する。
-  // 毎日ひとつは必ず何かが出る状態にしておかないと、日課にならない。
-  const sameMonth = all.filter((e) => {
-    const d = parseCivilDate(e.event_date);
-    return d.getUTCMonth() + 1 === month;
-  });
-  return sameMonth
-    .sort((a, b) => (a.event_date < b.event_date ? -1 : 1))
-    .slice(0, limit);
+  return ((data ?? []) as unknown) as TimelineEvent[];
 }
 
 /**
