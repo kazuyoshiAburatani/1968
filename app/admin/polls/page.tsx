@@ -244,7 +244,7 @@ function PollForm({ initial }: { initial?: Poll }) {
 
       <div>
         <label htmlFor="blurb" className="block text-sm font-bold mb-1">
-          投票後の一言（当時の背景）
+          解説（投票前に表示されます）
         </label>
         <textarea
           id="blurb"
@@ -255,6 +255,10 @@ function PollForm({ initial }: { initial?: Poll }) {
           placeholder="ひょうきん族が始まったのは1981年、ちょうど中1の年。土曜夜のチャンネル権争いが家庭で勃発した。"
           className="w-full px-3 py-2 rounded border border-border bg-background"
         />
+        <p className="mt-1 text-xs leading-6 text-foreground/60">
+          設問のすぐ下、選択肢の上に出ます。当時の背景を先に読んでもらうと記憶が戻りやすくなります。
+          ただし<strong>どちらが多数派かを匂わせる書き方はしないでください</strong>。選ぶ前に読まれるので、回答が歪みます。
+        </p>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-3">

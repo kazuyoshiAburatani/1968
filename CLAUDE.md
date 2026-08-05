@@ -176,7 +176,12 @@ admin_edited_at / admin_edited_by
 polls、id / question / option_a / option_b / blurb / era / gender_lean /
 published_at / expires_at / is_active / sort_index
 
-poll_votes、poll_id / voter_key / user_id / choice / comment
+poll_votes、poll_id / voter_key / user_id / choice（'a' | 'b' | **'other'**）/ comment
+
+「その他」は「どちらも選べない」人の受け皿。見ていなかった、地域に無かった、
+買ってもらえなかった、という人は必ずいて、選べないまま素通りされると
+そこで参加が止まる。A・B と同格には並べず、下に控えめに置く。
+「その他」を選んだ人には、コメント欄で「では何だったか」を聞く。
 
 voter_key は httpOnly クッキーでサーバが発行する。
 **poll_votes への書き込みポリシーは意図的に作っていない。**
@@ -315,6 +320,9 @@ admins / reports / audit_logs / beta_applications（創設メンバー招待に�
 - 投稿直後・投票直後に会員登録のモーダルを被せる（「結局これが目的か」と信頼が崩れる）
 - 書いた文章を捨てて登録画面へ飛ばす（二度と書いてもらえない）
 - 投票前に得票率を見せる（素直な回答が歪む）
+- 投票**後**に解説を出す。結果と一言入力欄のあいだに挟まって入力欄が埋もれる。
+  解説（polls.blurb）は投票**前**、設問のすぐ下に置く。
+  そのぶん、解説にどちらが多数派かを匂わせる書き方はしない
 - 「0件」を目立つ位置に出す
 
 ### トーン＆マナー

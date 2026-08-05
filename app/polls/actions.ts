@@ -17,7 +17,8 @@ import { getOrCreateVoterKey } from "@/lib/voter-key";
 
 const VoteSchema = z.object({
   poll_id: z.string().uuid(),
-  choice: z.enum(["a", "b"]),
+  // "other" は「どちらも選べない」人の受け皿
+  choice: z.enum(["a", "b", "other"]),
   return_path: z.string().default("/"),
 });
 

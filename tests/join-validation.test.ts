@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { JoinSchema, checkBirthday } from "@/lib/validation/profile";
-import { percent } from "@/lib/polls";
+import { percent, choiceLabel, type PollRow } from "@/lib/polls";
 
 // 30 秒登録の入力検証。
 // 必須はニックネームと生年月日の 2 つだけで、それ以外を増やさないこと自体が施策。
@@ -85,5 +85,34 @@ describe("percent", () => {
 
   it("総数0でも落ちない", () => {
     expect(percent(0, 0)).toBe(0);
+  });
+
+  it("その他を含めても合計が100%前後に収まる", () => {
+    const total = 10;
+    const sum =
+      percent(5, total) + percent(3, total) + percent(2, total);
+    expect(sum).toBe(100);
+  });
+});
+
+describe("choiceLabel", () => {
+  const poll = {
+    id: "x",
+    question: "土曜8時、どっち派だった？",
+    option_a: "8時だョ!全員集合",
+    option_b: "オレたちひょうきん族",
+    blurb: "",
+    era: "中学",
+    gender_lean: "both",
+    published_at: "2026-08-01T00:00:00Z",
+  } satisfies PollRow;
+
+  it("A・Bは設問の選択肢をそのまま返す", () => {
+    expect(choiceLabel(poll, "a")).toBe("8時だョ!全員集合");
+    expect(choiceLabel(poll, "b")).toBe("オレたちひょうきん族");
+  });
+
+  it("どちらも選べなかった人には「その他」を返す", () => {
+    expect(choiceLabel(poll, "other")).toBe("その他");
   });
 });

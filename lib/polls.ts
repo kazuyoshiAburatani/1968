@@ -2,6 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 // 二択投票の読み出し。ホームとお題ページの両方から使う。
 
+/** 'other' は「どちらも選べない」人の受け皿。 */
+export type PollChoice = "a" | "b" | "other";
+
 export type PollRow = {
   id: string;
   question: string;
@@ -13,14 +16,21 @@ export type PollRow = {
   published_at: string;
 };
 
+export type PollComment = {
+  choice: PollChoice;
+  comment: string;
+  created_at: string;
+};
+
 export type PollWithResult = PollRow & {
   countA: number;
   countB: number;
+  countOther: number;
   total: number;
-  /** 自分がどちらに入れたか。未投票なら null */
-  myChoice: "a" | "b" | null;
+  /** 自分がどれに入れたか。未投票なら null */
+  myChoice: PollChoice | null;
   /** 投票に添えられた一言、新しい順 */
-  comments: { choice: "a" | "b"; comment: string; created_at: string }[];
+  comments: PollComment[];
 };
 
 /**
@@ -58,7 +68,7 @@ export async function loadPolls(
   type VoteRow = {
     poll_id: string;
     voter_key: string;
-    choice: "a" | "b";
+    choice: PollChoice;
     comment: string | null;
     created_at: string;
   };
@@ -68,6 +78,7 @@ export async function loadPolls(
     const mine = votes.filter((v) => v.poll_id === p.id);
     const countA = mine.filter((v) => v.choice === "a").length;
     const countB = mine.filter((v) => v.choice === "b").length;
+    const countOther = mine.filter((v) => v.choice === "other").length;
     const myVote = opts.voterKey
       ? mine.find((v) => v.voter_key === opts.voterKey)
       : undefined;
@@ -85,7 +96,8 @@ export async function loadPolls(
       ...p,
       countA,
       countB,
-      total: countA + countB,
+      countOther,
+      total: countA + countB + countOther,
       myChoice: myVote?.choice ?? null,
       comments,
     };
@@ -96,4 +108,11 @@ export async function loadPolls(
 export function percent(count: number, total: number): number {
   if (total <= 0) return 0;
   return Math.round((count / total) * 100);
+}
+
+/** 選択肢の表示名。 */
+export function choiceLabel(poll: PollRow, choice: PollChoice): string {
+  if (choice === "a") return poll.option_a;
+  if (choice === "b") return poll.option_b;
+  return "その他";
 }
