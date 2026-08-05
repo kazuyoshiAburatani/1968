@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getCurrentRank } from "@/lib/auth/current-rank";
 import { UserAvatar } from "@/components/user-avatar";
 import { publicAvatarUrl } from "@/lib/avatar";
@@ -22,7 +23,10 @@ export default async function UserProfilePage({
   const supabase = await createSupabaseServerClient();
   const { rank, userId: viewerId } = await getCurrentRank(supabase);
 
-  const { data: profile } = await supabase
+  // 他人の詳細プロフィールはクライアント権限では読めない（RLS で自分の行だけに限定済み）。
+  // ここでサーバ権限で取り出し、公開範囲の判定はこの下で必ず行う。
+  const admin = getSupabaseAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select(
       "nickname, birth_year, birth_month, birth_day, gender, prefecture, hometown, school, occupation, introduction, bio_visible, avatar_url",
@@ -46,7 +50,7 @@ export default async function UserProfilePage({
   }
 
   // DM は撤去したので、ここで見るのは表示用のフラグだけ。
-  const { data: peerInfo } = await supabase
+  const { data: peerInfo } = await admin
     .from("member_display")
     .select("user_id, is_ai_persona, is_founding_member")
     .eq("user_id", id)

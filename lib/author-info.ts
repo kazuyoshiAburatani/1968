@@ -21,9 +21,11 @@ export async function fetchAuthorInfo(
   const map = new Map<string, AuthorInfo>();
   if (uniqueIds.length === 0) return map;
 
+  // profiles 本体は自分の行しか読めない。
+  // 他人の表示情報は、列を絞った公開ビュー profiles_public から取る。
   const [profileRes, displayRes] = await Promise.all([
     supabase
-      .from("profiles")
+      .from("profiles_public")
       .select("user_id, nickname, prefecture, avatar_url, school_year")
       .in("user_id", uniqueIds),
     supabase
