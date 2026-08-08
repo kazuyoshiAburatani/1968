@@ -2,6 +2,7 @@ import { postTopicResponse } from "@/app/topics/actions";
 import { UserAvatar } from "@/components/user-avatar";
 import { publicAvatarUrl } from "@/lib/avatar";
 import { SubmitButton } from "@/components/submit-button";
+import { PhotoPicker } from "@/components/photo-picker";
 
 // お題への回答入力欄。
 //
@@ -11,6 +12,9 @@ import { SubmitButton } from "@/components/submit-button";
 //  ・穴埋め形式のときは、回答例をプレースホルダに出す。具体例があるほど筆が動く
 //  ・「あとから消せます」を明記する。慎重な人が最初の一歩を出す条件だった
 //  ・「長く書かなくていい」と添える。1 行で終わってよいと分かると書き出しやすい
+//  ・写真は 1 枚だけ添えられる。ただし席がある人に限る。文章はゲストのまま書ける
+//    ので、最初の一歩の軽さは変わらない。写真だけ席を求めるのは、
+//    荒らされたときに辿れないと運営がひとりの場では対処しきれないため
 
 type Props = {
   topicId: string;
@@ -73,6 +77,14 @@ export function ResponseComposer({
               {examples.slice(0, 3).join("／")}
             </p>
           )}
+
+          <PhotoPicker
+            name="photo"
+            enabled={!guest}
+            joinHref={`/join?next=${encodeURIComponent(returnPath)}`}
+            label="写真を添える"
+            className="mt-2.5"
+          />
 
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs leading-6 text-foreground/60">

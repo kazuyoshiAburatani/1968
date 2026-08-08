@@ -54,7 +54,13 @@ GitHubリポジトリ、https://github.com/kazuyoshiAburatani/1968.git
 | 企画記事「あの店・あの商品、今どうなってる？」（stories） | 唯一、自発的な長文と会員同士の返信が出た | 7.2 / 6.7 |
 | 30秒の匿名登録（/join） | 上記すべての点火装置 | 7.5 / 5.8 |
 
-写真投稿（案G）は初回 4.7 で不合格。常連が 10 人育った第 2 フェーズで再検討する。
+写真投稿（案G）は初回 4.7 で不合格だったが、2026-08-08 に運営判断で導入した。
+不合格の理由は「写真を撮って上げるまでの手間が、最初の一歩には重すぎる」ことであって、
+写真そのものが要らないという結果ではない。そこで**写真を最初の一歩にはしない**形で入れてある。
+
+- 二択の選択肢に写真を出す（運営が入れる）。読む側の手間はゼロで、字より速く思い出せる
+- 一言と回答に写真を 1 枚添えられる（**席がある人だけ**）。文章はゲストのまま書ける
+- 写真は無くても成立する。写真の入っていないお題は、これまでと寸分同じ見た目で出る
 
 ## 事業要件
 
@@ -176,7 +182,11 @@ admin_edited_at / admin_edited_by
 polls、id / question / option_a / option_b / blurb / era / gender_lean /
 published_at / expires_at / is_active / sort_index
 
-poll_votes、poll_id / voter_key / user_id / choice（'a' | 'b' | **'other'**）/ comment
+polls には **option_a_image / option_b_image**（poll-media バケット内のパス）がある。
+**両方 null か、両方入っているかのどちらか**で、DB 制約 `polls_option_images_paired` が守る。
+片方だけだと、写真のあるほうが目に入って選ばれやすく、集計が意味を持たなくなる。
+
+poll_votes、poll_id / voter_key / user_id / choice（'a' | 'b' | **'other'**）/ comment / **image_path**
 
 「その他」は「どちらも選べない」人の受け皿。見ていなかった、地域に無かった、
 買ってもらえなかった、という人は必ずいて、選べないまま素通りされると
@@ -186,6 +196,12 @@ poll_votes、poll_id / voter_key / user_id / choice（'a' | 'b' | **'other'**）
 voter_key は httpOnly クッキーでサーバが発行する。
 **poll_votes への書き込みポリシーは意図的に作っていない。**
 投票は Server Action の service_role 経由のみ。anon に直接 insert を許すと票の水増しが容易になる。
+
+**poll_votes は読み取りも閉じてある。** 表示に使うのは `poll_votes_public` ビュー
+（poll_id / choice / comment / image_path / created_at のみ）。
+以前は表を直接読めたため voter_key が誰にでも見え、他人の識別子をクッキーに入れれば
+その人の票と一言を上書きできた。「自分がどれに入れたか」は service_role で照合する
+（`lib/polls-server.ts`）。
 
 ### quiz_questions / quiz_attempts（検定）
 question / choices / answer_index / explanation / era / gender_lean。
@@ -232,6 +248,7 @@ admins / reports / audit_logs / beta_applications（創設メンバー招待に�
 - `/admin/topics` お題の配信
 - `/admin/polls` 二択の配信
 - `/admin/letters` お便り紹介
+- `/admin/media` 写真の見張り（写真つき投稿を新しい順に並べ、写真だけ外せる）
 - `/admin/reports` 違反報告
 - `/admin/users` 会員管理
 - `/admin/applications` 創設メンバー招待
@@ -243,8 +260,12 @@ admins / reports / audit_logs / beta_applications（創設メンバー招待に�
    返信は相手が書いた固有名詞を必ず拾い、こちらの記憶を返す。
    「素敵な思い出ですね！」は一発でテンプレと見抜かれ、逆効果になる。
 2. **お題と二択を 4 週間先まで仕込む。** 途切れた週があるだけで習慣が切れる。
-3. **男女ネタを交互に出す。** 男性寄りが続くと女性の参加がまとめて止まる。
-   管理画面が偏りを警告する。
+3. **立ち上げ期は男性寄りを多めに出す（2 : 1 が目安）。**
+   検証で出ていた原則は「男女交互」で、男性寄りが続くと女性の参加がまとめて止まる。
+   ただし最初に入ってくるのは運営の同級生・知人で、その顔ぶれは男性に寄っている。
+   実際にいる人に向けた話題を出さないと、誰も答えないまま画面だけが埋まる。
+   **女性向けをゼロにはしない。** 管理画面は、この先 6 件に女性寄りがひとつも無いときだけ警告する。
+   女性の会員が増えたら `20260805005000_male_leaning_schedule.sql` の重み 1.5 を 3.0 に戻せば半々に復帰する。
 4. **お便り紹介は週 1〜3 件、書き手が入れ替わるように選ぶ。**
    同じ人ばかり載せると「常連の場」と見なされて他の人が書かなくなる。
 5. **「回答 0 件」を人目に晒さない。** 立ち上げ期は種火メンバー（同級生・知人 30 名、
@@ -262,9 +283,21 @@ admins / reports / audit_logs / beta_applications（創設メンバー招待に�
 - HTTPS必須、TLS1.3、HSTS有効化
 - 全データは日次自動バックアップ（Supabase Pro）
 
-### 画像を扱う場合の注意（未実装、写真投稿を入れるときに必須）
-- 投稿画像の EXIF・GPS を投稿時に除去し、その旨を画面に明記する。
+### 画像の扱い（2026-08-08 実装済み。緩めないこと）
+
+- **EXIF・GPS は保存時に必ず消す。** `lib/image-upload.ts` が sharp で焼き直しており、
+  sharp は `withMetadata()` を呼ばない限りメタデータを引き継がないので、この一手で落ちる。
+  画面にも「撮影場所の記録は消してから載せます」と明記する。
   慎重な層はこの記載の有無を見て投稿するかどうかを決める
+- **ブラウザからストレージへ直接書き込む口は無い。** 4 バケットすべて INSERT ポリシーを
+  持たないか `has_seat()` 必須。投稿はすべて Server Action の service_role を通る
+- **`has_seat()` が会員判定の唯一の基準。** 登録が匿名サインインなので、
+  `auth.uid() IS NOT NULL` も `is_anonymous` も「サイトを開いた人なら誰でも」と同義になる。
+  会員かどうかは **profiles に行があるか**でしか判定できない
+- 受け取りは画像のみ（jpeg / png / webp / heic）、12MB まで。保存時に長辺 1600px の JPEG へ焼き直す
+- 先頭バイトで画像であることを確かめ、さらに sharp に実際にデコードさせる。
+  拡張子と Content-Type は送る側が自由に名乗れるので当てにしない
+- 投稿を消したら Storage の実体も消す。行だけ消すと、URL を知っている人には見え続ける
 
 ### 攻撃対策
 - Cloudflare WAF（DNS 移管後）

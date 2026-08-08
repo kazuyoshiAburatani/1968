@@ -101,6 +101,8 @@ describe("choiceLabel", () => {
     question: "土曜8時、どっち派だった？",
     option_a: "8時だョ!全員集合",
     option_b: "オレたちひょうきん族",
+    option_a_image: null,
+    option_b_image: null,
     blurb: "",
     era: "中学",
     gender_lean: "both",

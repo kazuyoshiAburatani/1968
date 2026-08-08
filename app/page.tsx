@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { loadPolls } from "@/lib/polls";
+import { loadPolls } from "@/lib/polls-server";
 import { peekVoterKey } from "@/lib/voter-key";
 import { PollCard } from "@/components/polls/poll-card";
 import { TopicFeedSection } from "@/components/home/topic-feed-section";
@@ -88,6 +88,7 @@ export default async function HomePage({ searchParams }: Props) {
               key={p.id}
               poll={p}
               eyebrow={i === 0 ? "今週の二択" : "もうひとつの二択"}
+              canAttachPhoto={user !== null}
             />
           ))}
         </div>

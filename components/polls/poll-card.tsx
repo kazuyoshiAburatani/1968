@@ -1,9 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import Image from "next/image";
+import { useRef, useState, useTransition } from "react";
 import { votePoll, commentOnPoll } from "@/app/polls/actions";
+import { PhotoPicker } from "@/components/photo-picker";
+import { PhotoView } from "@/components/photo-view";
+import { pollImageUrl, postImageUrl } from "@/lib/media";
 import {
   choiceLabel,
+  hasOptionImages,
   percent,
   type PollChoice,
   type PollComment,
@@ -33,22 +38,40 @@ import {
 //
 // 解説（blurb）は投票前、設問のすぐ下に出す。
 // 投票後に出していた頃は、結果と一言入力欄のあいだに挟まって入力欄が埋もれていた。
+//
+// 写真について。
+// 選択肢に写真があるときは、写真を主役にして、その下に名前を置く。
+// 「りぼん」「なかよし」と字で並んでいるより、表紙が二枚並んでいるほうが速い。
+// 記憶を引き出すのに言葉を介さずに済むので、考える前に指が動く。
+// 写真が入っていないお題は今までどおり字だけで出す。写真の有無で作りを変えるが、
+// 押せる場所の大きさと並び方は変えない。
 
 type Props = {
   poll: PollWithResult;
   /** 見出しの上に出す小さなラベル */
   eyebrow?: string;
+  /** 席がある人か。写真を添えられるのはこの人だけ */
+  canAttachPhoto?: boolean;
 };
 
-export function PollCard({ poll, eyebrow = "今週の二択" }: Props) {
+export function PollCard({
+  poll,
+  eyebrow = "今週の二択",
+  canAttachPhoto = false,
+}: Props) {
+  const formRef = useRef<HTMLFormElement>(null);
+
   // サーバから渡った投票状況を初期値にして、以降はこの状態で描画する
   const [choice, setChoice] = useState<PollChoice | null>(poll.myChoice);
   const [comments, setComments] = useState<PollComment[]>(poll.comments);
   const [draft, setDraft] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
   const [, startTransition] = useTransition();
 
   const voted = choice !== null;
+  const withImages = hasOptionImages(poll);
   // 自分の 1 票を足した数。サーバの返事を待たずに出す
   const justVoted = poll.myChoice === null && choice !== null;
   const bump = (c: PollChoice) => (justVoted && choice === c ? 1 : 0);
@@ -70,28 +93,66 @@ export function PollCard({ poll, eyebrow = "今週の二択" }: Props) {
     });
   }
 
-  function submitComment(e: React.FormEvent<HTMLFormElement>) {
+  // 一言の送信。
+  // 文章だけのときは、これまでどおり押した瞬間に出す（送信は裏で走らせる）。
+  // 写真があるときは、送り終わるまで待つ。手元のファイルを先に出すことはできるが、
+  // 「出たのに保存に失敗して消える」がいちばん困るので、写真のときだけ待つ。
+  async function submitComment(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const text = draft.trim();
-    if (!text || !choice) return;
+    if (!choice) return;
+    if (!text && !photo) return;
+    if (sending) return;
 
-    const optimistic: PollComment = {
-      choice,
-      comment: text,
-      created_at: "",
-    };
-    setComments((prev) => [optimistic, ...prev]);
-    setDraft("");
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    fd.set("poll_id", poll.id);
+    fd.set("comment", text);
+
+    if (!photo) {
+      // これまでどおりの即時表示。写真が無いなら待つ理由がない
+      const optimistic: PollComment = {
+        choice,
+        comment: text,
+        image_path: null,
+        created_at: "",
+      };
+      setComments((prev) => [optimistic, ...prev]);
+      setDraft("");
+      setError(null);
+      startTransition(async () => {
+        const res = await commentOnPoll(fd);
+        if (!res.ok) {
+          setComments((prev) => prev.filter((c) => c !== optimistic));
+          setDraft(text); // 書いた文章は捨てない
+          setError(res.message);
+        }
+      });
+      return;
+    }
+
+    setSending(true);
     setError(null);
+    const res = await commentOnPoll(fd);
+    setSending(false);
 
-    startTransition(async () => {
-      const res = await commentOnPoll(poll.id, text);
-      if (!res.ok) {
-        setComments((prev) => prev.filter((c) => c !== optimistic));
-        setDraft(text); // 書いた文章は捨てない
-        setError(res.message);
-      }
-    });
+    if (!res.ok) {
+      setError(res.message);
+      return;
+    }
+
+    setComments((prev) => [
+      {
+        choice,
+        comment: text,
+        image_path: res.imagePath ?? null,
+        created_at: "",
+      },
+      ...prev,
+    ]);
+    setDraft("");
+    setPhoto(null);
+    formRef.current?.reset();
   }
 
   return (
@@ -125,9 +186,19 @@ export function PollCard({ poll, eyebrow = "今週の二択" }: Props) {
             </p>
           )}
 
+          {/* 写真があるときも無いときも、押せる場所の並びは同じ。
+              スマートフォンでは縦に積み、横並びにできる幅があれば 2 つ並べる。 */}
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <ChoiceButton label={poll.option_a} onClick={() => vote("a")} />
-            <ChoiceButton label={poll.option_b} onClick={() => vote("b")} />
+            <ChoiceButton
+              label={poll.option_a}
+              imageUrl={withImages ? pollImageUrl(poll.option_a_image) : null}
+              onClick={() => vote("a")}
+            />
+            <ChoiceButton
+              label={poll.option_b}
+              imageUrl={withImages ? pollImageUrl(poll.option_b_image) : null}
+              onClick={() => vote("b")}
+            />
           </div>
 
           {/* どちらも選べない人の受け皿。A・B より控えめに置く */}
@@ -148,12 +219,14 @@ export function PollCard({ poll, eyebrow = "今週の二択" }: Props) {
           <div className="mt-4 space-y-3">
             <ResultBar
               label={poll.option_a}
+              imageUrl={withImages ? pollImageUrl(poll.option_a_image) : null}
               pct={percent(countA, total)}
               count={countA}
               mine={choice === "a"}
             />
             <ResultBar
               label={poll.option_b}
+              imageUrl={withImages ? pollImageUrl(poll.option_b_image) : null}
               pct={percent(countB, total)}
               count={countB}
               mine={choice === "b"}
@@ -161,6 +234,7 @@ export function PollCard({ poll, eyebrow = "今週の二択" }: Props) {
             {(countOther > 0 || choice === "other") && (
               <ResultBar
                 label="どちらでもない・覚えていない"
+                imageUrl={null}
                 pct={percent(countOther, total)}
                 count={countOther}
                 mine={choice === "other"}
@@ -178,54 +252,74 @@ export function PollCard({ poll, eyebrow = "今週の二択" }: Props) {
           </p>
 
           {/* 一言コメント、任意。1タップの参加から会話への橋渡し */}
-          <form
-            onSubmit={submitComment}
-            className="mt-4 flex flex-col sm:flex-row gap-2"
-          >
-            <input
-              type="text"
-              name="comment"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              maxLength={200}
-              placeholder={
-                choice === "other"
-                  ? "よければ、あなたの場合は何だったか教えてください"
-                  : "ひとことどうぞ（書かなくても大丈夫です）"
-              }
-              className="flex-1 min-h-[var(--spacing-tap)] rounded-lg border border-border bg-background px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary/40"
+          <form ref={formRef} onSubmit={submitComment} className="mt-4">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                name="comment"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                maxLength={200}
+                placeholder={
+                  choice === "other"
+                    ? "よければ、あなたの場合は何だったか教えてください"
+                    : "ひとことどうぞ（書かなくても大丈夫です）"
+                }
+                className="flex-1 min-h-[var(--spacing-tap)] rounded-lg border border-border bg-background px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+              <button
+                type="submit"
+                disabled={(draft.trim().length === 0 && !photo) || sending}
+                className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-5 rounded-full border-2 border-primary text-primary font-medium hover:bg-primary hover:text-white active:bg-primary active:text-white transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-primary"
+              >
+                {sending ? "送っています" : "添える"}
+              </button>
+            </div>
+
+            {/* 写真は席がある人だけ。ゲストが押したら席づくりへ案内する */}
+            <PhotoPicker
+              name="photo"
+              enabled={canAttachPhoto}
+              disabled={sending}
+              onChange={setPhoto}
+              joinHref={`/join?next=${encodeURIComponent(`/#poll-${poll.id}`)}`}
+              label="写真を添える"
+              className="mt-2"
             />
-            <button
-              type="submit"
-              disabled={draft.trim().length === 0}
-              className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-5 rounded-full border-2 border-primary text-primary font-medium hover:bg-primary hover:text-white active:bg-primary active:text-white transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-primary"
-            >
-              添える
-            </button>
           </form>
 
           {comments.length > 0 && (
             <ul className="mt-4 space-y-2">
-              {comments.map((c, i) => (
-                <li
-                  key={`${i}-${c.comment}`}
-                  className="rounded-xl bg-background border border-border/60 px-3 py-2 text-sm leading-7"
-                >
-                  <span
-                    className={
-                      "mr-2 inline-block px-2 py-0.5 rounded-full text-xs font-medium " +
-                      (c.choice === "a"
-                        ? "bg-primary/10 text-primary"
-                        : c.choice === "b"
-                          ? "bg-accent/20 text-accent"
-                          : "bg-muted text-foreground/60")
-                    }
+              {comments.map((c, i) => {
+                const url = postImageUrl(c.image_path);
+                return (
+                  <li
+                    key={`${i}-${c.comment}-${c.image_path ?? ""}`}
+                    className="rounded-xl bg-background border border-border/60 px-3 py-2 text-sm leading-7"
                   >
-                    {choiceLabel(poll, c.choice)}
-                  </span>
-                  {c.comment}
-                </li>
-              ))}
+                    <span
+                      className={
+                        "mr-2 inline-block px-2 py-0.5 rounded-full text-xs font-medium " +
+                        (c.choice === "a"
+                          ? "bg-primary/10 text-primary"
+                          : c.choice === "b"
+                            ? "bg-accent/20 text-accent"
+                            : "bg-muted text-foreground/60")
+                      }
+                    >
+                      {choiceLabel(poll, c.choice)}
+                    </span>
+                    {c.comment}
+                    {url && (
+                      <PhotoView
+                        url={url}
+                        alt={`「${choiceLabel(poll, c.choice)}」に添えられた写真`}
+                        className="mt-2"
+                      />
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </>
@@ -234,75 +328,119 @@ export function PollCard({ poll, eyebrow = "今週の二択" }: Props) {
   );
 }
 
+// 選択肢のボタン。
+// 写真があるときは写真を上に大きく、名前を下に置く。押せる範囲は全体。
+// 写真が無いときは、これまでと寸分同じ見た目にする。
 function ChoiceButton({
   label,
+  imageUrl,
   onClick,
 }: {
   label: string;
+  imageUrl: string | null;
   onClick: () => void;
 }) {
+  if (!imageUrl) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="w-full min-h-[64px] px-4 py-3 rounded-xl border-2 border-border bg-background text-lg font-bold hover:border-primary hover:bg-primary/5 active:bg-primary/15 active:border-primary transition-colors"
+      >
+        {label}
+      </button>
+    );
+  }
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full min-h-[64px] px-4 py-3 rounded-xl border-2 border-border bg-background text-lg font-bold hover:border-primary hover:bg-primary/5 active:bg-primary/15 active:border-primary transition-colors"
+      className="group w-full overflow-hidden rounded-xl border-2 border-border bg-background text-left hover:border-primary active:border-primary transition-colors"
     >
-      {label}
+      <span className="relative block aspect-[4/3] w-full overflow-hidden bg-muted">
+        <Image
+          src={imageUrl}
+          alt=""
+          fill
+          sizes="(max-width: 640px) 92vw, 320px"
+          className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+        />
+      </span>
+      <span className="flex min-h-[56px] items-center justify-center px-4 py-3 text-lg font-bold group-hover:bg-primary/5 group-active:bg-primary/15 transition-colors">
+        {label}
+      </span>
     </button>
   );
 }
 
 function ResultBar({
   label,
+  imageUrl,
   pct,
   count,
   mine,
   muted = false,
 }: {
   label: string;
+  imageUrl: string | null;
   pct: number;
   count: number;
   mine: boolean;
   muted?: boolean;
 }) {
   return (
-    <div>
-      <div className="flex items-baseline justify-between gap-2 text-sm">
-        <span
-          className={
-            mine
-              ? "font-bold text-foreground"
-              : muted
-                ? "text-foreground/60"
-                : "text-foreground/80"
-          }
-        >
-          {label}
-          {mine && (
-            <span className="ml-1 text-xs text-primary font-medium">
-              （あなた）
-            </span>
-          )}
+    <div className="flex items-start gap-3">
+      {/* 結果でも写真を残す。どちらを選んだのかが、字を読まずに分かる */}
+      {imageUrl && (
+        <span className="relative mt-0.5 block size-14 shrink-0 overflow-hidden rounded-lg border border-border/70 bg-muted">
+          <Image
+            src={imageUrl}
+            alt=""
+            fill
+            sizes="56px"
+            className={mine ? "object-cover" : "object-cover opacity-60"}
+          />
         </span>
-        <span className="tabular-nums font-bold">
-          {pct}%
-          <span className="ml-1 text-xs font-normal text-foreground/60">
-            {count}人
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-2 text-sm">
+          <span
+            className={
+              mine
+                ? "font-bold text-foreground"
+                : muted
+                  ? "text-foreground/60"
+                  : "text-foreground/80"
+            }
+          >
+            {label}
+            {mine && (
+              <span className="ml-1 text-xs text-primary font-medium">
+                （あなた）
+              </span>
+            )}
           </span>
-        </span>
-      </div>
-      <div
-        className="mt-1 h-3 w-full rounded-full bg-muted overflow-hidden"
-        role="img"
-        aria-label={`${label} ${pct}パーセント`}
-      >
+          <span className="tabular-nums font-bold">
+            {pct}%
+            <span className="ml-1 text-xs font-normal text-foreground/60">
+              {count}人
+            </span>
+          </span>
+        </div>
         <div
-          className={
-            "h-full rounded-full transition-[width] duration-500 ease-out " +
-            (mine ? "bg-primary" : muted ? "bg-border" : "bg-accent")
-          }
-          style={{ width: `${pct}%` }}
-        />
+          className="mt-1 h-3 w-full rounded-full bg-muted overflow-hidden"
+          role="img"
+          aria-label={`${label} ${pct}パーセント`}
+        >
+          <div
+            className={
+              "h-full rounded-full transition-[width] duration-500 ease-out " +
+              (mine ? "bg-primary" : muted ? "bg-border" : "bg-accent")
+            }
+            style={{ width: `${pct}%` }}
+          />
+        </div>
       </div>
     </div>
   );

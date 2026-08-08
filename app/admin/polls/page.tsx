@@ -3,6 +3,8 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { TOPIC_ERA_VALUES } from "@/lib/validation/topic";
 import { createPoll, deletePoll, updatePoll } from "./actions";
+import { PhotoPicker } from "@/components/photo-picker";
+import { pollImageUrl } from "@/lib/media";
 
 export const metadata: Metadata = { title: "二択の配信" };
 
@@ -11,6 +13,8 @@ type Poll = {
   question: string;
   option_a: string;
   option_b: string;
+  option_a_image: string | null;
+  option_b_image: string | null;
   blurb: string;
   era: string | null;
   gender_lean: "male" | "female" | "both";
@@ -26,9 +30,11 @@ type Props = {
 // 二択の配信管理。
 //
 // 運用で守ること、
-//  ・男性寄りと女性寄りを交互に出す。連続すると片方の性別の参加が止まる
+//  ・立ち上げ期は男性寄りを多めに（2 : 1 が目安）。ただし女性向けをゼロにはしない
 //  ・全世代ネタ（きのこたけのこ等）は出さない。「うちの世代でやる意味ある？」と白ける
 //  ・4 週間先まで仕込んでおく
+//  ・写真は入れられるなら入れる。字だけより速く思い出せる。
+//    ただし片方だけは不可（写真のあるほうが有利になって集計が歪む）
 export default async function AdminPollsPage({ searchParams }: Props) {
   await requireAdmin();
   const { saved, error, edit } = await searchParams;
@@ -37,7 +43,7 @@ export default async function AdminPollsPage({ searchParams }: Props) {
   const { data } = await sb
     .from("polls")
     .select(
-      "id, question, option_a, option_b, blurb, era, gender_lean, published_at, expires_at, is_active",
+      "id, question, option_a, option_b, option_a_image, option_b_image, blurb, era, gender_lean, published_at, expires_at, is_active",
     )
     .order("published_at", { ascending: false })
     .limit(200);
@@ -63,7 +69,9 @@ export default async function AdminPollsPage({ searchParams }: Props) {
     .slice(0, 6);
   const maleAhead = nextSix.filter((p) => p.gender_lean === "male").length;
   const femaleAhead = nextSix.filter((p) => p.gender_lean === "female").length;
-  const lopsided = Math.abs(maleAhead - femaleAhead) >= 3;
+  // 立ち上げ期は男性寄りを多めに出す方針なので、偏っていること自体は警告しない。
+  // 女性向けが完全に消えたときだけ知らせる。3 週間ひとつも無い状態は行き過ぎ。
+  const femaleGone = nextSix.length >= 6 && femaleAhead === 0;
 
   return (
     <div className="space-y-6">
@@ -77,11 +85,15 @@ export default async function AdminPollsPage({ searchParams }: Props) {
             </span>
           )}
         </p>
-        {lopsided && (
+        <p className="mt-1 text-sm leading-7 text-foreground/60">
+          この先6件、男性寄り {maleAhead} 件・女性寄り {femaleAhead} 件。目安は
+          4 : 2。
+        </p>
+        {femaleGone && (
           <p className="mt-2 rounded-xl border border-notification/40 bg-notification/10 px-4 py-3 text-sm leading-7">
-            この先6件が男性寄り {maleAhead} 件、女性寄り {femaleAhead}{" "}
-            件と偏っています。交互になるよう公開日時を入れ替えてください。
-            偏った週が続くと、片方の性別がまとめて離れます。
+            この先6件に女性寄りがひとつもありません。
+            男性寄りを多めに出す方針ですが、3週間まるごと女性向けが無いのは行き過ぎです。
+            1〜2件、公開日時を前に出してください。
           </p>
         )}
       </header>
@@ -149,6 +161,19 @@ export default async function AdminPollsPage({ searchParams }: Props) {
                     <p className="mt-0.5 text-sm text-foreground/70">
                       {p.option_a} ／ {p.option_b}
                     </p>
+                    {p.option_a_image && p.option_b_image && (
+                      <div className="mt-1.5 flex gap-1.5">
+                        {[p.option_a_image, p.option_b_image].map((path) => (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            key={path}
+                            src={pollImageUrl(path) ?? ""}
+                            alt=""
+                            className="size-12 rounded border border-border object-cover"
+                          />
+                        ))}
+                      </div>
+                    )}
                     <p className="mt-0.5 text-xs text-foreground/50">
                       {new Date(p.published_at).toLocaleString("ja-JP", {
                         timeZone: "Asia/Tokyo",
@@ -241,6 +266,51 @@ function PollForm({ initial }: { initial?: Poll }) {
           />
         </div>
       </div>
+
+      <fieldset className="rounded-xl border border-border/70 p-4">
+        <legend className="px-1 text-sm font-bold">選択肢の写真（任意）</legend>
+        <p className="text-xs leading-6 text-foreground/60">
+          両方そろえて入れてください。片方だけだと、写真のあるほうが選ばれやすくなり、
+          集計が意味を持たなくなります。位置情報は保存時に消えます。
+          <br />
+          出典に気をつけてください。雑誌の表紙や商品の写真は、撮った人・作った人に権利があります。
+          自分で撮ったもの、自分が持っているものを写したものが安全です。
+        </p>
+
+        <div className="mt-3 grid sm:grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm font-bold mb-1.5">左の選択肢の写真</p>
+            {initial?.option_a_image && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={pollImageUrl(initial.option_a_image) ?? ""}
+                alt="いま入っている左の写真"
+                className="mb-2 h-24 w-full rounded-lg border border-border object-cover"
+              />
+            )}
+            <PhotoPicker name="option_a_photo" label="写真を選ぶ" />
+          </div>
+          <div>
+            <p className="text-sm font-bold mb-1.5">右の選択肢の写真</p>
+            {initial?.option_b_image && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={pollImageUrl(initial.option_b_image) ?? ""}
+                alt="いま入っている右の写真"
+                className="mb-2 h-24 w-full rounded-lg border border-border object-cover"
+              />
+            )}
+            <PhotoPicker name="option_b_photo" label="写真を選ぶ" />
+          </div>
+        </div>
+
+        {initial?.option_a_image && (
+          <label className="mt-3 flex items-center gap-2 text-sm">
+            <input type="checkbox" name="clear_images" value="1" className="size-5" />
+            写真を外して、字だけに戻す
+          </label>
+        )}
+      </fieldset>
 
       <div>
         <label htmlFor="blurb" className="block text-sm font-bold mb-1">

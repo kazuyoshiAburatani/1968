@@ -1,6 +1,9 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-
-// 二択投票の読み出し。ホームとお題ページの両方から使う。
+// 二択投票の型と、画面・サーバの両方から使う小さな関数。
+//
+// 読み出し（loadPolls）は lib/polls-server.ts に分けてある。
+// あちらは service_role の鍵を使うのでブラウザに出せない。
+// このファイルはクライアントコンポーネント（PollCard）からも読むので、
+// サーバ専用のものを持ち込まないこと。
 
 /** 'other' は「どちらも選べない」人の受け皿。 */
 export type PollChoice = "a" | "b" | "other";
@@ -10,6 +13,9 @@ export type PollRow = {
   question: string;
   option_a: string;
   option_b: string;
+  /** 選択肢の写真。poll-media バケット内のパス。両方 null か、両方入っているかのどちらか */
+  option_a_image: string | null;
+  option_b_image: string | null;
   blurb: string;
   era: string | null;
   gender_lean: "male" | "female" | "both";
@@ -19,6 +25,8 @@ export type PollRow = {
 export type PollComment = {
   choice: PollChoice;
   comment: string;
+  /** 添えられた写真。post-media バケット内のパス */
+  image_path: string | null;
   created_at: string;
 };
 
@@ -33,75 +41,11 @@ export type PollWithResult = PollRow & {
   comments: PollComment[];
 };
 
-/**
- * 公開中の投票を新しい順に取得し、集計と自分の投票状況を添えて返す。
- * 得票率は投票した本人にしか見せない（先に結果を見ると素直な回答が歪むため）。
- */
-export async function loadPolls(
-  supabase: SupabaseClient,
-  opts: { limit?: number; voterKey: string | null; pollId?: string },
-): Promise<PollWithResult[]> {
-  const now = new Date().toISOString();
-  let query = supabase
-    .from("polls")
-    .select(
-      "id, question, option_a, option_b, blurb, era, gender_lean, published_at",
-    )
-    .eq("is_active", true)
-    .lte("published_at", now)
-    .or(`expires_at.is.null,expires_at.gt.${now}`)
-    .order("published_at", { ascending: false });
-
-  if (opts.pollId) query = query.eq("id", opts.pollId);
-  if (opts.limit) query = query.limit(opts.limit);
-
-  const { data } = await query;
-  const polls = (data ?? []) as PollRow[];
-  if (polls.length === 0) return [];
-
-  const ids = polls.map((p) => p.id);
-  const { data: voteData } = await supabase
-    .from("poll_votes")
-    .select("poll_id, voter_key, choice, comment, created_at")
-    .in("poll_id", ids);
-
-  type VoteRow = {
-    poll_id: string;
-    voter_key: string;
-    choice: PollChoice;
-    comment: string | null;
-    created_at: string;
-  };
-  const votes = (voteData ?? []) as VoteRow[];
-
-  return polls.map((p) => {
-    const mine = votes.filter((v) => v.poll_id === p.id);
-    const countA = mine.filter((v) => v.choice === "a").length;
-    const countB = mine.filter((v) => v.choice === "b").length;
-    const countOther = mine.filter((v) => v.choice === "other").length;
-    const myVote = opts.voterKey
-      ? mine.find((v) => v.voter_key === opts.voterKey)
-      : undefined;
-    const comments = mine
-      .filter((v) => v.comment && v.comment.trim().length > 0)
-      .sort((x, y) => (x.created_at < y.created_at ? 1 : -1))
-      .slice(0, 20)
-      .map((v) => ({
-        choice: v.choice,
-        comment: v.comment as string,
-        created_at: v.created_at,
-      }));
-
-    return {
-      ...p,
-      countA,
-      countB,
-      countOther,
-      total: countA + countB + countOther,
-      myChoice: myVote?.choice ?? null,
-      comments,
-    };
-  });
+/** 選択肢に写真が入っているか。片方だけということは無い（DB 制約で担保）。 */
+export function hasOptionImages(
+  poll: Pick<PollRow, "option_a_image" | "option_b_image">,
+): boolean {
+  return poll.option_a_image !== null && poll.option_b_image !== null;
 }
 
 /** 得票率（%）。総数 0 のときは 0 を返す。 */

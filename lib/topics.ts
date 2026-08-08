@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchAuthorInfo } from "@/lib/author-info";
+import { parseMedia, type MediaItem } from "@/lib/media";
 import type { ReactionType } from "@/lib/reactions";
 import type { ResponseReply } from "@/components/topics/response-card";
 
@@ -21,6 +22,7 @@ type ResponseRow = {
   topic_id: string;
   user_id: string;
   body: string;
+  media: unknown;
   created_at: string;
   parent_response_id: string | null;
   is_operator: boolean;
@@ -38,6 +40,7 @@ export type TopicWithResponses = {
     prefecture: string | null;
     avatarUrl: string | null;
     body: string;
+    media: MediaItem[];
     createdAt: string;
     reactionCounts: Partial<Record<ReactionType, number>>;
     myReaction: ReactionType | null;
@@ -86,7 +89,7 @@ export async function loadTopicResponses(
   const topicIds = topics.map((t) => t.id);
 
   const columns =
-    "id, topic_id, user_id, body, created_at, parent_response_id, is_operator, featured_at, featured_note";
+    "id, topic_id, user_id, body, media, created_at, parent_response_id, is_operator, featured_at, featured_note";
 
   // トップレベル回答
   let topQuery = supabase
@@ -193,6 +196,7 @@ export async function loadTopicResponses(
           prefecture: a?.prefecture ?? null,
           avatarUrl: a?.avatarUrl ?? null,
           body: r.body,
+          media: parseMedia(r.media),
           createdAt: r.created_at,
           reactionCounts: countsBy.get(r.id) ?? {},
           myReaction: myReactionBy.get(r.id) ?? null,
@@ -209,6 +213,7 @@ export async function loadTopicResponses(
               prefecture: ra?.prefecture ?? null,
               avatarUrl: ra?.avatarUrl ?? null,
               body: rp.body,
+              media: parseMedia(rp.media),
               createdAt: rp.created_at,
               reactionCounts: countsBy.get(rp.id) ?? {},
               myReaction: myReactionBy.get(rp.id) ?? null,

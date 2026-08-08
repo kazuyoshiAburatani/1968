@@ -7,6 +7,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isValidReactionType, type ReactionType } from "@/lib/reactions";
 import { saveDraft } from "@/lib/draft";
+import { hasFile, removeImage, storeImage } from "@/lib/image-upload";
+import { parseMedia, type MediaItem } from "@/lib/media";
 
 // お題まわりの Server Actions。
 //  1. postTopicResponse   お題への短文回答（未登録なら下書きを預かって席づくりへ）
@@ -50,7 +52,10 @@ export async function postTopicResponse(formData: FormData) {
   }
 
   const body = parsed.data.body;
-  if (body.length === 0) {
+  const photo = formData.get("photo");
+  const wantsPhoto = hasFile(photo);
+
+  if (body.length === 0 && !wantsPhoto) {
     redirect(
       `${parsed.data.return_path}?error=${encodeURIComponent("何か一言、書いてみてください")}`,
     );
@@ -63,6 +68,11 @@ export async function postTopicResponse(formData: FormData) {
 
   // 未登録でも書けるようにする。書いた文章はクッキーに預け、席づくりが済んだら自動で投稿する。
   // ここで文章を捨てて登録画面に飛ばすと、二度と書いてもらえない。
+  //
+  // 写真は預かれない。クッキーに入る大きさではないし、席をつくる前に
+  // 誰のものとも分からないファイルをサーバに置くのは避けたい。
+  // 画面側では席が無い人に写真ボタンを押させず先に席づくりへ案内しているので、
+  // ここに来るのは画面を経由しなかった場合だけになる。
   if (!user) {
     await saveDraft({
       topicId: parsed.data.topic_id,
@@ -73,16 +83,42 @@ export async function postTopicResponse(formData: FormData) {
     redirect("/join?draft=1");
   }
 
+  // 席があるかは profiles に行があるかで見る。
+  // 登録が匿名サインインなので、auth.uid() の有無だけでは通りすがりと区別できない。
+  const media: MediaItem[] = [];
+  if (wantsPhoto) {
+    const admin = getSupabaseAdminClient();
+    const { data: seat } = await admin
+      .from("profiles")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!seat) {
+      redirect(`/join?next=${encodeURIComponent(parsed.data.return_path)}`);
+    }
+
+    const stored = await storeImage(photo, "post-media", user.id);
+    if (!stored.ok) {
+      redirect(
+        `${parsed.data.return_path}?error=${encodeURIComponent(stored.message)}`,
+      );
+    }
+    media.push(stored.image);
+  }
+
   const { error } = await supabase.from("topic_responses").insert({
     topic_id: parsed.data.topic_id,
     user_id: user.id,
     body,
-    media: [],
+    media,
     parent_response_id: parsed.data.parent_response_id ?? null,
   });
 
   if (error) {
     console.error("[topics/postResponse]", error.message);
+    // 入れ損なった写真を置き去りにしない
+    await removeImage("post-media", media[0]?.path);
     redirect(
       `${parsed.data.return_path}?error=${encodeURIComponent("投稿に失敗しました")}`,
     );
@@ -252,11 +288,26 @@ export async function deleteOwnResponse(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/join");
 
-  await supabase
+  // 添えられていた写真も一緒に消す。行だけ消して Storage に残すと、
+  // 「消した」と言われた写真が URL を知っている人には見え続けることになる。
+  const { data: row } = await supabase
+    .from("topic_responses")
+    .select("media")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const { error } = await supabase
     .from("topic_responses")
     .delete()
     .eq("id", id)
     .eq("user_id", user.id);
+
+  if (!error && row) {
+    for (const m of parseMedia((row as { media: unknown }).media)) {
+      await removeImage("post-media", m.path);
+    }
+  }
 
   revalidatePath(returnPath);
   redirect(returnPath);

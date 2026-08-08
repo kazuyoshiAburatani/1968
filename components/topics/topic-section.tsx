@@ -104,6 +104,7 @@ export function TopicSection({
               prefecture={r.prefecture}
               avatarUrl={r.avatarUrl}
               body={r.body}
+              media={r.media}
               createdAt={r.createdAt}
               reactionCounts={r.reactionCounts}
               myReaction={r.myReaction}
