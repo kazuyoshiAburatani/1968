@@ -12,6 +12,7 @@ import { StoryRail } from "@/components/home/story-rail";
 import { FeaturedLetters } from "@/components/home/featured-letters";
 import { SectionSkeleton } from "@/components/home/section-skeleton";
 import { LAUNCH_LABEL, isBeforeLaunch } from "@/lib/launch";
+import { feedEyebrow } from "@/lib/day-label";
 
 type Props = {
   searchParams: Promise<{
@@ -26,7 +27,7 @@ type Props = {
 // ホーム。並び順そのものが施策になっている。
 //
 // 検証で見えた勝ち筋の動線をそのまま縦に並べてある。
-//   1. 今週の二択      … 初回参加 8.8/10。ゲストのまま 1 タップで参加できる最初の一歩
+//   1. 今日の二択      … 初回参加 8.8/10。ゲストのまま 1 タップで参加できる最初の一歩
 //   2. 今日は何の日    … 毎日きっかけを置き、LINE 配信へ橋渡しする
 //   3. 穴埋めのお題    … 二択で温まった人が、1 行だけ書く
 //   4. 年表・検定      … 拡散装置。人に見せたくなる自分ごとの結果を返す
@@ -58,7 +59,7 @@ export default async function HomePage({ searchParams }: Props) {
 
   // 二択に必要なのはクッキー（識別子）と 2 クエリだけ。ここは待って描く
   const voterKey = await peekVoterKey();
-  const polls = await loadPolls(supabase, { limit: 2, voterKey });
+  const polls = await loadPolls(supabase, { limit: 3, voterKey });
   const beforeLaunch = isBeforeLaunch();
 
   return (
@@ -93,7 +94,7 @@ export default async function HomePage({ searchParams }: Props) {
             <PollCard
               key={p.id}
               poll={p}
-              eyebrow={i === 0 ? "今週の二択" : "もうひとつの二択"}
+              eyebrow={feedEyebrow(p.published_at, "二択", i)}
               canAttachPhoto={user !== null}
             />
           ))}
@@ -154,10 +155,10 @@ function ComingSoon() {
       <p className="mt-3 text-base leading-8 text-foreground/80">
         まずは「小学校のころ」の話から。
         <br />
-        二択が16問と、一行で答えるお題が9題、その日にまとめて出ます。
+        二択と、一行で答えるお題が、その日から毎日ひとつずつ出ます。
       </p>
       <p className="mt-3 text-sm leading-7 text-foreground/60">
-        次の週は中学のころ、その次は高校のころ、と進みます。
+        小学校のころから中学、高校、二十代へと順に進みます。
         <br />
         どれも登録なしで読めます。
       </p>

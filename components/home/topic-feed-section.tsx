@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { feedEyebrow } from "@/lib/day-label";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { loadTopics, loadTopicResponses } from "@/lib/topics";
 import { TopicSection } from "@/components/topics/topic-section";
@@ -15,7 +16,7 @@ export async function TopicFeedSection() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const topics = await loadTopics(supabase, { limit: 4 });
+  const topics = await loadTopics(supabase, { limit: 3 });
   if (topics.length === 0) return null;
 
   let myNickname = "あなた";
@@ -45,17 +46,15 @@ export async function TopicFeedSection() {
           myNickname={myNickname}
           myAvatarPath={myAvatarPath}
           returnPath="/"
-          eyebrow={
-            i === 0
-              ? d.topic.format === "fill_blank"
-                ? "今週の穴埋め"
-                : "今週のお題"
-              : undefined
-          }
+          eyebrow={feedEyebrow(
+            d.topic.published_at,
+            d.topic.format === "fill_blank" ? "穴埋め" : "お題",
+            i,
+          )}
         />
       ))}
 
-      {/* ホームに出るのは 4 題だけ。残りへの入口をここに置く。
+      {/* ホームに出るのは新しい 3 題だけ。残りへの入口をここに置く。
           これが無いと、流れたお題は URL を知らない限り見つけようがない */}
       <p className="text-center">
         <Link

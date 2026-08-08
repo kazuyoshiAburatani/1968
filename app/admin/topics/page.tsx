@@ -34,7 +34,7 @@ type Props = {
 // 運用上いちばん大事なのは「先の分まで仕込んでおく」こと。
 // 公開日時を未来にして保存しておけば、その日が来たら自動で出る。
 // 検証では、お題が途切れた週があるだけで習慣が切れることが分かっているので、
-// 常に 4 週間先まで埋まっている状態を保つ運用にしている。
+// 1 日 1 題ずつ出るので、常に 2 週間先までは埋まっている状態を保つ。
 export default async function AdminTopicsPage({ searchParams }: Props) {
   const { saved, error, edit } = await searchParams;
   const sb = getSupabaseAdminClient();
@@ -66,10 +66,11 @@ export default async function AdminTopicsPage({ searchParams }: Props) {
       <header>
         <h1 className="text-2xl font-bold">お題の配信</h1>
         <p className="mt-2 text-sm leading-7 text-foreground/70">
-          公開中 {live.length} 件、これから公開 {upcoming.length} 件。
-          {upcoming.length < 4 && (
+          公開中 {live.length} 件、これから公開 {upcoming.length} 件
+          （1日1題なので、あと{upcoming.length}日分）。
+          {upcoming.length < 14 && (
             <span className="ml-1 font-bold text-notification">
-              仕込みが 4 件を切っています。先の分を足してください。
+              2週間分を切っています。先の分を足してください。
             </span>
           )}
         </p>

@@ -42,7 +42,7 @@ export function TopicSection({
             className={isFill ? "ri-edit-box-line" : "ri-chat-quote-line"}
             aria-hidden
           />
-          {eyebrow ?? (isFill ? "今週の穴埋め" : "お題")}
+          {eyebrow ?? (isFill ? "穴埋めのお題" : "お題")}
           {topic.era && (
             <span className="ml-1 font-normal text-foreground/50">
               {topic.era}のころ

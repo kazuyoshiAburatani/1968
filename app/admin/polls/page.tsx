@@ -35,7 +35,7 @@ type Props = {
 // 運用で守ること、
 //  ・立ち上げ期は男性寄りを多めに（2 : 1 が目安）。ただし女性向けをゼロにはしない
 //  ・全世代ネタ（きのこたけのこ等）は出さない。「うちの世代でやる意味ある？」と白ける
-//  ・4 週間先まで仕込んでおく
+//  ・1 日 1 問ずつ出る。最低 2 週間分は先まで埋めておく
 //  ・写真は入れられるなら入れる。字だけより速く思い出せる。
 //    ただし片方だけは不可（写真のあるほうが有利になって集計が歪む）
 export default async function AdminPollsPage({ searchParams }: Props) {
@@ -81,10 +81,10 @@ export default async function AdminPollsPage({ searchParams }: Props) {
       <header>
         <h1 className="text-2xl font-bold">二択の配信</h1>
         <p className="mt-2 text-sm leading-7 text-foreground/70">
-          配信待ち {queued.length} 件。
-          {queued.length < 4 && (
+          配信待ち {queued.length} 件（1日1問なので、あと{queued.length}日分）。
+          {queued.length < 14 && (
             <span className="ml-1 font-bold text-notification">
-              4件を切っています。先の分を足してください。
+              2週間分を切っています。先の分を足してください。
             </span>
           )}
         </p>
