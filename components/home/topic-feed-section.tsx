@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { loadTopics, loadTopicResponses } from "@/lib/topics";
 import { TopicSection } from "@/components/topics/topic-section";
@@ -53,6 +54,18 @@ export async function TopicFeedSection() {
           }
         />
       ))}
+
+      {/* ホームに出るのは 4 題だけ。残りへの入口をここに置く。
+          これが無いと、流れたお題は URL を知らない限り見つけようがない */}
+      <p className="text-center">
+        <Link
+          href="/topics"
+          className="inline-flex items-center gap-1.5 min-h-[var(--spacing-tap)] px-5 rounded-full border border-border bg-background text-base no-underline text-foreground/80 hover:border-primary hover:text-primary transition-colors"
+        >
+          <i className="ri-list-check-2" aria-hidden />
+          これまでのお題をぜんぶ見る
+        </Link>
+      </p>
     </div>
   );
 }

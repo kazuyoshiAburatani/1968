@@ -344,6 +344,12 @@ function SiteFooter() {
                 <Link href="/stories">あの店・あの商品、今どうなってる？</Link>
               </li>
               <li>
+                <Link href="/polls">これまでの二択</Link>
+              </li>
+              <li>
+                <Link href="/topics">これまでのお題</Link>
+              </li>
+              <li>
                 <Link href="/nenpyo">あなたの1968年表</Link>
               </li>
               <li>
