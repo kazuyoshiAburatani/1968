@@ -10,13 +10,13 @@ import { submitBetaApplication } from "./actions";
 export const metadata: Metadata = {
   title: "ベータテスター募集",
   description:
-    "同い年だけで、もう一度本音で話せる場所を。1968 年生まれだけの掲示板「1968」、最初の 30 人を一緒に育ててください。",
+    "同い年だけで、もう一度本音で話せる場所を。1968 年に生まれた学年だけの「1968.LOVE」、最初の 30 人を一緒に育ててください。",
   openGraph: {
     title: "同い年だけで、もう一度本音で話せる場所を。| 1968",
     description:
       "1968 年（昭和 43 年）生まれだけの掲示板。最初の 30 人を募集中。創設メンバーに永久特典 8 つ。",
     url: "https://1968.love/beta",
-    siteName: "1968",
+    siteName: "1968.LOVE",
     locale: "ja_JP",
     type: "website",
     images: [
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "ベータテスター30名募集中 | 1968",
     description:
-      "1968年生まれ限定コミュニティ「1968」、ベータテスター30名募集中。創設メンバー限定 8 特典。",
+      "1968年に生まれた学年の「1968.LOVE」、ベータテスター30名募集中。創設メンバー限定 8 特典。",
     images: ["/og/og-beta.png"],
   },
 };
@@ -145,7 +145,7 @@ export default async function BetaPage({ searchParams }: Props) {
     "@type": "WebPage",
     name: "同い年だけで、もう一度本音で話せる場所を。 | 1968 ベータテスター募集",
     description:
-      "1968 年（昭和 43 年）生まれだけの掲示板「1968」、最初の 30 人を一緒に育ててください。創設メンバー限定の永久バッジ・専用ラウンジ等 8 つの特典が永久付帯。",
+      "1968 年（昭和 43 年）に生まれた学年だけの「1968.LOVE」、最初の 30 人を一緒に育ててください。創設メンバー限定の永久バッジ・専用ラウンジ等 8 つの特典が永久付帯。",
     url: "https://1968.love/beta",
     inLanguage: "ja-JP",
     isPartOf: { "@id": "https://1968.love/#website" },
@@ -573,7 +573,7 @@ export default async function BetaPage({ searchParams }: Props) {
       {/* フッター案内 */}
       <section className="py-12 px-4 bg-foreground text-background">
         <div className="max-w-4xl mx-auto text-center">
-          <p className="text-2xl font-bold tracking-wider mb-4">1968</p>
+          <p className="text-2xl font-bold tracking-wider mb-4">1968.LOVE</p>
           <div className="space-y-2 text-sm opacity-80">
             <p>運営、油谷和好</p>
             <p>

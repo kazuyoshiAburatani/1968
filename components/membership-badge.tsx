@@ -29,7 +29,7 @@ export function MembershipBadge({
   return (
     <span className="inline-flex items-center gap-1 align-middle">
       {isOperator && (
-        <Pill bg="#e8f3f3" fg="#1f6b6b" border="#2c9a9a">
+        <Pill bg="#e7edf4" fg="#0d2f54" border="#0d2f54">
           運営
         </Pill>
       )}

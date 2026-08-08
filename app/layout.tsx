@@ -26,7 +26,7 @@ const notoSansJp = Noto_Sans_JP({
   display: "swap",
 });
 
-// ロゴ「1968」の装飾用、header やフッターだけで使う
+// ロゴ「1968.LOVE」の装飾用、header やフッターだけで使う
 const pacifico = Pacifico({
   variable: "--font-pacifico",
   subsets: ["latin"],
@@ -37,14 +37,14 @@ const pacifico = Pacifico({
 export const metadata: Metadata = {
   title: {
     default: "1968 | 1968年に生まれた学年の、語らいの場",
-    template: "%s | 1968",
+    template: "%s | 1968.LOVE",
   },
   description:
     "1968年に生まれた学年（昭和43年度生まれ）だけの語らいの場。今週の二択、穴埋めのお題、自分の年表、昭和43年度生まれ検定。読むだけなら登録は要りません。",
-  applicationName: "1968",
+  applicationName: "1968.LOVE",
   authors: [{ name: "油谷和好", url: "https://1968.love" }],
   creator: "油谷和好",
-  publisher: "1968",
+  publisher: "1968.LOVE",
   keywords: [
     "1968年生まれ",
     "昭和43年生まれ",
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     "同年代コミュニティ",
     "50代",
     "シニアSNS",
-    "1968",
+    "1968.LOVE",
   ],
   metadataBase: new URL("https://1968.love"),
   alternates: { canonical: "https://1968.love" },
@@ -69,11 +69,11 @@ export const metadata: Metadata = {
     shortcut: ["/favicon.ico"],
   },
   openGraph: {
-    title: "1968 | 1968年に生まれた学年の、語らいの場",
+    title: "1968.LOVE | 1968年に生まれた学年の、語らいの場",
     description:
       "同じ年に同じテレビを見ていた人としか通じない話を、ここでしています。完全無料。ニックネームと生まれた日だけ、30秒で参加できます。",
     url: "https://1968.love",
-    siteName: "1968",
+    siteName: "1968.LOVE",
     locale: "ja_JP",
     type: "website",
     images: [
@@ -81,13 +81,13 @@ export const metadata: Metadata = {
         url: "/og/og-tagline.png",
         width: 1200,
         height: 630,
-        alt: "1968 | 同い年だけが、本音で話せる場所。",
+        alt: "1968.LOVE | 1968年に生まれた学年の、語らいの場",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "1968 | 1968年に生まれた学年の、語らいの場",
+    title: "1968.LOVE | 1968年に生まれた学年の、語らいの場",
     description:
       "1968年に生まれた学年だけの語らいの場。今週の二択に、指一本でどうぞ。",
     images: ["/og/og-tagline.png"],
@@ -175,8 +175,11 @@ export default async function RootLayout({
                 {
                   "@type": "Organization",
                   "@id": "https://1968.love/#organization",
-                  name: "1968",
-                  alternateName: "昭和43年度生まれの語らいの場",
+                  name: "1968.LOVE",
+                  alternateName: [
+                    "イチキュウロクハチドットラブ",
+                    "昭和43年度生まれの語らいの場",
+                  ],
                   url: "https://1968.love",
                   logo: "https://1968.love/logo/icon-512.png",
                   founder: {
@@ -206,7 +209,8 @@ export default async function RootLayout({
                   "@type": "WebSite",
                   "@id": "https://1968.love/#website",
                   url: "https://1968.love",
-                  name: "1968",
+                  name: "1968.LOVE",
+                  alternateName: "イチキュウロクハチドットラブ",
                   description:
                     "1968年に生まれた学年だけの語らいの場。",
                   publisher: { "@id": "https://1968.love/#organization" },
@@ -256,22 +260,22 @@ function SiteHeader({
         <Link
           href="/"
           className="flex items-center no-underline shrink-0"
-          aria-label="1968、1968年生まれ限定コミュニティ、トップへ"
+          aria-label="1968.LOVE、1968年に生まれた学年の語らいの場、トップへ"
         >
           {/* デスクトップではフルロゴ（1968 + サブタイトル）、モバイルではアイコンのみ */}
           <Image
             src="/logo/wordmark.png"
-            alt="1968 1968年生まれ限定コミュニティ"
-            width={221}
-            height={96}
+            alt="1968.LOVE 1968年に生まれた学年の、語らいの場"
+            width={209}
+            height={144}
             priority
             className="hidden sm:block h-12 w-auto"
           />
           <Image
             src="/logo/wordmark-compact.png"
-            alt="1968"
-            width={159}
-            height={48}
+            alt="1968.LOVE"
+            width={157}
+            height={108}
             priority
             className="block sm:hidden h-9 w-auto"
           />
@@ -332,7 +336,7 @@ function SiteFooter() {
       <div className="mx-auto max-w-5xl px-4 py-10 text-sm">
         <div className="grid gap-8 md:grid-cols-3">
           <div>
-            <p className="font-bold text-base mb-2">1968</p>
+            <p className="font-bold text-base mb-2">1968.LOVE</p>
             <p className="text-foreground/80">
               1968年に生まれた学年の、語らいの場
             </p>

@@ -18,7 +18,7 @@ export default function TokushohoPage() {
       </p>
 
       <p className="mt-3 text-sm text-foreground/80 leading-7">
-        本サービス「1968」は、すべての機能を無料でご利用いただけます。
+        本サービス「1968.LOVE」は、すべての機能を無料でご利用いただけます。
         唯一の有償取引は、運営を任意で支援するための「
         <strong>年次応援団</strong>」（一回 3,000 円）です。
         以下、応援団のお支払いに関する特定商取引法上の表示を行います。

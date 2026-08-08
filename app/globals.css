@@ -3,20 +3,30 @@
 /* 1968 テーマ（teal + タン、2026 リフレッシュ）
    ・ページ全体（body）の背景は明るいオフホワイト #FAFAFA
    ・罫線で囲まれたカード・入力欄・ヘッダー等の「サーフェス」は白 #FFFFFF
-   ・アクセントの teal は 50 代でも眩しくない落ち着いた色味（#2C9A9A）
-   ・副色にタン（#D4A373）、通知系にコーラル（#E76F51）
-   ・本文色は青みグレー（#264653）で長時間読みに耐えるコントラスト
+   ・主役の色はロゴ「1968.LOVE」の紺（#0D2F54）
+   ・副色にタン（#A0662E）、通知系に朱（#C1462A）。どちらも文字にしても AA を通る濃さ
+   ・本文色は紺寄りのダークグレー（#1F2D3D）で長時間読みに耐えるコントラスト
    bg-background ユーティリティは白サーフェス、bg-page が背景。 */
+/* 色について。
+   主役の色はロゴ「1968.LOVE」の紺（#0D2F54）。ロゴと画面を同じ色で通すことで、
+   ヘッダーのロゴが浮かず、ひとつのものに見える。白地に紺は teal より
+   コントラストが高く、老眼が始まっている層にも読みやすい。
+
+   差し色のタンと通知色の朱は、以前は薄すぎて文字にすると WCAG AA を
+   満たしていなかった（タンは白地で 2.2:1、朱は 3.2:1）。
+   どちらも文字として使っている箇所があるので、AA を通る濃さに落としてある
+   （タン 4.7:1、朱 5.0:1）。塗りに使うときは不透明度を下げているので、
+   濃くしても見た目はほとんど変わらない。 */
 @theme {
   --color-page: #fafafa;
   --color-background: #ffffff;
-  --color-foreground: #264653;
+  --color-foreground: #1f2d3d;
   --color-muted: #f2ede4;
   --color-border: #d9d3c7;
-  --color-primary: #2c9a9a;
+  --color-primary: #0d2f54;
   --color-primary-fg: #ffffff;
-  --color-accent: #d4a373;
-  --color-notification: #e76f51;
+  --color-accent: #a0662e;
+  --color-notification: #c1462a;
 
   --font-sans: var(--font-noto-sans-jp), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-pacifico), var(--font-noto-sans-jp), cursive;
