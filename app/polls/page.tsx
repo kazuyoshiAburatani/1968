@@ -6,6 +6,7 @@ import { peekVoterKey } from "@/lib/voter-key";
 import { groupByEra, type ArchivePoll } from "@/lib/archive";
 import { loadPollArchive } from "@/lib/archive-server";
 import { pollIcon } from "@/lib/poll-icon";
+import { LAUNCH_LABEL, isBeforeLaunch } from "@/lib/launch";
 import { pollImageUrl } from "@/lib/media";
 
 export const metadata: Metadata = {
@@ -56,9 +57,9 @@ export default async function PollsArchivePage() {
 
       {polls.length === 0 ? (
         <p className="mt-8 rounded-2xl border border-border/60 bg-muted/40 p-6 text-center leading-8">
-          いま出ている二択はありません。
-          <br />
-          近いうちにまた出します。
+          {isBeforeLaunch()
+            ? `${LAUNCH_LABEL}から始めます。まずは小学校のころの話から。`
+            : "いま出ているものはありません。近いうちにまた出します。"}
         </p>
       ) : (
         <div className="mt-8 space-y-10">

@@ -11,6 +11,7 @@ import { SpreadCards } from "@/components/home/spread-cards";
 import { StoryRail } from "@/components/home/story-rail";
 import { FeaturedLetters } from "@/components/home/featured-letters";
 import { SectionSkeleton } from "@/components/home/section-skeleton";
+import { LAUNCH_LABEL, isBeforeLaunch } from "@/lib/launch";
 
 type Props = {
   searchParams: Promise<{
@@ -58,6 +59,7 @@ export default async function HomePage({ searchParams }: Props) {
   // 二択に必要なのはクッキー（識別子）と 2 クエリだけ。ここは待って描く
   const voterKey = await peekVoterKey();
   const polls = await loadPolls(supabase, { limit: 2, voterKey });
+  const beforeLaunch = isBeforeLaunch();
 
   return (
     <div className="mx-auto max-w-2xl px-4 sm:px-6 py-6 sm:py-8 space-y-10">
@@ -79,6 +81,10 @@ export default async function HomePage({ searchParams }: Props) {
       )}
 
       {!user && <GuestIntro />}
+
+      {/* 開店前。何も出ない画面をそのまま見せると「過疎っている」と読まれるので、
+          開く日を先に伝える。公開日を過ぎたら自動で出なくなる */}
+      {beforeLaunch && polls.length === 0 && <ComingSoon />}
 
       {/* 1. 今週の二択、最優先で描画する */}
       {polls.length > 0 && (
@@ -132,6 +138,30 @@ export default async function HomePage({ searchParams }: Props) {
         </div>
       )}
     </div>
+  );
+}
+
+// 開店前の案内。
+// 「準備中です」だけだと、何を待てばいいのか分からないまま閉じられる。
+// いつ・何が始まるのかを具体的に書いて、その日に思い出してもらう。
+function ComingSoon() {
+  return (
+    <section className="rounded-2xl border-2 border-accent/50 bg-accent/5 p-6 text-center">
+      <p className="text-xs font-bold text-accent">開店のお知らせ</p>
+      <p className="mt-2 text-xl sm:text-2xl font-bold leading-snug">
+        {LAUNCH_LABEL}から始めます
+      </p>
+      <p className="mt-3 text-base leading-8 text-foreground/80">
+        まずは「小学校のころ」の話から。
+        <br />
+        二択が16問と、一行で答えるお題が9題、その日にまとめて出ます。
+      </p>
+      <p className="mt-3 text-sm leading-7 text-foreground/60">
+        次の週は中学のころ、その次は高校のころ、と進みます。
+        <br />
+        どれも登録なしで読めます。
+      </p>
+    </section>
   );
 }
 

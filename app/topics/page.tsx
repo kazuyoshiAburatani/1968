@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { groupByEra, type ArchiveTopic } from "@/lib/archive";
 import { loadTopicArchive } from "@/lib/archive-server";
+import { LAUNCH_LABEL, isBeforeLaunch } from "@/lib/launch";
 
 export const metadata: Metadata = {
   title: "これまでのお題",
@@ -53,9 +54,9 @@ export default async function TopicsArchivePage() {
 
       {topics.length === 0 ? (
         <p className="mt-8 rounded-2xl border border-border/60 bg-muted/40 p-6 text-center leading-8">
-          いま出ているお題はありません。
-          <br />
-          近いうちにまた出します。
+          {isBeforeLaunch()
+            ? `${LAUNCH_LABEL}から始めます。まずは小学校のころの話から。`
+            : "いま出ているものはありません。近いうちにまた出します。"}
         </p>
       ) : (
         <div className="mt-8 space-y-10">
