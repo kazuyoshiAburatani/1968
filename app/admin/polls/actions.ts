@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { PollUpsertSchema } from "@/lib/validation/topic";
 import { hasFile, removeImage, storeImage } from "@/lib/image-upload";
+import { isValidPollIcon } from "@/lib/poll-icon";
 
 function fail(message: string): never {
   redirect(`/admin/polls?error=${encodeURIComponent(message)}`);
@@ -66,6 +67,30 @@ async function readOptionImages(
   return uploaded;
 }
 
+// 設問の上に出す写真。こちらは 1 枚だけなので、左右そろえる制約はない。
+async function readHeaderImage(
+  formData: FormData,
+  pollId: string,
+  current: string | null,
+): Promise<string | null> {
+  if (formData.get("clear_header") === "1") {
+    await removeImage("poll-media", current);
+    return null;
+  }
+  const file = formData.get("header_photo");
+  if (!hasFile(file)) return current;
+
+  const r = await storeImage(file, "poll-media", pollId);
+  if (!r.ok) fail(r.message);
+  await removeImage("poll-media", current);
+  return r.image.path;
+}
+
+function readIcon(formData: FormData): string | null {
+  const raw = formData.get("icon");
+  return isValidPollIcon(raw) ? raw : null;
+}
+
 function readForm(formData: FormData) {
   return {
     question: formData.get("question"),
@@ -74,6 +99,8 @@ function readForm(formData: FormData) {
     blurb: formData.get("blurb") ?? "",
     era: formData.get("era") ?? "",
     gender_lean: formData.get("gender_lean") ?? "both",
+    // 一覧に無い値は保存しない。空文字は「自動で選ぶ」なので null にする
+    icon: readIcon(formData),
     published_at: formData.get("published_at"),
     expires_at: formData.get("expires_at") ?? "",
     is_active: formData.get("is_active") ?? undefined,
@@ -105,10 +132,11 @@ export async function createPoll(formData: FormData) {
     a: null,
     b: null,
   });
-  if (images.option_a_image) {
+  const headerImage = await readHeaderImage(formData, created.id, null);
+  if (images.option_a_image || headerImage) {
     const { error: imgError } = await sb
       .from("polls")
-      .update(images)
+      .update({ ...images, header_image: headerImage })
       .eq("id", created.id);
     if (imgError) {
       console.error("[admin/polls/create:images]", imgError.message);
@@ -138,7 +166,7 @@ export async function updatePoll(formData: FormData) {
 
   const { data: before } = await sb
     .from("polls")
-    .select("option_a_image, option_b_image")
+    .select("option_a_image, option_b_image, header_image")
     .eq("id", id)
     .maybeSingle();
 
@@ -146,10 +174,15 @@ export async function updatePoll(formData: FormData) {
     a: before?.option_a_image ?? null,
     b: before?.option_b_image ?? null,
   });
+  const headerImage = await readHeaderImage(
+    formData,
+    id,
+    before?.header_image ?? null,
+  );
 
   const { error } = await sb
     .from("polls")
-    .update({ ...rest, ...images })
+    .update({ ...rest, ...images, header_image: headerImage })
     .eq("id", id);
   if (error) {
     console.error("[admin/polls/update]", error.message);
@@ -172,13 +205,14 @@ export async function deletePoll(formData: FormData) {
   // 誰からも辿れないファイルが増え続ける
   const { data: before } = await sb
     .from("polls")
-    .select("option_a_image, option_b_image")
+    .select("option_a_image, option_b_image, header_image")
     .eq("id", parsed.data.id)
     .maybeSingle();
 
   await sb.from("polls").delete().eq("id", parsed.data.id);
   await removeImage("poll-media", before?.option_a_image);
   await removeImage("poll-media", before?.option_b_image);
+  await removeImage("poll-media", before?.header_image);
 
   revalidatePath("/admin/polls");
   revalidatePath("/");

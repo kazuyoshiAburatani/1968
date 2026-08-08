@@ -182,6 +182,26 @@ admin_edited_at / admin_edited_by
 polls、id / question / option_a / option_b / blurb / era / gender_lean /
 published_at / expires_at / is_active / sort_index
 
+polls には **icon / header_image** もある。
+icon は設問の前に出す絵（Remix Icon のクラス名）で、**null が既定**。
+null のときは `lib/poll-icon.ts` が設問と選択肢の言葉から推測するので、
+79 問を手で埋める必要はなく、新しい問いにも自動で付く。
+運営が管理画面で明示的に選んだときだけ値が入る。
+header_image を入れた問いだけ、アイコンの代わりに設問の上へ横長の写真が出る。
+
+**設問の前は基本アイコンにすること。** 全問に写真を用意することはできず、
+一部だけ写真になると、写真の無い問いが見劣りして押されなくなる。
+アイコンなら全問に必ず付いて見た目の格が揃う。
+
+`lib/poll-icon.ts` の RULES は**並び順に意味がある**。上から順に見て最初に当たった
+ものを使うので、具体的な語ほど先に置く。実際に踏んだ例、
+「聖子ちゃんカット」がアイドルになる（髪型を先に置いて解決）、
+「ナイロンのスポーツバッグ」がスポーツになる（カバンを先に）、
+「ラジオなどの電気工作」がラジオ番組になる（技術・工作を先に）、
+「名作劇場」が映画になる（映画側を「劇場版」に限定）、
+「二十代の習い事」が仕事になる（二十代を最後に）。
+語を足すときは `tests/poll-icon.test.ts` を通すこと。
+
 polls には **option_a_image / option_b_image**（poll-media バケット内のパス）がある。
 **両方 null か、両方入っているかのどちらか**で、DB 制約 `polls_option_images_paired` が守る。
 片方だけだと、写真のあるほうが目に入って選ばれやすく、集計が意味を持たなくなる。

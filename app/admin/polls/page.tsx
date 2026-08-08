@@ -5,6 +5,7 @@ import { TOPIC_ERA_VALUES } from "@/lib/validation/topic";
 import { createPoll, deletePoll, updatePoll } from "./actions";
 import { PhotoPicker } from "@/components/photo-picker";
 import { pollImageUrl } from "@/lib/media";
+import { POLL_ICONS, pollIcon } from "@/lib/poll-icon";
 
 export const metadata: Metadata = { title: "二択の配信" };
 
@@ -15,6 +16,8 @@ type Poll = {
   option_b: string;
   option_a_image: string | null;
   option_b_image: string | null;
+  icon: string | null;
+  header_image: string | null;
   blurb: string;
   era: string | null;
   gender_lean: "male" | "female" | "both";
@@ -43,7 +46,7 @@ export default async function AdminPollsPage({ searchParams }: Props) {
   const { data } = await sb
     .from("polls")
     .select(
-      "id, question, option_a, option_b, option_a_image, option_b_image, blurb, era, gender_lean, published_at, expires_at, is_active",
+      "id, question, option_a, option_b, option_a_image, option_b_image, icon, header_image, blurb, era, gender_lean, published_at, expires_at, is_active",
     )
     .order("published_at", { ascending: false })
     .limit(200);
@@ -157,7 +160,13 @@ export default async function AdminPollsPage({ searchParams }: Props) {
                         {voteCount.get(p.id) ?? 0} 票
                       </span>
                     </div>
-                    <p className="mt-1.5 font-bold leading-7">{p.question}</p>
+                    <p className="mt-1.5 flex items-center gap-2 font-bold leading-7">
+                      <i
+                        className={`${pollIcon(p)} shrink-0 text-lg text-accent`}
+                        aria-hidden
+                      />
+                      {p.question}
+                    </p>
                     <p className="mt-0.5 text-sm text-foreground/70">
                       {p.option_a} ／ {p.option_b}
                     </p>
@@ -236,6 +245,38 @@ function PollForm({ initial }: { initial?: Poll }) {
         />
       </div>
 
+      <div>
+        <label htmlFor="icon" className="block text-sm font-bold mb-1">
+          設問の前に出す絵
+        </label>
+        <div className="flex items-center gap-3">
+          <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent/15 text-accent">
+            <i
+              className={`${initial ? pollIcon(initial) : "ri-scales-3-line"} text-[26px]`}
+              aria-hidden
+            />
+          </span>
+          <select
+            id="icon"
+            name="icon"
+            defaultValue={initial?.icon ?? ""}
+            className="flex-1 px-3 py-2 rounded border border-border bg-background"
+          >
+            <option value="">自動で選ぶ（おすすめ）</option>
+            {POLL_ICONS.map((i) => (
+              <option key={i.value} value={i.value}>
+                {i.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <p className="mt-1 text-xs leading-6 text-foreground/60">
+          「自動で選ぶ」のままにしておくと、設問と選択肢の言葉から中身に合った絵が付きます。
+          ふつうは触らなくて構いません。左の丸は、いま保存されている内容での見え方です
+          （選び直した見え方は、保存すると反映されます）。
+        </p>
+      </div>
+
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
           <label htmlFor="option_a" className="block text-sm font-bold mb-1">
@@ -308,6 +349,35 @@ function PollForm({ initial }: { initial?: Poll }) {
           <label className="mt-3 flex items-center gap-2 text-sm">
             <input type="checkbox" name="clear_images" value="1" className="size-5" />
             写真を外して、字だけに戻す
+          </label>
+        )}
+
+        <hr className="my-4 border-border/60" />
+
+        <p className="text-sm font-bold">設問の上に出す写真（任意）</p>
+        <p className="mt-1 text-xs leading-6 text-foreground/60">
+          入れると、カードの一番上に横長で出ます。入れなければ上のアイコンが出ます。
+          ここぞという問いだけに使ってください。全部の問いに写真が付くわけではないので、
+          毎回入れると、写真の無い問いが見劣りします。
+        </p>
+        {initial?.header_image && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={pollImageUrl(initial.header_image) ?? ""}
+            alt="いま入っている設問の上の写真"
+            className="mt-2 h-28 w-full rounded-lg border border-border object-cover"
+          />
+        )}
+        <PhotoPicker name="header_photo" label="写真を選ぶ" className="mt-2" />
+        {initial?.header_image && (
+          <label className="mt-2 flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="clear_header"
+              value="1"
+              className="size-5"
+            />
+            設問の上の写真を外して、アイコンに戻す
           </label>
         )}
       </fieldset>

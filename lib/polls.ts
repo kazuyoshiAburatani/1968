@@ -16,6 +16,10 @@ export type PollRow = {
   /** 選択肢の写真。poll-media バケット内のパス。両方 null か、両方入っているかのどちらか */
   option_a_image: string | null;
   option_b_image: string | null;
+  /** 設問の前に出すアイコン。null なら lib/poll-icon.ts が言葉から推測する */
+  icon: string | null;
+  /** 設問の上に出す写真。入っているときはアイコンより優先する */
+  header_image: string | null;
   blurb: string;
   era: string | null;
   gender_lean: "male" | "female" | "both";

@@ -56,6 +56,9 @@ export const TopicUpsertSchema = z.object({
     .optional()
     .transform((v) => (v && v.length > 0 ? v : null)),
   gender_lean: z.enum(["male", "female", "both"]).default("both"),
+  // 設問の前に出す絵。null は「自動で選ぶ」で、表示時に lib/poll-icon.ts が推測する。
+  // 一覧に無い値は Server Action 側で先に落としてあるので、ここは受けるだけ。
+  icon: z.string().nullable().default(null),
   published_at: z.string().min(1, "公開日時を入力してください"),
   expires_at: z
     .string()
@@ -83,6 +86,9 @@ export const PollUpsertSchema = z.object({
     .optional()
     .transform((v) => (v && v.length > 0 ? v : null)),
   gender_lean: z.enum(["male", "female", "both"]).default("both"),
+  // 設問の前に出す絵。null は「自動で選ぶ」で、表示時に lib/poll-icon.ts が推測する。
+  // 一覧に無い値は Server Action 側で先に落としてあるので、ここは受けるだけ。
+  icon: z.string().nullable().default(null),
   published_at: z.string().min(1, "公開日時を入力してください"),
   expires_at: z
     .string()

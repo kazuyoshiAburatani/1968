@@ -25,7 +25,7 @@ export async function loadPolls(
   let query = supabase
     .from("polls")
     .select(
-      "id, question, option_a, option_b, option_a_image, option_b_image, blurb, era, gender_lean, published_at",
+      "id, question, option_a, option_b, option_a_image, option_b_image, icon, header_image, blurb, era, gender_lean, published_at",
     )
     .eq("is_active", true)
     .lte("published_at", now)

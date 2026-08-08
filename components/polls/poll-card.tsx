@@ -6,6 +6,7 @@ import { votePoll, commentOnPoll } from "@/app/polls/actions";
 import { PhotoPicker } from "@/components/photo-picker";
 import { PhotoView } from "@/components/photo-view";
 import { pollImageUrl, postImageUrl } from "@/lib/media";
+import { pollIcon } from "@/lib/poll-icon";
 import {
   choiceLabel,
   hasOptionImages,
@@ -45,6 +46,14 @@ import {
 // 記憶を引き出すのに言葉を介さずに済むので、考える前に指が動く。
 // 写真が入っていないお題は今までどおり字だけで出す。写真の有無で作りを変えるが、
 // 押せる場所の大きさと並び方は変えない。
+//
+// 設問の前に出す絵について。
+// 設問だけが縦に並ぶと、どれも同じ見た目になって「読む」作業になる。
+// 左に小さな絵がひとつあるだけで、読む前に「野球の話だ」「テレビの話だ」と
+// 分かって目が止まる。字を追うのが億劫な人ほど効く。
+// 基本はアイコンにしてある。79 問すべてに写真は用意できないし、一部だけ写真だと、
+// 写真の無い問いが見劣りして押されなくなる。アイコンなら全部に必ず付いて格が揃う。
+// 写真（header_image）が入っている問いだけ、アイコンの代わりに写真を出す。
 
 type Props = {
   poll: PollWithResult;
@@ -72,6 +81,7 @@ export function PollCard({
 
   const voted = choice !== null;
   const withImages = hasOptionImages(poll);
+  const headerUrl = pollImageUrl(poll.header_image);
   // 自分の 1 票を足した数。サーバの返事を待たずに出す
   const justVoted = poll.myChoice === null && choice !== null;
   const bump = (c: PollChoice) => (justVoted && choice === c ? 1 : 0);
@@ -160,14 +170,34 @@ export function PollCard({
       id={`poll-${poll.id}`}
       className="rounded-2xl border-2 border-accent/50 bg-accent/5 p-5 sm:p-6 scroll-mt-20"
     >
-      <div className="flex items-center gap-2 text-xs font-bold text-accent">
-        <i className="ri-scales-3-line text-base" aria-hidden />
-        {eyebrow}
-      </div>
+      {/* 写真が指定されている問いだけ、設問の上に大きく出す */}
+      {headerUrl && (
+        <div className="relative -mx-5 -mt-5 mb-4 aspect-[16/7] overflow-hidden rounded-t-xl sm:-mx-6 sm:-mt-6">
+          <Image
+            src={headerUrl}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 100vw, 640px"
+            className="object-cover"
+            priority={false}
+          />
+        </div>
+      )}
 
-      <h2 className="mt-2 text-xl sm:text-2xl font-bold leading-snug">
-        {poll.question}
-      </h2>
+      <div className="flex items-start gap-3">
+        {/* 写真があるときはアイコンを重ねない。二つ並ぶとどちらも意味を失う */}
+        {!headerUrl && (
+          <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent/15 text-accent">
+            <i className={`${pollIcon(poll)} text-[26px]`} aria-hidden />
+          </span>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-bold text-accent">{eyebrow}</div>
+          <h2 className="mt-1 text-xl sm:text-2xl font-bold leading-snug">
+            {poll.question}
+          </h2>
+        </div>
+      </div>
 
       {error && (
         <p

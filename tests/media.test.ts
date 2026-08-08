@@ -83,6 +83,8 @@ describe("hasOptionImages", () => {
     option_b: "オレたちひょうきん族",
     option_a_image: null,
     option_b_image: null,
+    icon: null,
+    header_image: null,
     blurb: "",
     era: "中学",
     gender_lean: "both",
