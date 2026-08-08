@@ -39,7 +39,7 @@ export function MembershipBadge({
           title="立ち上げから参加している創設メンバー"
         >
           <Image
-            src="/badges/founding.png"
+            src="/badges/founding-member_96.png"
             alt="創設メンバー"
             width={px}
             height={px}

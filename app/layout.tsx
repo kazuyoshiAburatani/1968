@@ -36,7 +36,7 @@ const pacifico = Pacifico({
 
 export const metadata: Metadata = {
   title: {
-    default: "1968 | 1968年に生まれた学年の、語らいの場",
+    default: "1968.LOVE | 1968年に生まれた学年の、語らいの場",
     template: "%s | 1968.LOVE",
   },
   description:
