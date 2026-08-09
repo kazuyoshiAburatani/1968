@@ -25,3 +25,26 @@ export const LAUNCH_LABEL = "8月10日（月）";
 export function isBeforeLaunch(now: Date = new Date()): boolean {
   return now.getTime() < LAUNCH_AT.getTime();
 }
+
+// 創設メンバーの締切。
+//
+// この日時までに席をつくった人は、全員「創設メンバー」になる。
+//
+// なぜ自動にするか。
+// 立ち上げ期にいちばん要るのは、最初に入って最初に書いてくれる人たち
+// （種火メンバー）で、その人たちに声をかけるとき「最初の30人は創設メンバーです」
+// と言えるかどうかで、返事の率がまるで違う。
+// ところが承認フロー（/admin/applications）を通さないと称号が付かない作りだったので、
+// 声をかけた本人が手で付けて回る必要があった。30人ぶんそれをやる余裕は無い。
+//
+// 期間で自動的に付けば、誘い文句がそのまま事実になる。
+// 締切を過ぎたら二度と付かないので、称号の価値も薄まらない。
+export const FOUNDING_MEMBER_UNTIL = new Date("2026-09-01T00:00:00+09:00");
+
+/** 画面に出す締切の表記。 */
+export const FOUNDING_LABEL = "8月31日";
+
+/** いま席をつくった人が創設メンバーになるか。 */
+export function isFoundingWindow(now: Date = new Date()): boolean {
+  return now.getTime() < FOUNDING_MEMBER_UNTIL.getTime();
+}

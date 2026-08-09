@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { FOUNDING_LABEL, isFoundingWindow } from "@/lib/launch";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { joinAnonymously } from "./actions";
 import { SubmitButton } from "@/components/submit-button";
@@ -57,6 +58,26 @@ export default async function JoinPage({ searchParams }: Props) {
           書いたものは、あとから自分で消せます
         </li>
       </ul>
+
+      {/* 創設メンバーの案内。
+          立ち上げ期に最初に入ってくれる人へ渡せるものが、いまはこれしかない。
+          締切を過ぎたら自動で消えるので、当日に何かを消す作業は要らない。 */}
+      {isFoundingWindow() && (
+        <div className="mt-5 flex items-start gap-3 rounded-2xl border border-accent/40 bg-accent/5 p-4">
+          <i
+            className="ri-award-line mt-0.5 shrink-0 text-xl text-accent"
+            aria-hidden
+          />
+          <p className="text-sm leading-7 text-foreground/80">
+            <span className="font-bold text-foreground">
+              いま席をつくった方は「創設メンバー」です。
+            </span>
+            <br />
+            {FOUNDING_LABEL}までに来てくださった方に、名前の横に出る称号が付きます。
+            あとから付けることはできません。
+          </p>
+        </div>
+      )}
 
       {params.error && (
         <p

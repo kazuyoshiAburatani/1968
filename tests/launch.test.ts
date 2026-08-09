@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { LAUNCH_AT, LAUNCH_LABEL, isBeforeLaunch } from "@/lib/launch";
+import {
+  FOUNDING_LABEL,
+  FOUNDING_MEMBER_UNTIL,
+  LAUNCH_AT,
+  LAUNCH_LABEL,
+  isBeforeLaunch,
+  isFoundingWindow,
+} from "@/lib/launch";
 
 // 公開日の判定。
 //
@@ -43,5 +50,36 @@ describe("isBeforeLaunch", () => {
     // サーバは UTC で動く。8月10日 0時 JST は 8月9日 15時 UTC
     expect(isBeforeLaunch(new Date("2026-08-09T14:59:59Z"))).toBe(true);
     expect(isBeforeLaunch(new Date("2026-08-09T15:00:00Z"))).toBe(false);
+  });
+});
+
+describe("創設メンバーの窓口", () => {
+  it("締切は日本時間の8月31日いっぱい（9月1日0時まで）", () => {
+    expect(FOUNDING_MEMBER_UNTIL.toISOString()).toBe("2026-08-31T15:00:00.000Z");
+  });
+
+  it("画面の表記と締切がずれていない", () => {
+    // 表記だけ直して日付を直し忘れる事故を防ぐ。
+    // 締切は9月1日0時なので、表示は「その前日まで」になる
+    const jst = new Date(FOUNDING_MEMBER_UNTIL.getTime() + 9 * 60 * 60 * 1000);
+    const lastDay = new Date(jst.getTime() - 24 * 60 * 60 * 1000);
+    expect(FOUNDING_LABEL).toContain(`${lastDay.getUTCMonth() + 1}月`);
+    expect(FOUNDING_LABEL).toContain(`${lastDay.getUTCDate()}日`);
+  });
+
+  it("8月中に席をつくれば創設メンバーになる", () => {
+    expect(isFoundingWindow(new Date("2026-08-10T00:00:00+09:00"))).toBe(true);
+    expect(isFoundingWindow(new Date("2026-08-31T23:59:59+09:00"))).toBe(true);
+  });
+
+  it("9月に入ったら、もう付かない", () => {
+    // ここが true のままだと、称号が誰にでも付いて値打ちが消える
+    expect(isFoundingWindow(new Date("2026-09-01T00:00:00+09:00"))).toBe(false);
+    expect(isFoundingWindow(new Date("2026-09-01T00:00:01+09:00"))).toBe(false);
+  });
+
+  it("公開日には、まだ窓口が開いている", () => {
+    // 公開日に閉まっていたら、そもそも誰も受け取れない
+    expect(isFoundingWindow(LAUNCH_AT)).toBe(true);
   });
 });

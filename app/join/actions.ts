@@ -6,6 +6,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { JoinSchema, checkBirthday } from "@/lib/validation/profile";
 import { schoolYearOfBirth } from "@/lib/school-year";
 import { takeDraft } from "@/lib/draft";
+import { isFoundingWindow } from "@/lib/launch";
 
 // 30 秒登録。
 //
@@ -68,11 +69,30 @@ export async function joinAnonymously(formData: FormData) {
   const admin = getSupabaseAdminClient();
 
   // public.users はトリガーで作られるが、匿名の場合は取りこぼしがありうるので保険を張る
-  await admin
-    .from("users")
-    .upsert({ id: userId, membership_rank: "member", status: "active" }, {
-      onConflict: "id",
-    });
+  //
+  // 創設メンバーについて。
+  // 締切（lib/launch.ts の FOUNDING_MEMBER_UNTIL）までに席をつくった人には、
+  // ここで自動的に称号を付ける。種火メンバーに声をかけるとき
+  // 「いま入れば創設メンバーです」と言えるようにするため。
+  // 手で付けて回る作りだと、30人ぶんの手間で運用が止まる。
+  //
+  // 締切を過ぎたら is_founding_member を渡さない。渡さなければ既存の値は
+  // 触られないので、すでに称号を持っている人から取り上げてしまうことはない。
+  const founding = isFoundingWindow();
+  await admin.from("users").upsert(
+    {
+      id: userId,
+      membership_rank: "member",
+      status: "active",
+      ...(founding
+        ? {
+            is_founding_member: true,
+            founding_member_since: new Date().toISOString(),
+          }
+        : {}),
+    },
+    { onConflict: "id" },
+  );
 
   const { error: profileError } = await admin.from("profiles").upsert(
     {
