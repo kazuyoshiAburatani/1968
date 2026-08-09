@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FoundingCta } from "@/components/founding-cta";
+import { ShareRow } from "@/components/share-row";
+import { getSiteUrl } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   buildPersonalTimeline,
@@ -176,7 +178,16 @@ export default async function NenpyoPage({ searchParams }: Props) {
         </section>
       ))}
 
-      {/* 年表を読み終えた直後がいちばん温まっている。ここで席づくりへ渡す */}
+      {/* 年表を読み終えた直後がいちばん温まっている。
+          ここで「人に渡す」と「席をつくる」の 2 つを並べる。
+          渡す先を年表そのものにしてあるのは、受け取った人が自分の生まれた日で
+          同じものを作れるから。そこがこの場の入口として一番軽い。 */}
+      <ShareRow
+        url={`${getSiteUrl()}/nenpyo`}
+        text={`${schoolYearLabel(sy)}の年表を作りました。自分が何年生のときに何があったかが並びます。`}
+        label="この年表を、同級生に送る"
+      />
+
       <FoundingCta />
 
       {/* 打ち上げ花火で終わらせないための戻り口。

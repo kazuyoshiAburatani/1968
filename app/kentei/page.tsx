@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FoundingCta } from "@/components/founding-cta";
+import { ShareRow } from "@/components/share-row";
+import { getSiteUrl } from "@/lib/site-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   buildQuizSet,
@@ -156,6 +158,12 @@ export default async function KenteiPage({ searchParams }: Props) {
             );
           })}
         </section>
+
+        <ShareRow
+          url={`${getSiteUrl()}/kentei`}
+          text={`昭和43年度生まれ検定、${questions.length}問中${score}問でした。${verdict.title}`}
+          label="この結果を、同級生に送る"
+        />
 
         <FoundingCta />
 
