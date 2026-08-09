@@ -50,16 +50,23 @@ export default async function AdminTopicsPage({ searchParams }: Props) {
   const topics = ((data ?? []) as unknown) as Topic[];
   const editing = edit ? topics.find((t) => t.id === edit) : undefined;
 
+  // 並べ方について。
+  // 1 日 1 題で 2 か月先まで仕込んであるので、「新しい順」の一列にすると
+  // 上から 10月 → 8月 と逆向きに並び、次に何が出るのか読み取れない。
+  // 運営が毎日見たいのは「次に出るもの」なので、そこを先頭に近い順で置く。
   const now = new Date();
-  const upcoming = topics.filter(
-    (t) => t.is_active && new Date(t.published_at) > now,
-  );
-  const live = topics.filter(
-    (t) =>
-      t.is_active &&
-      new Date(t.published_at) <= now &&
-      (t.expires_at == null || new Date(t.expires_at) > now),
-  );
+  const upcoming = topics
+    .filter((t) => t.is_active && new Date(t.published_at) > now)
+    .sort((a, b) => (a.published_at < b.published_at ? -1 : 1));
+  const live = topics
+    .filter(
+      (t) =>
+        t.is_active &&
+        new Date(t.published_at) <= now &&
+        (t.expires_at == null || new Date(t.expires_at) > now),
+    )
+    .sort((a, b) => (a.published_at < b.published_at ? 1 : -1));
+  const drafts = topics.filter((t) => !t.is_active);
 
   return (
     <div className="space-y-6">
@@ -94,14 +101,43 @@ export default async function AdminTopicsPage({ searchParams }: Props) {
         <TopicForm initial={editing} />
       </section>
 
+      <TopicList title="これから配信" note="上から順に出ます。1日1題、毎朝0時。" topics={upcoming} />
+      <TopicList title="公開中" note="すでに出ているもの。新しい順。" topics={live} />
+      <TopicList
+        title="下書き・停止中"
+        note="配信には乗っていません。出すときは公開日を入れて「有効にする」を押してください。"
+        topics={drafts}
+      />
+      {topics.length === 0 && (
+        <p className="rounded-xl border border-border bg-background p-6 text-center text-foreground/70">
+          まだお題はありません。
+        </p>
+      )}
+    </div>
+  );
+}
+
+function TopicList({
+  title,
+  note,
+  topics,
+}: {
+  title: string;
+  note: string;
+  topics: Topic[];
+}) {
+  if (topics.length === 0) return null;
+  const now = new Date();
+  return (
       <section>
-        <h2 className="text-lg font-bold">一覧</h2>
+        <h2 className="text-lg font-bold">
+          {title}
+          <span className="ml-2 text-sm font-normal text-foreground/60">
+            {topics.length}件
+          </span>
+        </h2>
+        <p className="mt-1 text-sm text-foreground/60">{note}</p>
         <ul className="mt-3 space-y-3">
-          {topics.length === 0 && (
-            <li className="rounded-xl border border-border bg-background p-6 text-center text-foreground/70">
-              まだお題はありません。
-            </li>
-          )}
           {topics.map((t) => {
             const isLive =
               t.is_active &&
@@ -144,10 +180,7 @@ export default async function AdminTopicsPage({ searchParams }: Props) {
                     </div>
                     <p className="mt-1.5 font-bold leading-7">{t.title}</p>
                     <p className="mt-0.5 text-xs text-foreground/50">
-                      {new Date(t.published_at).toLocaleString("ja-JP", {
-                        timeZone: "Asia/Tokyo",
-                      })}
-                      公開
+                      {formatSchedule(t.published_at)}
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-2">
@@ -173,7 +206,6 @@ export default async function AdminTopicsPage({ searchParams }: Props) {
           })}
         </ul>
       </section>
-    </div>
   );
 }
 
@@ -363,4 +395,18 @@ function TopicForm({ initial }: { initial?: Topic }) {
       </button>
     </form>
   );
+}
+
+// 配信日の表示。1 日 1 題なので秒まで出しても意味がない。
+// 曜日を添えると「土日に何が出るか」を数えずに確かめられる。
+function formatSchedule(iso: string): string {
+  const d = new Date(iso);
+  const jst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  const y = jst.getUTCFullYear();
+  if (y >= 2090) return "公開日は未定（下書き）";
+  const w = ["日", "月", "火", "水", "木", "金", "土"][jst.getUTCDay()];
+  const hh = jst.getUTCHours();
+  const mm = jst.getUTCMinutes();
+  const time = hh === 0 && mm === 0 ? "" : ` ${hh}:${String(mm).padStart(2, "0")}`;
+  return `${y}年${jst.getUTCMonth() + 1}月${jst.getUTCDate()}日（${w}）${time} 公開`;
 }

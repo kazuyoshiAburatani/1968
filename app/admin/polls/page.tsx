@@ -54,6 +54,28 @@ export default async function AdminPollsPage({ searchParams }: Props) {
   const polls = ((data ?? []) as unknown) as Poll[];
   const editing = edit ? polls.find((p) => p.id === edit) : undefined;
 
+  // 一覧の並べ方について。
+  //
+  // 以前は「公開日の新しい順」の一列だった。1 日 1 問で 2 か月先まで
+  // 仕込んであるため、上から順に 10月 → 9月 → 8月 と逆向きに並び、
+  // さらに下書き（公開日 2099年）が先頭に 20 行居座っていた。
+  // 「次に何が出るのか」がまったく読み取れず、日付がばらばらに見える。
+  //
+  // 運営が毎日見たいのは「次に出るもの」なので、そこを先頭に、近い順で置く。
+  const nowDate = new Date();
+  const isLiveNow = (p: Poll) =>
+    p.is_active &&
+    new Date(p.published_at) <= nowDate &&
+    (p.expires_at == null || new Date(p.expires_at) > nowDate);
+
+  const queuedAsc = polls
+    .filter((p) => p.is_active && new Date(p.published_at) > nowDate)
+    .sort((a, b) => (a.published_at < b.published_at ? -1 : 1));
+  const livePolls = polls
+    .filter(isLiveNow)
+    .sort((a, b) => (a.published_at < b.published_at ? 1 : -1));
+  const draftPolls = polls.filter((p) => !p.is_active);
+
   // 投票数
   const { data: voteData } = await sb.from("poll_votes").select("poll_id");
   const voteCount = new Map<string, number>();
@@ -119,8 +141,50 @@ export default async function AdminPollsPage({ searchParams }: Props) {
         <PollForm initial={editing} />
       </section>
 
+      <PollList
+        title="これから配信"
+        note="上から順に出ます。1日1問、毎朝0時。"
+        polls={queuedAsc}
+        voteCount={voteCount}
+      />
+      <PollList
+        title="公開中"
+        note="すでに出ているもの。新しい順。"
+        polls={livePolls}
+        voteCount={voteCount}
+      />
+      <PollList
+        title="下書き・停止中"
+        note="配信には乗っていません。出すときは公開日を入れて「有効にする」を押してください。"
+        polls={draftPolls}
+        voteCount={voteCount}
+      />
+    </div>
+  );
+}
+
+function PollList({
+  title,
+  note,
+  polls,
+  voteCount,
+}: {
+  title: string;
+  note: string;
+  polls: Poll[];
+  voteCount: Map<string, number>;
+}) {
+  if (polls.length === 0) return null;
+  const now = new Date();
+  return (
       <section>
-        <h2 className="text-lg font-bold">一覧</h2>
+        <h2 className="text-lg font-bold">
+          {title}
+          <span className="ml-2 text-sm font-normal text-foreground/60">
+            {polls.length}件
+          </span>
+        </h2>
+        <p className="mt-1 text-sm text-foreground/60">{note}</p>
         <ul className="mt-3 space-y-3">
           {polls.map((p) => {
             const isLive =
@@ -184,10 +248,7 @@ export default async function AdminPollsPage({ searchParams }: Props) {
                       </div>
                     )}
                     <p className="mt-0.5 text-xs text-foreground/50">
-                      {new Date(p.published_at).toLocaleString("ja-JP", {
-                        timeZone: "Asia/Tokyo",
-                      })}
-                      公開
+                      {formatSchedule(p.published_at)}
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-2">
@@ -213,7 +274,6 @@ export default async function AdminPollsPage({ searchParams }: Props) {
           })}
         </ul>
       </section>
-    </div>
   );
 }
 
@@ -483,4 +543,19 @@ function PollForm({ initial }: { initial?: Poll }) {
       </button>
     </form>
   );
+}
+
+// 配信日の表示。
+// 1 日 1 問なので、秒まで出しても意味がない。曜日を添えると、
+// 「土日に何が出るか」を確かめるときに数えなくて済む。
+function formatSchedule(iso: string): string {
+  const d = new Date(iso);
+  const jst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  const y = jst.getUTCFullYear();
+  if (y >= 2090) return "公開日は未定（下書き）";
+  const w = ["日", "月", "火", "水", "木", "金", "土"][jst.getUTCDay()];
+  const hh = jst.getUTCHours();
+  const mm = jst.getUTCMinutes();
+  const time = hh === 0 && mm === 0 ? "" : ` ${hh}:${String(mm).padStart(2, "0")}`;
+  return `${y}年${jst.getUTCMonth() + 1}月${jst.getUTCDate()}日（${w}）${time} 公開`;
 }
