@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FoundingCta } from "@/components/founding-cta";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   buildPersonalTimeline,
@@ -175,19 +176,24 @@ export default async function NenpyoPage({ searchParams }: Props) {
         </section>
       ))}
 
-      {/* 打ち上げ花火で終わらせないための戻り口 */}
+      {/* 年表を読み終えた直後がいちばん温まっている。ここで席づくりへ渡す */}
+      <FoundingCta />
+
+      {/* 打ち上げ花火で終わらせないための戻り口。
+          「みんなが書いています」とは書かない。まだ書かれていない日に来た人には
+          嘘になり、次の画面で分かる。書けることだけを書く */}
       <section className="rounded-2xl border border-border/60 bg-muted/40 p-6 text-center">
         <p className="text-base leading-8">
           この年表の中で、いちばん覚えている出来事はどれでしたか。
           <br />
-          同じ学年の人たちが、それぞれの記憶を書いています。
+          よければ、その記憶を置いていってください。
         </p>
         <div className="mt-4 flex flex-col sm:flex-row gap-2 justify-center">
           <Link
             href="/#polls"
             className="inline-flex items-center justify-center min-h-[52px] px-6 rounded-full bg-primary text-white text-base font-bold no-underline hover:opacity-90"
           >
-            今週の二択に答える
+            今日の二択に答える
           </Link>
           <Link
             href="/kentei"

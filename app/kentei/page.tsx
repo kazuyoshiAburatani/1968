@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FoundingCta } from "@/components/founding-cta";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   buildQuizSet,
@@ -156,6 +157,8 @@ export default async function KenteiPage({ searchParams }: Props) {
           })}
         </section>
 
+        <FoundingCta />
+
         <section className="rounded-2xl border border-border/60 bg-muted/40 p-6 text-center">
           <p className="text-base leading-8">
             解けなかった問題のほうを、あなたはきっと別の形で覚えています。
@@ -167,7 +170,7 @@ export default async function KenteiPage({ searchParams }: Props) {
               href="/#polls"
               className="inline-flex items-center justify-center min-h-[52px] px-6 rounded-full bg-primary text-white text-base font-bold no-underline hover:opacity-90"
             >
-              今週の二択に答える
+              今日の二択に答える
             </Link>
             <Link
               href="/nenpyo"

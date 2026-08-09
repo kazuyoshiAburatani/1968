@@ -40,7 +40,7 @@ export default async function JoinDonePage({ searchParams }: Props) {
       )}
 
       <p className="mt-4 text-base leading-8 text-foreground/80">
-        まずは、今週の二択から。
+        まずは、今日の二択から。
         <br />
         指一本で終わります。
       </p>
@@ -49,7 +49,7 @@ export default async function JoinDonePage({ searchParams }: Props) {
         href="/#polls"
         className="mt-6 inline-flex items-center justify-center min-h-[52px] px-8 rounded-full bg-primary text-white text-base font-bold no-underline hover:opacity-90"
       >
-        今週の二択を見る
+        今日の二択を見る
       </Link>
 
       <div className="mt-10 rounded-2xl border border-border/60 bg-muted/40 p-5 text-left">

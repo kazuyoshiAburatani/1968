@@ -87,7 +87,7 @@ export default async function HomePage({ searchParams }: Props) {
           開く日を先に伝える。公開日を過ぎたら自動で出なくなる */}
       {beforeLaunch && polls.length === 0 && <ComingSoon />}
 
-      {/* 1. 今週の二択、最優先で描画する */}
+      {/* 1. 今日の二択、最優先で描画する */}
       {polls.length > 0 && (
         <div id="polls" className="space-y-6 scroll-mt-20">
           {polls.map((p, i) => (

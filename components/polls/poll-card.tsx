@@ -66,7 +66,7 @@ type Props = {
 
 export function PollCard({
   poll,
-  eyebrow = "今週の二択",
+  eyebrow = "今日の二択",
   canAttachPhoto = false,
 }: Props) {
   const formRef = useRef<HTMLFormElement>(null);

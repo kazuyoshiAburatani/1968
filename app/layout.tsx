@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     template: "%s | 1968.LOVE",
   },
   description:
-    "1968年に生まれた学年（昭和43年度生まれ）だけの語らいの場。今週の二択、穴埋めのお題、自分の年表、昭和43年度生まれ検定。読むだけなら登録は要りません。",
+    "1968年に生まれた学年（昭和43年度生まれ）だけの語らいの場。今日の二択、穴埋めのお題、自分の年表、昭和43年度生まれ検定。読むだけなら登録は要りません。",
   applicationName: "1968.LOVE",
   authors: [{ name: "油谷和好", url: "https://1968.love" }],
   creator: "油谷和好",
@@ -89,7 +89,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "1968.LOVE | 1968年に生まれた学年の、語らいの場",
     description:
-      "1968年に生まれた学年だけの語らいの場。今週の二択に、指一本でどうぞ。",
+      "1968年に生まれた学年だけの語らいの場。今日の二択に、指一本でどうぞ。",
     images: ["/og/og-tagline.png"],
   },
   robots: {
