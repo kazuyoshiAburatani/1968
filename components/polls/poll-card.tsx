@@ -11,6 +11,7 @@ import {
   choiceLabel,
   hasOptionImages,
   percent,
+  showAsPercent,
   type PollChoice,
   type PollComment,
   type PollWithResult,
@@ -252,6 +253,7 @@ export function PollCard({
               imageUrl={withImages ? pollImageUrl(poll.option_a_image) : null}
               pct={percent(countA, total)}
               count={countA}
+              total={total}
               mine={choice === "a"}
             />
             <ResultBar
@@ -259,6 +261,7 @@ export function PollCard({
               imageUrl={withImages ? pollImageUrl(poll.option_b_image) : null}
               pct={percent(countB, total)}
               count={countB}
+              total={total}
               mine={choice === "b"}
             />
             {(countOther > 0 || choice === "other") && (
@@ -267,6 +270,7 @@ export function PollCard({
                 imageUrl={null}
                 pct={percent(countOther, total)}
                 count={countOther}
+                total={total}
                 mine={choice === "other"}
                 muted
               />
@@ -409,6 +413,7 @@ function ResultBar({
   imageUrl,
   pct,
   count,
+  total,
   mine,
   muted = false,
 }: {
@@ -416,9 +421,13 @@ function ResultBar({
   imageUrl: string | null;
   pct: number;
   count: number;
+  total: number;
   mine: boolean;
   muted?: boolean;
 }) {
+  // 人数が少ないうちは割合を出さない。3人しかいないのに「67%」と出すと、
+  // 統計の見た目だけがあって中身が無いので、かえって場の小ささが目立つ。
+  const asPercent = showAsPercent(total);
   return (
     <div className="flex items-start gap-3">
       {/* 結果でも写真を残す。どちらを選んだのかが、字を読まずに分かる */}
@@ -452,16 +461,31 @@ function ResultBar({
             )}
           </span>
           <span className="tabular-nums font-bold">
-            {pct}%
-            <span className="ml-1 text-xs font-normal text-foreground/60">
-              {count}人
-            </span>
+            {asPercent ? (
+              <>
+                {pct}%
+                <span className="ml-1 text-xs font-normal text-foreground/60">
+                  {count}人
+                </span>
+              </>
+            ) : (
+              <>
+                {count}人
+                <span className="ml-1 text-xs font-normal text-foreground/60">
+                  / {total}人中
+                </span>
+              </>
+            )}
           </span>
         </div>
         <div
           className="mt-1 h-3 w-full rounded-full bg-muted overflow-hidden"
           role="img"
-          aria-label={`${label} ${pct}パーセント`}
+          aria-label={
+            asPercent
+              ? `${label} ${pct}パーセント`
+              : `${label} ${total}人中${count}人`
+          }
         >
           <div
             className={

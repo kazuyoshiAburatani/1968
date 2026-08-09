@@ -52,6 +52,22 @@ export function hasOptionImages(
   return poll.option_a_image !== null && poll.option_b_image !== null;
 }
 
+// 何人から「割合」で見せるか。
+//
+// 立ち上げ期は、答えた人が数人しかいない。そこに「67%」と出すと、
+// 統計に見えるのに中身が3人しかないので、かえって場の小ささが際立つ。
+// 「1人しかいない」ときの「100%」は、ほとんど故障に見える。
+//
+// 少ないうちは実数で「3人中2人」と出す。こちらのほうが、
+// 同じ事実でも人の顔が見える言い方になる。
+// 10人を超えたら割合に切り替える。そこからは割合のほうが速く読める。
+export const PERCENT_THRESHOLD = 10;
+
+/** 割合で見せてよい人数が集まっているか。 */
+export function showAsPercent(total: number): boolean {
+  return total >= PERCENT_THRESHOLD;
+}
+
 /** 得票率（%）。総数 0 のときは 0 を返す。 */
 export function percent(count: number, total: number): number {
   if (total <= 0) return 0;

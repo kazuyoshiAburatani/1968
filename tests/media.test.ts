@@ -5,7 +5,7 @@ import {
   pollImageUrl,
   postImageUrl,
 } from "@/lib/media";
-import { hasOptionImages, type PollRow } from "@/lib/polls";
+import { hasOptionImages, showAsPercent, type PollRow } from "@/lib/polls";
 
 // 写真まわり。
 //
@@ -110,5 +110,22 @@ describe("hasOptionImages", () => {
     // 「写真のあるほうが有利」な見た目にはしない
     expect(hasOptionImages({ ...base, option_a_image: "p/a.jpg" })).toBe(false);
     expect(hasOptionImages({ ...base, option_b_image: "p/b.jpg" })).toBe(false);
+  });
+});
+
+describe("showAsPercent", () => {
+  // 立ち上げ期の見え方。3人しかいないのに「67%」と出すと、
+  // 統計の見た目だけがあって中身が無いので、場の小ささが際立つ。
+  // 「1人しかいない」ときの「100%」は、ほとんど故障に見える。
+  it("人が少ないうちは、割合を出さない", () => {
+    expect(showAsPercent(0)).toBe(false);
+    expect(showAsPercent(1)).toBe(false);
+    expect(showAsPercent(3)).toBe(false);
+    expect(showAsPercent(9)).toBe(false);
+  });
+
+  it("10人そろったら、割合に切り替える", () => {
+    expect(showAsPercent(10)).toBe(true);
+    expect(showAsPercent(142)).toBe(true);
   });
 });
