@@ -41,6 +41,16 @@ export type PollWithResult = PollRow & {
   total: number;
   /** 自分がどれに入れたか。未投票なら null */
   myChoice: PollChoice | null;
+  /**
+   * 自分が添えた一言。まだ書いていなければ空文字。
+   *
+   * 一言は 1 人 1 つで、書き直すと上書きされる（poll_votes の行を更新する）。
+   * 直すには、いま何を書いてあるかが見えていないと話にならないので、
+   * 表示用の一覧とは別に、自分の分だけをここに持ってくる。
+   */
+  myComment: string;
+  /** 自分が添えた写真。post-media バケット内のパス */
+  myImagePath: string | null;
   /** 投票に添えられた一言、新しい順 */
   comments: PollComment[];
 };

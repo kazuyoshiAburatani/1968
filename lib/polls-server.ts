@@ -48,7 +48,13 @@ export async function loadPolls(
     image_path: string | null;
     created_at: string;
   };
-  type MineRow = { poll_id: string; choice: PollChoice };
+  type MineRow = {
+    poll_id: string;
+    choice: PollChoice;
+    comment: string | null;
+    image_path: string | null;
+    created_at: string;
+  };
 
   const [{ data: voteData }, { data: mineData }] = await Promise.all([
     supabase
@@ -58,7 +64,7 @@ export async function loadPolls(
     opts.voterKey
       ? getSupabaseAdminClient()
           .from("poll_votes")
-          .select("poll_id, choice")
+          .select("poll_id, choice, comment, image_path, created_at")
           .eq("voter_key", opts.voterKey)
           .in("poll_id", ids)
       : Promise.resolve({ data: [] as MineRow[] }),
@@ -66,7 +72,7 @@ export async function loadPolls(
 
   const votes = (voteData ?? []) as VoteRow[];
   const myVotes = new Map(
-    ((mineData ?? []) as MineRow[]).map((v) => [v.poll_id, v.choice]),
+    ((mineData ?? []) as MineRow[]).map((v) => [v.poll_id, v]),
   );
 
   return polls.map((p) => {
@@ -74,7 +80,12 @@ export async function loadPolls(
     const countA = forPoll.filter((v) => v.choice === "a").length;
     const countB = forPoll.filter((v) => v.choice === "b").length;
     const countOther = forPoll.filter((v) => v.choice === "other").length;
+    const mine = myVotes.get(p.id);
+    // 自分の一言は「あなたの一言」として別枠で出すので、みんなの一覧からは外す。
+    // 公開ビューには voter_key が無い（意図的に落としてある）ので、
+    // 自分の行かどうかは、service_role で引いた自分の created_at と突き合わせて見る。
     const comments = forPoll
+      .filter((v) => !mine || v.created_at !== mine.created_at)
       .filter(
         (v) =>
           (v.comment && v.comment.trim().length > 0) || v.image_path !== null,
@@ -94,7 +105,9 @@ export async function loadPolls(
       countB,
       countOther,
       total: countA + countB + countOther,
-      myChoice: myVotes.get(p.id) ?? null,
+      myChoice: mine?.choice ?? null,
+      myComment: mine?.comment ?? "",
+      myImagePath: mine?.image_path ?? null,
       comments,
     };
   });

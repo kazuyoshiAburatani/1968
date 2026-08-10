@@ -2,7 +2,11 @@
 
 import Image from "next/image";
 import { useRef, useState, useTransition } from "react";
-import { votePoll, commentOnPoll } from "@/app/polls/actions";
+import {
+  votePoll,
+  commentOnPoll,
+  clearOwnPollComment,
+} from "@/app/polls/actions";
 import { PhotoPicker } from "@/components/photo-picker";
 import { PhotoView } from "@/components/photo-view";
 import { pollImageUrl, postImageUrl } from "@/lib/media";
@@ -73,8 +77,18 @@ export function PollCard({
 
   // サーバから渡った投票状況を初期値にして、以降はこの状態で描画する
   const [choice, setChoice] = useState<PollChoice | null>(poll.myChoice);
-  const [comments, setComments] = useState<PollComment[]>(poll.comments);
-  const [draft, setDraft] = useState("");
+  // みんなの一言は読むだけ。自分の分はここに混ざっていない（サーバ側で外してある）ので、
+  // 書いても直しても消しても、この一覧は動かない。だから状態にしない。
+  const comments: PollComment[] = poll.comments;
+  // 一言は 1 人 1 つで、書き直すと上書きされる。
+  // だから入力欄には、いま書いてあるものを最初から入れておく。
+  // 空欄から始まると「もう一つ足せる」と読めてしまい、送ったあとに
+  // 前のが消えたように見える。
+  const [draft, setDraft] = useState(poll.myComment);
+  const [myComment, setMyComment] = useState(poll.myComment);
+  const [myImagePath, setMyImagePath] = useState(poll.myImagePath);
+  const hasMine = myComment.trim().length > 0 || myImagePath !== null;
+  const myUrl = postImageUrl(myImagePath);
   const [photo, setPhoto] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -121,20 +135,18 @@ export function PollCard({
     fd.set("comment", text);
 
     if (!photo) {
-      // これまでどおりの即時表示。写真が無いなら待つ理由がない
-      const optimistic: PollComment = {
-        choice,
-        comment: text,
-        image_path: null,
-        created_at: "",
-      };
-      setComments((prev) => [optimistic, ...prev]);
-      setDraft("");
+      // これまでどおりの即時表示。写真が無いなら待つ理由がない。
+      // 一覧に足すのではなく、自分の一言を置き換える。
+      // 足す作りだと、直したときに前のものと 2 つ並んで見え、
+      // 画面を開き直すと 1 つに戻る（実際には上書きされている）ことになる。
+      const before = myComment;
+      setMyComment(text);
+      setDraft(text);
       setError(null);
       startTransition(async () => {
         const res = await commentOnPoll(fd);
         if (!res.ok) {
-          setComments((prev) => prev.filter((c) => c !== optimistic));
+          setMyComment(before);
           setDraft(text); // 書いた文章は捨てない
           setError(res.message);
         }
@@ -152,18 +164,31 @@ export function PollCard({
       return;
     }
 
-    setComments((prev) => [
-      {
-        choice,
-        comment: text,
-        image_path: res.imagePath ?? null,
-        created_at: "",
-      },
-      ...prev,
-    ]);
-    setDraft("");
+    setMyComment(text);
+    setMyImagePath(res.imagePath ?? null);
+    setDraft(text);
     setPhoto(null);
     formRef.current?.reset();
+  }
+
+  // 一言と写真を取り消す。票そのものは残す。
+  // 消したいのは書いたものであって、選んだ事実ではない。
+  function clearMine() {
+    const beforeText = myComment;
+    const beforeImage = myImagePath;
+    setMyComment("");
+    setMyImagePath(null);
+    setDraft("");
+    setError(null);
+    startTransition(async () => {
+      const res = await clearOwnPollComment(poll.id);
+      if (!res.ok) {
+        setMyComment(beforeText);
+        setMyImagePath(beforeImage);
+        setDraft(beforeText);
+        setError(res.message);
+      }
+    });
   }
 
   return (
@@ -306,7 +331,7 @@ export function PollCard({
                 disabled={(draft.trim().length === 0 && !photo) || sending}
                 className="inline-flex items-center justify-center min-h-[var(--spacing-tap)] px-5 rounded-full border-2 border-primary text-primary font-medium hover:bg-primary hover:text-white active:bg-primary active:text-white transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-primary"
               >
-                {sending ? "送っています" : "添える"}
+                {sending ? "送っています" : hasMine ? "直す" : "添える"}
               </button>
             </div>
 
@@ -321,6 +346,53 @@ export function PollCard({
               className="mt-2"
             />
           </form>
+
+          {/* 自分の一言。みんなの一覧とは分けて、いちばん上に置く。
+              直すには、いま何を書いてあるかが見えている必要がある。
+              一覧に混ぜてしまうと、どれが自分のものか分からない */}
+          {hasMine && (
+            <div className="mt-3 rounded-xl border border-primary/40 bg-primary/5 px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold text-primary">
+                  あなたの一言
+                </span>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDraft(myComment);
+                      formRef.current
+                        ?.querySelector<HTMLInputElement>('input[name="comment"]')
+                        ?.focus();
+                    }}
+                    className="text-xs text-primary underline-offset-2 hover:underline"
+                  >
+                    直す
+                  </button>
+                  <button
+                    type="button"
+                    onClick={clearMine}
+                    className="text-xs text-foreground/50 hover:text-notification underline-offset-2 hover:underline"
+                  >
+                    消す
+                  </button>
+                </div>
+              </div>
+              {myComment.trim().length > 0 && (
+                <p className="mt-1 text-sm leading-7">{myComment}</p>
+              )}
+              {myUrl && (
+                <PhotoView
+                  url={myUrl}
+                  alt="あなたが添えた写真"
+                  className="mt-2"
+                />
+              )}
+              <p className="mt-1.5 text-xs leading-6 text-foreground/60">
+                書き直すと、前のものと入れ替わります。
+              </p>
+            </div>
+          )}
 
           {comments.length > 0 && (
             <ul className="mt-4 space-y-2">

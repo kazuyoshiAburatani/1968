@@ -173,3 +173,49 @@ export async function commentOnPoll(
 
   return { ok: true, imagePath };
 }
+
+/**
+ * 自分が添えた一言と写真を取り消す。
+ *
+ * commentOnPoll は「一言か写真か、どちらかは要る」という決まりなので、
+ * 空文字を送っても消せない。消したいという意思は、別の入口で受ける。
+ * 票そのものは残す。消したいのは書いたものであって、選んだ事実ではない。
+ */
+export async function clearOwnPollComment(
+  pollId: string,
+): Promise<CommentResult> {
+  if (typeof pollId !== "string" || pollId.length === 0) {
+    return { ok: false, message: "消せませんでした" };
+  }
+
+  const voterKey = await getOrCreateVoterKey();
+  const admin = getSupabaseAdminClient();
+
+  const { data: existing } = await admin
+    .from("poll_votes")
+    .select("image_path")
+    .eq("poll_id", pollId)
+    .eq("voter_key", voterKey)
+    .maybeSingle();
+
+  if (!existing) return { ok: false, message: "消せませんでした" };
+
+  const { error } = await admin
+    .from("poll_votes")
+    .update({ comment: null, image_path: null })
+    .eq("poll_id", pollId)
+    .eq("voter_key", voterKey);
+
+  if (error) {
+    console.error("[polls/clear-comment]", error.message);
+    return { ok: false, message: "消せませんでした" };
+  }
+
+  // 行から外すだけだと、URL を知っている人には写真が見え続ける
+  await removeImage(
+    "post-media",
+    (existing as { image_path: string | null }).image_path,
+  );
+
+  return { ok: true, imagePath: null };
+}

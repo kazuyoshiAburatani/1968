@@ -312,3 +312,62 @@ export async function deleteOwnResponse(formData: FormData) {
   revalidatePath(returnPath);
   redirect(returnPath);
 }
+
+/**
+ * 自分が書いた回答を直す。
+ *
+ * これまでは削除しかなかった。スマホでの入力は誤字が出やすく、
+ * 直せないと分かると次から書かなくなる。とくにこの年代では、
+ * 「間違えたら消してもう一度」は面倒すぎて、そのまま黙る側に倒れる。
+ *
+ * 直せるのは本文だけ。写真の差し替えは、いまのところ
+ * 「一度消してもう一度」でやってもらう。写真まで含めると、
+ * 差し替え中に古い写真が Storage に残る道筋が増え、消し忘れが出る。
+ *
+ * 他人の回答を書き換えられないよう、更新は user_id 一致を必ず条件に入れる。
+ * 運営が直したときの admin_edited_at とは別物なので、そちらは触らない。
+ */
+export async function updateOwnResponse(formData: FormData) {
+  const id = formData.get("response_id");
+  const returnPath =
+    typeof formData.get("return_path") === "string"
+      ? (formData.get("return_path") as string)
+      : "/";
+
+  if (typeof id !== "string") redirect(returnPath);
+
+  const body = formData.get("body");
+  const text = typeof body === "string" ? body.trim() : "";
+  if (text.length === 0) {
+    redirect(
+      `${returnPath}?error=${encodeURIComponent("何か一言、書いてみてください")}`,
+    );
+  }
+  if (text.length > 1000) {
+    redirect(
+      `${returnPath}?error=${encodeURIComponent("1000文字以内でお願いします")}`,
+    );
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/join");
+
+  const { error } = await supabase
+    .from("topic_responses")
+    .update({ body: text })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("[topics/update]", error.message);
+    redirect(
+      `${returnPath}?error=${encodeURIComponent("直せませんでした")}`,
+    );
+  }
+
+  revalidatePath(returnPath);
+  redirect(returnPath);
+}

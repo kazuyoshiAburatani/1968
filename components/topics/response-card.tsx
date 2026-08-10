@@ -5,6 +5,7 @@ import { ReactionRow } from "./reaction-row";
 import { postTopicResponse, deleteOwnResponse } from "@/app/topics/actions";
 import { SubmitButton } from "@/components/submit-button";
 import { ConfirmDelete } from "@/components/confirm-delete";
+import { ResponseEditor } from "./response-editor";
 import type { ReactionType } from "@/lib/reactions";
 import { PhotoPicker } from "@/components/photo-picker";
 import { PhotoView } from "@/components/photo-view";
@@ -111,7 +112,15 @@ export function ResponseCard({
 
       {body.length > 0 && (
         <div className="mt-2.5 text-base leading-8 text-foreground">
-          <RichText text={body} />
+          {isMine ? (
+            <ResponseEditor
+              responseId={responseId}
+              body={body}
+              returnPath={returnPath}
+            />
+          ) : (
+            <RichText text={body} />
+          )}
         </div>
       )}
 
@@ -155,7 +164,15 @@ export function ResponseCard({
               />
               {r.body.length > 0 && (
                 <div className="mt-1.5 text-base leading-8">
-                  <RichText text={r.body} />
+                  {r.isMine ? (
+                    <ResponseEditor
+                      responseId={r.id}
+                      body={r.body}
+                      returnPath={returnPath}
+                    />
+                  ) : (
+                    <RichText text={r.body} />
+                  )}
                 </div>
               )}
               <PhotoList media={r.media} who={r.nickname} className="mt-2" />
