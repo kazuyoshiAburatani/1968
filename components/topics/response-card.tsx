@@ -4,6 +4,7 @@ import { RichText } from "@/components/rich-text";
 import { ReactionRow } from "./reaction-row";
 import { postTopicResponse, deleteOwnResponse } from "@/app/topics/actions";
 import { SubmitButton } from "@/components/submit-button";
+import { ConfirmDelete } from "@/components/confirm-delete";
 import type { ReactionType } from "@/lib/reactions";
 import { PhotoPicker } from "@/components/photo-picker";
 import { PhotoView } from "@/components/photo-view";
@@ -127,12 +128,7 @@ export function ResponseCard({
           <form action={deleteOwnResponse}>
             <input type="hidden" name="response_id" value={responseId} />
             <input type="hidden" name="return_path" value={returnPath} />
-            <button
-              type="submit"
-              className="text-xs text-foreground/50 hover:text-notification underline-offset-2 hover:underline"
-            >
-              消す
-            </button>
+            <ConfirmDelete />
           </form>
         )}
       </div>
@@ -174,12 +170,7 @@ export function ResponseCard({
                   <form action={deleteOwnResponse}>
                     <input type="hidden" name="response_id" value={r.id} />
                     <input type="hidden" name="return_path" value={returnPath} />
-                    <button
-                      type="submit"
-                      className="text-xs text-foreground/50 hover:text-notification"
-                    >
-                      消す
-                    </button>
+                    <ConfirmDelete />
                   </form>
                 )}
               </div>

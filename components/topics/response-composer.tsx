@@ -26,6 +26,11 @@ type Props = {
   /** 穴埋めの回答例。プレースホルダに使う */
   examples?: string[];
   returnPath?: string;
+  /**
+   * 書き込み専用ページで使うときは true。
+   * 入力欄を広く取り、送信後の戻り先を呼び出し側に決めてもらう。
+   */
+  standalone?: boolean;
 };
 
 export function ResponseComposer({
@@ -36,6 +41,7 @@ export function ResponseComposer({
   format = "free",
   examples = [],
   returnPath = "/",
+  standalone = false,
 }: Props) {
   const isFill = format === "fill_blank";
 
@@ -48,7 +54,11 @@ export function ResponseComposer({
   return (
     <form
       action={postTopicResponse}
-      className="rounded-2xl border border-border/60 bg-background p-3 sm:p-4 shadow-sm"
+      className={
+        standalone
+          ? "rounded-2xl border border-border/60 bg-background p-4 sm:p-5"
+          : "rounded-2xl border border-border/60 bg-background p-3 sm:p-4 shadow-sm"
+      }
     >
       <input type="hidden" name="topic_id" value={topicId} />
       <input type="hidden" name="return_path" value={returnPath} />
@@ -64,7 +74,7 @@ export function ResponseComposer({
         <div className="flex-1 min-w-0">
           <textarea
             name="body"
-            rows={isFill ? 2 : 3}
+            rows={standalone ? 6 : isFill ? 2 : 3}
             maxLength={1000}
             required
             placeholder={placeholder}

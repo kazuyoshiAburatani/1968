@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ResponseCard } from "./response-card";
 import { ResponseComposer } from "./response-composer";
+import { writePath } from "@/lib/topic-path";
 import type { TopicWithResponses } from "@/lib/topics";
 
 // お題ひとつぶんの表示。ホームのフィードとお題詳細の両方で使う。
@@ -17,6 +18,12 @@ type Props = {
   returnPath: string;
   /** 詳細ページでは全件表示するので「全て見る」を出さない */
   showMoreLink?: boolean;
+  /**
+   * 入力欄の出し方。
+   * inline は入力欄をその場に置く（お題1件だけの詳細ページ向け）。
+   * link は「一行だけ書く」ボタンだけを置き、書き込み専用ページへ送る（一覧向け）。
+   */
+  composer?: "inline" | "link";
   eyebrow?: string;
 };
 
@@ -28,6 +35,7 @@ export function TopicSection({
   returnPath,
   showMoreLink = true,
   eyebrow,
+  composer = "inline",
 }: Props) {
   const { topic, responses, totalCount } = data;
   const isFill = topic.format === "fill_blank";
@@ -77,6 +85,20 @@ export function TopicSection({
         )}
       </div>
 
+      {composer === "link" ? (
+        /* 一覧では入力欄を出さない。
+           お題・入力欄・他人の回答が縦に3組並ぶと、スマホでは読めたものではない。
+           書く操作は、入力欄だけが載った専用ページへ送る。 */
+        <p className="text-center">
+          <Link
+            href={writePath(topic.id)}
+            className="inline-flex items-center justify-center gap-2 min-h-[52px] px-7 rounded-full border-2 border-primary text-primary text-base font-bold no-underline hover:bg-primary hover:text-white transition-colors"
+          >
+            <i className="ri-quill-pen-line text-xl" aria-hidden />
+            一行だけ書く
+          </Link>
+        </p>
+      ) : (
       <ResponseComposer
         topicId={topic.id}
         nickname={myNickname}
@@ -86,6 +108,7 @@ export function TopicSection({
         examples={topic.blank_examples ?? []}
         returnPath={returnPath}
       />
+      )}
 
       {responses.length === 0 ? (
         <p className="text-center text-sm leading-7 text-foreground/60 py-4">

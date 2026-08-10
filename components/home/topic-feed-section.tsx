@@ -46,6 +46,7 @@ export async function TopicFeedSection() {
           myNickname={myNickname}
           myAvatarPath={myAvatarPath}
           returnPath="/"
+          composer="link"
           eyebrow={feedEyebrow(
             d.topic.published_at,
             d.topic.format === "fill_blank" ? "穴埋め" : "お題",
