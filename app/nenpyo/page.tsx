@@ -12,13 +12,13 @@ import {
   isAcceptedBirthday,
   schoolYearOfBirth,
   schoolYearLabel,
-  isCoreCohort,
+  cohortNote,
 } from "@/lib/school-year";
 
 export const metadata: Metadata = {
   title: "あなたの1968年表",
   description:
-    "生まれた日を入れると、あなたが何年生のときに何があったかが並びます。1968年に生まれた学年（昭和43年度生まれ）専用。早生まれの方も学年で正しく出ます。",
+    "生まれた日を入れると、あなたが何年生のときに何があったかが並びます。昭和42年度・43年度・44年度生まれの3学年に対応。早生まれの方も学年で正しく出ます。",
 };
 
 type Props = {
@@ -58,8 +58,8 @@ export default async function NenpyoPage({ searchParams }: Props) {
             role="alert"
             className="mt-5 rounded-xl border border-notification/40 bg-notification/10 px-4 py-3 text-sm leading-7"
           >
-            この年表は、1968年に生まれた学年のために作っています。
-            1968年1月1日〜1969年4月1日の間で選んでください。
+            この年表は、1968年に生まれた学年と、その上下ひとつずつのために作っています。
+            1967年4月2日〜1970年4月1日の間で選んでください。
           </p>
         )}
 
@@ -73,8 +73,10 @@ export default async function NenpyoPage({ searchParams }: Props) {
                 aria-label="生まれた年"
                 className="min-h-[var(--spacing-tap)] rounded-lg border border-border bg-background px-3 text-base"
               >
+                <option value="1967">1967年</option>
                 <option value="1968">1968年</option>
                 <option value="1969">1969年</option>
+                <option value="1970">1970年</option>
               </select>
               <select
                 name="m"
@@ -135,9 +137,7 @@ export default async function NenpyoPage({ searchParams }: Props) {
           あなたは{schoolYearLabel(sy)}
         </h1>
         <p className="mt-2 text-base leading-8 text-foreground/80">
-          {isCoreCohort(sy)
-            ? "1968年に生まれた学年、この集まりのど真ん中です。1975年4月に小学校へ上がり、1987年3月に高校を出た学年ですね。"
-            : "1968年生まれのうち、ひとつ上の学年（昭和42年度）にあたります。1974年4月に小学校へ上がった学年です。"}
+          {cohortNote(sy)}
         </p>
       </header>
 

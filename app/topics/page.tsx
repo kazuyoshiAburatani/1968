@@ -8,7 +8,7 @@ import { LAUNCH_LABEL, isBeforeLaunch } from "@/lib/launch";
 export const metadata: Metadata = {
   title: "これまでのお題",
   description:
-    "昭和43年度生まれのお題を、小学校のころから二十代まで年代ごとに並べています。一行だけ書けば終わりです。",
+    "昭和43年度生まれを中心にしたお題を、小学校のころから二十代まで年代ごとに並べています。一行だけ書けば終わりです。",
 };
 
 // これまでのお題の一覧。

@@ -127,7 +127,7 @@ export function verdictFor(score: number, total: number): {
   const ratio = total > 0 ? score / total : 0;
   if (ratio === 1) {
     return {
-      title: "文句なしの、昭和43年度生まれ",
+      title: "文句なしの、昭和43年度生まれ級",
       body: "全問正解です。当時をまるごと体で覚えている人にしか、この点は出ません。",
     };
   }

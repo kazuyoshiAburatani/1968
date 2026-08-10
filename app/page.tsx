@@ -172,14 +172,14 @@ function GuestIntro() {
   return (
     <section className="text-center">
       <h1 className="text-2xl sm:text-3xl font-bold leading-snug">
-        1968年に生まれた学年の、
+        1968年前後に生まれた学年の、
         <br className="sm:hidden" />
         語らいの場です
       </h1>
       <p className="mt-3 text-base leading-8 text-foreground/80">
-        昭和43年度生まれ、いま57歳と58歳。
+        昭和43年度生まれを真ん中に、ひとつ上とひとつ下の学年まで。
         <br />
-        同じ年に同じテレビを見ていた人としか通じない話を、ここでしています。
+        同じ校舎で同じテレビの話をしていた人としか通じない話を、ここでしています。
       </p>
       <p className="mt-3 text-sm text-foreground/60">
         読むだけなら登録は要りません。まずは下の二択を、指一本でどうぞ。

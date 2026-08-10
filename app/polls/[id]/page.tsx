@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: poll.question,
     description:
       poll.blurb ||
-      `${poll.option_a} と ${poll.option_b}。昭和43年度生まれの二択です。`,
+      `${poll.option_a} と ${poll.option_b}。昭和43年度生まれを中心にした二択です。`,
   };
 }
 

@@ -13,24 +13,24 @@ export async function sendBetaApplicationReceipt(args: {
 }) {
   return sendEmail({
     to: args.to,
-    subject: "[1968] ベータテスター応募を受け付けました",
+    subject: "[1968.LOVE] ベータテスター応募を受け付けました",
     text: [
       `${args.name} 様`,
       "",
-      "1968 ベータテスター募集にご応募いただきありがとうございます。",
+      "1968.LOVE ベータテスター募集にご応募いただきありがとうございます。",
       "",
       "内容を確認のうえ、3〜5 営業日を目処に、",
       "ご登録のメールアドレスへご連絡いたします。",
       "今しばらくお待ちください。",
       "",
-      "1968 についての詳細は以下をご覧ください。",
+      "1968.LOVE についての詳細は以下をご覧ください。",
       `${SITE_URL}`,
       "",
       "ご質問は本メールにご返信、または",
       `${SUPPORT} までご連絡ください。`,
       "",
       "—",
-      "1968 運営、油谷和好",
+      "1968.LOVE 運営、油谷和好",
     ].join("\n"),
   });
 }
@@ -46,7 +46,7 @@ export async function sendBetaApplicationAdminNotice(args: {
   const to = process.env.BETA_NOTIFY_EMAIL ?? SUPPORT;
   return sendEmail({
     to,
-    subject: `[1968] 新しいベータテスター応募、${args.name} さん`,
+    subject: `[1968.LOVE] 新しいベータテスター応募、${args.name} さん`,
     text: [
       "ベータテスター応募が届きました。",
       "",
@@ -68,11 +68,11 @@ export async function sendBetaApplicationAdminNotice(args: {
 export async function sendBetaInvitation(args: { to: string; name: string }) {
   return sendEmail({
     to: args.to,
-    subject: "[1968] ベータテスター採用のご案内",
+    subject: "[1968.LOVE] ベータテスター採用のご案内",
     text: [
       `${args.name} 様`,
       "",
-      "1968 ベータテスターにご採用となりました。",
+      "1968.LOVE ベータテスターにご採用となりました。",
       "おめでとうございます、ご参加を心よりお待ちしておりました。",
       "",
       "以下の URL から、会員登録のお手続きをお願いします。",
@@ -85,7 +85,7 @@ export async function sendBetaInvitation(args: { to: string; name: string }) {
       `${SUPPORT} までお気軽にお問い合わせください。`,
       "",
       "—",
-      "1968 運営、油谷和好",
+      "1968.LOVE 運営、油谷和好",
     ].join("\n"),
   });
 }
@@ -99,7 +99,7 @@ export async function sendVerificationApproved(args: {
 }) {
   return sendEmail({
     to: args.to,
-    subject: "[1968] 本人確認が完了しました",
+    subject: "[1968.LOVE] 本人確認が完了しました",
     text: [
       `${args.nickname} 様`,
       "",
@@ -108,10 +108,10 @@ export async function sendVerificationApproved(args: {
       "",
       `マイページ、${SITE_URL}/mypage`,
       "",
-      "今後とも 1968 をよろしくお願いいたします。",
+      "今後とも 1968.LOVE をよろしくお願いいたします。",
       "",
       "—",
-      "1968 運営、油谷和好",
+      "1968.LOVE 運営、油谷和好",
     ].join("\n"),
   });
 }
@@ -126,7 +126,7 @@ export async function sendVerificationRejected(args: {
 }) {
   return sendEmail({
     to: args.to,
-    subject: "[1968] 本人確認のご案内（再提出のお願い）",
+    subject: "[1968.LOVE] 本人確認のご案内（再提出のお願い）",
     text: [
       `${args.nickname} 様`,
       "",
@@ -143,7 +143,7 @@ export async function sendVerificationRejected(args: {
       `${SUPPORT} までご連絡ください。`,
       "",
       "—",
-      "1968 運営、油谷和好",
+      "1968.LOVE 運営、油谷和好",
     ].join("\n"),
   });
 }

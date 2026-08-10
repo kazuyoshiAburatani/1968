@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { schoolYearLabel, isCoreCohort } from "@/lib/school-year";
+import { schoolYearLabel, cohortNote } from "@/lib/school-year";
 
 export const metadata: Metadata = {
   title: "席ができました",
@@ -33,9 +33,8 @@ export default async function JoinDonePage({ searchParams }: Props) {
       {label && (
         <p className="mt-3 text-base leading-8 text-foreground/80">
           あなたは{label}。
-          {isCoreCohort(sy)
-            ? "この集まりの、ど真ん中の学年です。"
-            : "1968年生まれ、ひとつ上の学年ですね。同じ時代の話が通じます。"}
+          <br />
+          {cohortNote(sy)}
         </p>
       )}
 

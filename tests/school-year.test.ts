@@ -13,6 +13,10 @@ import {
   parseCivilDate,
   todayInTokyo,
   CORE_SCHOOL_YEAR,
+  ACCEPTED_SCHOOL_YEARS,
+  cohortRelation,
+  cohortNote,
+  isAcceptedSchoolYear,
 } from "@/lib/school-year";
 
 // 学年計算はこのサービスの信頼の踏み絵にあたる。
@@ -39,17 +43,30 @@ describe("schoolYearOfBirth", () => {
 });
 
 describe("isAcceptedBirthday", () => {
-  it("1968年1月1日から1969年4月1日までを受け入れる", () => {
-    expect(isAcceptedBirthday(1968, 1, 1)).toBe(true);
-    expect(isAcceptedBirthday(1968, 7, 15)).toBe(true);
-    expect(isAcceptedBirthday(1969, 3, 31)).toBe(true);
-    expect(isAcceptedBirthday(1969, 4, 1)).toBe(true);
+  // 2026-08-10、対象を3学年（昭和42・43・44年度）に広げた。
+  // 受け入れ範囲は 1967-04-02 〜 1970-04-01。
+  // DB 側の profiles_birth_date_range_check がまったく同じ境目で書いてある。
+  it("3学年ぶんの、境目のちょうど内側を受け入れる", () => {
+    expect(isAcceptedBirthday(1967, 4, 2)).toBe(true); // 昭和42年度のはじまり
+    expect(isAcceptedBirthday(1968, 4, 1)).toBe(true); // 昭和42年度の早生まれ
+    expect(isAcceptedBirthday(1968, 4, 2)).toBe(true); // 昭和43年度のはじまり
+    expect(isAcceptedBirthday(1969, 4, 1)).toBe(true); // 昭和43年度の早生まれ
+    expect(isAcceptedBirthday(1969, 4, 2)).toBe(true); // 昭和44年度のはじまり
+    expect(isAcceptedBirthday(1970, 4, 1)).toBe(true); // 昭和44年度の早生まれ、範囲の最後
   });
 
-  it("範囲外は弾く", () => {
-    expect(isAcceptedBirthday(1967, 12, 31)).toBe(false);
-    expect(isAcceptedBirthday(1969, 4, 2)).toBe(false);
-    expect(isAcceptedBirthday(1970, 1, 1)).toBe(false);
+  it("これまで対象だった1968年生まれは、全員そのまま入れる", () => {
+    expect(isAcceptedBirthday(1968, 1, 1)).toBe(true);
+    expect(isAcceptedBirthday(1968, 7, 15)).toBe(true);
+    expect(isAcceptedBirthday(1968, 12, 31)).toBe(true);
+    expect(isAcceptedBirthday(1969, 3, 31)).toBe(true);
+  });
+
+  it("境目のちょうど外側は弾く", () => {
+    expect(isAcceptedBirthday(1967, 4, 1)).toBe(false); // 1日手前
+    expect(isAcceptedBirthday(1970, 4, 2)).toBe(false); // 1日あと
+    expect(isAcceptedBirthday(1966, 12, 31)).toBe(false);
+    expect(isAcceptedBirthday(1971, 1, 1)).toBe(false);
   });
 
   it("存在しない日付は弾く", () => {
@@ -161,9 +178,65 @@ describe("schoolYearLabel / isCoreCohort", () => {
     expect(schoolYearLabel(1967)).toBe("昭和42年度生まれ");
   });
 
-  it("中核の学年は1968年度だけ", () => {
+  it("中心の学年は1968年度だけ", () => {
     expect(isCoreCohort(1968)).toBe(true);
     expect(isCoreCohort(1967)).toBe(false);
+    expect(isCoreCohort(1969)).toBe(false);
+  });
+});
+
+describe("受け入れる3学年", () => {
+  it("昭和42・43・44年度の3つ", () => {
+    expect([...ACCEPTED_SCHOOL_YEARS]).toEqual([1967, 1968, 1969]);
+    expect(ACCEPTED_SCHOOL_YEARS.map(schoolYearLabel)).toEqual([
+      "昭和42年度生まれ",
+      "昭和43年度生まれ",
+      "昭和44年度生まれ",
+    ]);
+  });
+
+  it("isAcceptedSchoolYear が3学年だけを通す", () => {
+    expect(isAcceptedSchoolYear(1966)).toBe(false);
+    expect(isAcceptedSchoolYear(1967)).toBe(true);
+    expect(isAcceptedSchoolYear(1969)).toBe(true);
+    expect(isAcceptedSchoolYear(1970)).toBe(false);
+  });
+
+  it("受け入れる生年月日は、必ず3学年のどれかになる", () => {
+    // 範囲の全日を走査して、学年計算と受け入れ範囲がずれていないことを確かめる。
+    // ここがずれると、画面は通るのに DB の制約で落ちる。
+    for (let t = Date.UTC(1966, 0, 1); t <= Date.UTC(1971, 11, 31); t += 86400000) {
+      const dt = new Date(t);
+      const y = dt.getUTCFullYear();
+      const m = dt.getUTCMonth() + 1;
+      const d = dt.getUTCDate();
+      if (!isAcceptedBirthday(y, m, d)) continue;
+      expect(isAcceptedSchoolYear(schoolYearOfBirth(y, m, d))).toBe(true);
+    }
+  });
+
+  it("cohortRelation が中心からの位置を返す", () => {
+    expect(cohortRelation(1967)).toBe("above");
+    expect(cohortRelation(1968)).toBe("core");
+    expect(cohortRelation(1969)).toBe("below");
+    expect(cohortRelation(1970)).toBe("outside");
+  });
+
+  it("前後の学年に、弾かれたと読める言い方をしない", () => {
+    for (const sy of [1967, 1969]) {
+      const note = cohortNote(sy);
+      expect(note).toContain("同じ校舎");
+      expect(note).not.toContain("対象外");
+      expect(note).not.toContain("ではありません");
+    }
+    expect(cohortNote(1968)).toContain("ど真ん中");
+  });
+
+  it("入学と卒業の年が、学年ごとに1年ずつずれる", () => {
+    expect(cohortNote(1967)).toContain("1974年4月");
+    expect(cohortNote(1967)).toContain("1986年3月");
+    expect(cohortNote(1969)).toContain("1976年4月");
+    expect(cohortNote(1969)).toContain("1988年3月");
   });
 });
 
@@ -218,6 +291,60 @@ describe("暦日ヘルパー（UTC 実行環境での日付ズレ対策）", () 
   it("小学校入学（4月1日）が小学1年生として出る", () => {
     expect(stageAt(CORE_SCHOOL_YEAR, parseCivilDate("1975-04-01")).label).toBe(
       "小学1年生",
+    );
+  });
+});
+
+describe("milestonesFor（前後の学年）", () => {
+  // 成人式と入社は3学年でまるきり別の景色になる。
+  // ここを一括りにすると「自分の年表」ではなくなり、学年で組む意味が消える。
+  it("ひとつ上の学年は、昭和最後の成人式になる", () => {
+    const ms = milestonesFor(1967);
+    expect(ms.find((m) => m.title === "成人式")?.date).toBe("1988-01-15");
+    expect(ms.find((m) => m.title === "成人式")?.note).toContain("昭和最後");
+  });
+
+  it("ひとつ下の学年は、平成に入って最初の成人式になる", () => {
+    const ms = milestonesFor(1969);
+    expect(ms.find((m) => m.title === "成人式")?.date).toBe("1990-01-15");
+    expect(ms.find((m) => m.title === "成人式")?.note).toContain("平成");
+  });
+
+  it("入社の年が3学年で1年ずつずれる", () => {
+    const nyusha = (sy: number) =>
+      milestonesFor(sy).find((m) => m.title.startsWith("大学を卒業"))?.date;
+    expect(nyusha(1967)).toBe("1990-04-01");
+    expect(nyusha(1968)).toBe("1991-04-01");
+    expect(nyusha(1969)).toBe("1992-04-01");
+  });
+
+  it("3学年とも、成人式と入社に固有の注記が入る（使い回しの一文にしない）", () => {
+    const notes = [1967, 1968, 1969].flatMap((sy) =>
+      milestonesFor(sy)
+        .filter((m) => m.title === "成人式" || m.title.startsWith("大学を卒業"))
+        .map((m) => m.note),
+    );
+    expect(new Set(notes).size).toBe(notes.length);
+  });
+});
+
+describe("節目が二重に出ないこと", () => {
+  // 節目（入学・卒業・成人式・入社）は milestonesFor() だけが持つ。
+  // 以前は timeline_events にも 1968年度の実年月日で同じ行が入っており、
+  // 自分年表に「小学校に入学」が 2 行並んでいた。
+  // 3学年に広げると、これは重複では済まず
+  // 「あなたが小学2年生のとき、小学校に入学」という表示になる。
+  it("同じ日に同じ節目を2つ返さない", () => {
+    for (const sy of [1967, 1968, 1969]) {
+      const keys = milestonesFor(sy).map((m) => `${m.date} ${m.title}`);
+      expect(new Set(keys).size).toBe(keys.length);
+    }
+  });
+
+  it("高校卒業の翌月に、進路が分かれる一行が入る", () => {
+    const ms = milestonesFor(CORE_SCHOOL_YEAR);
+    expect(ms.find((m) => m.title.startsWith("大学に入学"))?.date).toBe(
+      "1987-04-01",
     );
   });
 });

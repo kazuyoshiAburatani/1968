@@ -12,20 +12,35 @@
 // 日本の年度は 4月1日〜翌3月31日。
 // 一方で「同じ学年」の境目は 4月2日〜翌4月1日（4月1日生まれは早生まれ扱い）。
 // この 1 日のズレが早生まれ問題の正体なので、両者を別の関数に分けて扱う。
+//
+// 2026-08-10、対象を 3 学年に広げた。
+// 昭和43年度（1968年度）を中心に、ひとつ上（昭和42年度）とひとつ下（昭和44年度）まで。
+// 1 学年だけだと母数が薄く、立ち上げ期に「回答 0 件」が人目に触れやすい。
+// 前後 1 学年なら、小学校から高校まで同じ校舎にいた相手なので、同じ話が通じる。
+// ただし**中心は 1968年度のまま**で、そこを薄めない。
+// 「56歳から59歳の方どうぞ」に均すと、同じ年に同じテレビを見ていたという密度が消え、
+// 二択が初回参加 8.8 を取れた理由そのものが無くなる。
 
-/** このサービスの中核となる学年、昭和43年度（1968年4月2日〜1969年4月1日生まれ）。 */
+/** このサービスの中心となる学年、昭和43年度（1968年4月2日〜1969年4月1日生まれ）。 */
 export const CORE_SCHOOL_YEAR = 1968;
 
-/** 受け入れる生年月日の範囲、1968年生まれ ∪ 昭和43年度生まれ。 */
+/** 受け入れる学年（年度）。中心の 1968 と、その上下ひとつずつ。 */
+export const ACCEPTED_SCHOOL_YEARS = [1967, 1968, 1969] as const;
+
+/**
+ * 受け入れる生年月日の範囲、昭和42年度〜昭和44年度生まれ。
+ * 1967年4月2日〜1970年4月1日。境目が 4月1日 / 4月2日 なのは早生まれの扱いによる。
+ */
 export const ACCEPTED_BIRTH_RANGE = {
-  from: { year: 1968, month: 1, day: 1 },
-  to: { year: 1969, month: 4, day: 1 },
+  from: { year: 1967, month: 4, day: 2 },
+  to: { year: 1970, month: 4, day: 1 },
 } as const;
 
 /**
  * 生年月日から学年（年度）を返す。
- * 1968-01-01〜1968-04-01 → 1967（昭和42年度、ひとつ上の学年）
- * 1968-04-02〜1969-04-01 → 1968（昭和43年度、中核の学年）
+ * 1967-04-02〜1968-04-01 → 1967（昭和42年度、ひとつ上の学年）
+ * 1968-04-02〜1969-04-01 → 1968（昭和43年度、中心の学年）
+ * 1969-04-02〜1970-04-01 → 1969（昭和44年度、ひとつ下の学年）
  *
  * DB 側の profiles.school_year 生成列と同じ式にしてある。片方だけ直さないこと。
  */
@@ -75,7 +90,13 @@ export function nendoOfDate(date: Date): number {
   return m >= 4 ? y : y - 1;
 }
 
-/** 受け入れ範囲内の生年月日かどうか。 */
+/**
+ * 受け入れ範囲内の生年月日かどうか。
+ *
+ * DB 側の制約 profiles_birth_date_range_check がまったく同じ式で書いてある
+ * （birth_year * 10000 + birth_month * 100 + birth_day を 19670402〜19700401 で挟む）。
+ * 片方だけ直すと、画面の検証は通るのに保存で落ちる、という最悪の壊れ方をする。
+ */
 export function isAcceptedBirthday(
   year: number,
   month: number,
@@ -83,7 +104,7 @@ export function isAcceptedBirthday(
 ): boolean {
   if (!isValidCalendarDate(year, month, day)) return false;
   const v = year * 10000 + month * 100 + day;
-  return v >= 19680101 && v <= 19690401;
+  return v >= 19670402 && v <= 19700401;
 }
 
 /** 実在する暦日かどうか（2月31日などを弾く）。 */
@@ -163,9 +184,74 @@ export function schoolYearLabel(schoolYear: number): string {
   return `昭和${showa}年度生まれ`;
 }
 
-/** 中核の学年かどうか。1968年1〜4月1日生まれはひとつ上の学年になる。 */
+/** 中心の学年かどうか。昭和43年度（1968年度）だけが true。 */
 export function isCoreCohort(schoolYear: number): boolean {
   return schoolYear === CORE_SCHOOL_YEAR;
+}
+
+/** 受け入れている 3 学年のどれかかどうか。 */
+export function isAcceptedSchoolYear(schoolYear: number): boolean {
+  return (ACCEPTED_SCHOOL_YEARS as readonly number[]).includes(schoolYear);
+}
+
+/** 中心の学年から見た位置。 */
+export type CohortRelation = "above" | "core" | "below" | "outside";
+
+export function cohortRelation(schoolYear: number): CohortRelation {
+  if (schoolYear === CORE_SCHOOL_YEAR) return "core";
+  if (schoolYear === CORE_SCHOOL_YEAR - 1) return "above";
+  if (schoolYear === CORE_SCHOOL_YEAR + 1) return "below";
+  return "outside";
+}
+
+/**
+ * その学年の人に返す一行。年表と登録直後の画面で使う。
+ *
+ * 前後の学年に「あなたは中心ではありません」と読める書き方をしないこと。
+ * 弾かれた感じが少しでも出ると、その人はもう書かない。
+ * 中心との距離ではなく、「同じ校舎にいた」という共有物のほうを言う。
+ */
+export function cohortNote(schoolYear: number): string {
+  const entered = `${schoolYear + 7}年4月に小学校へ上がり、${schoolYear + 19}年3月に高校を出た学年`;
+  switch (cohortRelation(schoolYear)) {
+    case "core":
+      return `1968年に生まれた学年、この集まりのど真ん中です。${entered}ですね。`;
+    case "above":
+      return `1968年に生まれた学年の、ひとつ上ですね。${entered}です。真ん中の学年とは、小学校から高校までずっと同じ校舎にいた間柄になります。`;
+    case "below":
+      return `1968年に生まれた学年の、ひとつ下ですね。${entered}です。真ん中の学年とは、小学校から高校までずっと同じ校舎にいた間柄になります。`;
+    default:
+      return `${schoolYearLabel(schoolYear)}ですね。`;
+  }
+}
+
+// 成人式と入社は、3 学年でまるきり別の景色になる。ここを一括りにすると
+// 「自分の年表」ではなく「だいたいこの世代の年表」になってしまい、
+// 学年で組んでいる意味が消える。年度ごとに書き分ける。
+function comingOfAgeNote(schoolYear: number): string {
+  switch (schoolYear) {
+    case 1967: // 1988年1月、昭和63年
+      return "昭和最後の成人式。この翌年に元号が変わるとは、まだ誰も思っていなかった。";
+    case 1968: // 1989年1月15日、崩御の8日後
+      return "昭和天皇崩御のわずか8日後。自粛の空気の中で晴れ着を着た、特別な学年。";
+    case 1969: // 1990年1月
+      return "平成に入って最初に迎えた成人式。街がいちばん浮かれていた頃。";
+    default:
+      return "振袖とスーツで、久しぶりに同級生が集まった日。";
+  }
+}
+
+function joiningNote(schoolYear: number): string {
+  switch (schoolYear) {
+    case 1967: // 1990年4月入社
+      return "売り手市場のまっただ中の入社式。会社に選ばれるより、会社を選んでいた頃。";
+    case 1968: // 1991年4月入社
+      return "バブル最末期の入社式。売り手市場の最後の年で、同期の人数が異常に多かった。";
+    case 1969: // 1992年4月入社
+      return "入った翌年から採用の数が絞られていった。あとから見れば、潮目のすぐ手前。";
+    default:
+      return "景気の潮目が変わる前後の入社だった。";
+  }
 }
 
 /**
@@ -199,20 +285,19 @@ export function milestonesFor(
       note: "第二ボタンも、寄せ書きも、この日の話。",
     },
     {
+      date: `${y + 19}-04-01`,
+      title: "大学に入学、または社会人1年目が始まる",
+      note: "進路が分かれ、同級生の景色が初めてバラバラになった春。",
+    },
+    {
       date: `${y + 21}-01-15`,
       title: "成人式",
-      note:
-        y === CORE_SCHOOL_YEAR
-          ? "昭和天皇崩御のわずか8日後。自粛の空気の中で晴れ着を着た、特別な学年。"
-          : "振袖とスーツで、久しぶりに同級生が集まった日。",
+      note: comingOfAgeNote(y),
     },
     {
       date: `${y + 23}-04-01`,
       title: "大学を卒業して入社（四年制の場合）",
-      note:
-        y === CORE_SCHOOL_YEAR
-          ? "バブル最末期の入社式。売り手市場の最後の年で、同期の人数が異常に多かった。"
-          : "景気の潮目が変わる直前の入社だった。",
+      note: joiningNote(y),
     },
   ];
 }

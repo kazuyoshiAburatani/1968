@@ -36,19 +36,23 @@ const pacifico = Pacifico({
 
 export const metadata: Metadata = {
   title: {
-    default: "1968.LOVE | 1968年に生まれた学年の、語らいの場",
+    default: "1968.LOVE | 1968年前後に生まれた学年の、語らいの場",
     template: "%s | 1968.LOVE",
   },
   description:
-    "1968年に生まれた学年（昭和43年度生まれ）だけの語らいの場。今日の二択、穴埋めのお題、自分の年表、昭和43年度生まれ検定。読むだけなら登録は要りません。",
+    "1968年に生まれた学年（昭和43年度）を中心に、そのひとつ上とひとつ下の学年までが集まる語らいの場。今日の二択、穴埋めのお題、自分の年表、昭和43年度生まれ検定。読むだけなら登録は要りません。",
   applicationName: "1968.LOVE",
   authors: [{ name: "油谷和好", url: "https://1968.love" }],
   creator: "油谷和好",
   publisher: "1968.LOVE",
   keywords: [
     "1968年生まれ",
+    "1967年生まれ",
+    "1969年生まれ",
     "昭和43年生まれ",
+    "昭和42年度生まれ",
     "昭和43年度生まれ",
+    "昭和44年度生まれ",
     "昭和レトロ",
     "同年代コミュニティ",
     "50代",
@@ -69,9 +73,9 @@ export const metadata: Metadata = {
     shortcut: ["/favicon.ico"],
   },
   openGraph: {
-    title: "1968.LOVE | 1968年に生まれた学年の、語らいの場",
+    title: "1968.LOVE | 1968年前後に生まれた学年の、語らいの場",
     description:
-      "同じ年に同じテレビを見ていた人としか通じない話を、ここでしています。完全無料。ニックネームと生まれた日だけ、30秒で参加できます。",
+      "同じ校舎で同じテレビの話をしていた学年だけで話しています。完全無料。ニックネームと生まれた日だけ、30秒で参加できます。",
     url: "https://1968.love",
     siteName: "1968.LOVE",
     locale: "ja_JP",
@@ -81,15 +85,15 @@ export const metadata: Metadata = {
         url: "/og/og-tagline.png",
         width: 1200,
         height: 630,
-        alt: "1968.LOVE | 1968年に生まれた学年の、語らいの場",
+        alt: "1968.LOVE | 1968年前後に生まれた学年の、語らいの場",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "1968.LOVE | 1968年に生まれた学年の、語らいの場",
+    title: "1968.LOVE | 1968年前後に生まれた学年の、語らいの場",
     description:
-      "1968年に生まれた学年だけの語らいの場。今日の二択に、指一本でどうぞ。",
+      "1968年に生まれた学年と、その上下ひとつずつの語らいの場。今日の二択に、指一本でどうぞ。",
     images: ["/og/og-tagline.png"],
   },
   robots: {
@@ -179,6 +183,7 @@ export default async function RootLayout({
                   alternateName: [
                     "イチキュウロクハチドットラブ",
                     "昭和43年度生まれの語らいの場",
+                    "1968年前後に生まれた学年の語らいの場",
                   ],
                   url: "https://1968.love",
                   logo: "https://1968.love/logo/icon-512.png",
@@ -188,7 +193,7 @@ export default async function RootLayout({
                   },
                   email: "support@1968.love",
                   description:
-                    "1968年に生まれた学年（昭和43年度生まれ）だけが参加できる、同学年のオンラインの集まり。",
+                    "1968年に生まれた学年（昭和43年度生まれ）を中心に、ひとつ上の昭和42年度とひとつ下の昭和44年度までが参加できる、同世代のオンラインの集まり。",
                   address: {
                     "@type": "PostalAddress",
                     streetAddress: "南船場3丁目2番22号おおきに南船場ビル205",
@@ -212,7 +217,7 @@ export default async function RootLayout({
                   name: "1968.LOVE",
                   alternateName: "イチキュウロクハチドットラブ",
                   description:
-                    "1968年に生まれた学年だけの語らいの場。",
+                    "1968年に生まれた学年と、その上下ひとつずつの語らいの場。",
                   publisher: { "@id": "https://1968.love/#organization" },
                   inLanguage: "ja-JP",
                 },
@@ -260,12 +265,12 @@ function SiteHeader({
         <Link
           href="/"
           className="flex items-center no-underline shrink-0"
-          aria-label="1968.LOVE、1968年に生まれた学年の語らいの場、トップへ"
+          aria-label="1968.LOVE、1968年前後に生まれた学年の語らいの場、トップへ"
         >
           {/* デスクトップではフルロゴ（1968 + サブタイトル）、モバイルではアイコンのみ */}
           <Image
             src="/logo/wordmark.png"
-            alt="1968.LOVE 1968年に生まれた学年の、語らいの場"
+            alt="1968.LOVE 1968年前後に生まれた学年の、語らいの場"
             width={209}
             height={144}
             priority
@@ -338,7 +343,7 @@ function SiteFooter() {
           <div>
             <p className="font-bold text-base mb-2">1968.LOVE</p>
             <p className="text-foreground/80">
-              1968年に生まれた学年の、語らいの場
+              1968年に生まれた学年と、その上下ひとつずつ
             </p>
           </div>
           <div>

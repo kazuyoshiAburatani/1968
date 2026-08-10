@@ -9,15 +9,17 @@ import { isAcceptedBirthday } from "@/lib/school-year";
 // 「30 秒で終わること」が最優先で、都道府県も職業も自己紹介もあとから任意で足せばよい。
 // 検証では、項目が増えるほど途中離脱が増え、特にパスワード欄が致命傷になっていた。
 //
-// 生年は 1968 固定をやめ、1968年1月1日〜1969年4月1日を受け入れる。
-// 昭和43年度生まれ（＝1968年に生まれた学年）の早生まれの同級生を弾かないため。
+// 生年は 1967年4月2日〜1970年4月1日を受け入れる。
+// 昭和43年度（1968年度）を中心に、ひとつ上の昭和42年度とひとつ下の昭和44年度まで。
+// ここで年だけ見て弾かないこと。1967年と1970年は「年度の途中まで」しか対象にならないので、
+// 年の範囲は緩く取り、日付の境目は checkBirthday（＝ isAcceptedBirthday）に任せる。
 export const JoinSchema = z.object({
   nickname: z
     .string()
     .trim()
     .min(1, "ニックネームを入れてください")
     .max(30, "30文字以内でお願いします"),
-  birth_year: z.coerce.number().int().min(1968).max(1969),
+  birth_year: z.coerce.number().int().min(1967).max(1970),
   birth_month: z.coerce.number().int().min(1).max(12),
   birth_day: z.coerce.number().int().min(1).max(31),
 });
@@ -32,7 +34,7 @@ export function checkBirthday(
     return {
       ok: false,
       message:
-        "この集まりは、1968年に生まれた学年（昭和43年度、1968年4月2日〜1969年4月1日生まれ）と、1968年生まれの方が対象です。",
+        "この集まりは、1968年に生まれた学年（昭和43年度）を中心に、そのひとつ上とひとつ下の学年までが対象です。1967年4月2日〜1970年4月1日生まれの方が入れます。",
     };
   }
   return { ok: true };

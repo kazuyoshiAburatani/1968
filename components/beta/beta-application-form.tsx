@@ -103,15 +103,22 @@ export function BetaApplicationForm({ action }: Props) {
             生年月日 <span className="text-red-700">*</span>
           </label>
           <p className="text-xs text-foreground/60 mb-2">
-            1968 年生まれの方のみご応募いただけます
+            1968 年に生まれた学年（昭和43年度）を中心に、そのひとつ上とひとつ下の学年までが対象です。1967年4月2日〜1970年4月1日生まれの方がご応募いただけます
           </p>
           <div className="flex gap-2 sm:gap-3">
-            <input
-              type="text"
-              value="1968年"
-              className="p-3 sm:p-4 border border-border rounded-lg text-base sm:text-lg bg-muted/40 w-24 sm:w-28 text-center"
-              readOnly
-            />
+            <select
+              name="birth_year"
+              required={step === 1}
+              defaultValue="1968"
+              aria-label="生まれた年"
+              className="p-3 sm:p-4 border border-border rounded-lg text-base sm:text-lg bg-background w-28 sm:w-32"
+            >
+              {[1967, 1968, 1969, 1970].map((y) => (
+                <option key={y} value={y}>
+                  {y}年
+                </option>
+              ))}
+            </select>
             <select
               name="birth_month"
               required={step === 1}
@@ -202,7 +209,7 @@ export function BetaApplicationForm({ action }: Props) {
             rows={5}
             maxLength={800}
             className="w-full p-3 sm:p-4 border border-border rounded-lg text-base sm:text-lg h-32 resize-none bg-background"
-            placeholder="1968 年生まれの仲間と交流したい理由や、サービスに期待することをお聞かせください。"
+            placeholder="同じ学年の仲間と交流したい理由や、サービスに期待することをお聞かせください。"
           />
         </div>
 

@@ -9,7 +9,7 @@ export type AuthorInfo = {
   prefecture: string | null;
   avatarUrl: string | null;
   isFoundingMember: boolean;
-  /** 学年（年度）。1968 = 昭和43年度 */
+  /** 学年（年度）。1968 = 昭和43年度。受け入れは 1967 / 1968 / 1969 の3学年 */
   schoolYear: number | null;
 };
 

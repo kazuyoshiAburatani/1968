@@ -123,8 +123,10 @@ export default async function JoinPage({ searchParams }: Props) {
               aria-label="生まれた年"
               className="min-h-[var(--spacing-tap)] rounded-lg border border-border bg-background px-3 text-base focus:outline-none focus:ring-2 focus:ring-primary/40"
             >
+              <option value="1967">1967年</option>
               <option value="1968">1968年</option>
               <option value="1969">1969年</option>
+              <option value="1970">1970年</option>
             </select>
             <select
               name="birth_month"
@@ -154,9 +156,9 @@ export default async function JoinPage({ searchParams }: Props) {
             </select>
           </div>
           <p className="mt-1.5 text-xs leading-6 text-foreground/60">
-            この集まりは、1968年に生まれた学年が対象です。
+            この集まりは、1968年に生まれた学年（昭和43年度）を真ん中に、ひとつ上とひとつ下の学年までが対象です。
             <br />
-            1969年1月〜4月1日生まれの方（いわゆる早生まれ）も、同じ学年ですのでどうぞ。
+            1967年4月2日〜1970年4月1日生まれの方が入れます。早生まれの方も、学年でそのまま数えます。
           </p>
         </fieldset>
 

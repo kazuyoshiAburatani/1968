@@ -18,6 +18,7 @@ export async function submitBetaApplication(formData: FormData) {
   const parsed = BetaApplicationSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
+    birth_year: formData.get("birth_year"),
     birth_month: formData.get("birth_month"),
     birth_day: formData.get("birth_day"),
     prefecture: formData.get("prefecture") ?? undefined,
@@ -49,7 +50,7 @@ export async function submitBetaApplication(formData: FormData) {
   const { error } = await admin.from("beta_applications").insert({
     name: parsed.data.name,
     email: parsed.data.email,
-    birth_year: 1968,
+    birth_year: parsed.data.birth_year,
     birth_month: parsed.data.birth_month,
     birth_day: parsed.data.birth_day,
     prefecture: parsed.data.prefecture ?? null,

@@ -5,7 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export const metadata: Metadata = {
   title: "あの店・あの商品、今どうなってる？",
   description:
-    "給食のソフト麺、なめ猫、駅前のレコード店。1968年に生まれた学年が見てきたものの、今の安否を確かめる連載です。",
+    "給食のソフト麺、なめ猫、駅前のレコード店。1968年前後に生まれた学年が見てきたものの、今の安否を確かめる連載です。",
 };
 
 export default async function StoriesPage() {

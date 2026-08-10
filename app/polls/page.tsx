@@ -12,7 +12,7 @@ import { pollImageUrl } from "@/lib/media";
 export const metadata: Metadata = {
   title: "これまでの二択",
   description:
-    "昭和43年度生まれの二択を、小学校のころから二十代まで年代ごとに並べています。登録なしで答えられます。",
+    "昭和43年度生まれを中心にした二択を、小学校のころから二十代まで年代ごとに並べています。登録なしで答えられます。",
 };
 
 // これまでの二択の一覧。

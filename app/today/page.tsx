@@ -7,7 +7,7 @@ import { parseCivilDate, todayInTokyo } from "@/lib/school-year";
 export const metadata: Metadata = {
   title: "今日は何の日",
   description:
-    "1968年に生まれた学年から見た、今日という日の出来事。毎朝ひとつ、LINEでも受け取れます。",
+    "1968年前後に生まれた学年から見た、今日という日の出来事。毎朝ひとつ、LINEでも受け取れます。",
 };
 
 // 「今日は何の日」。
@@ -32,7 +32,7 @@ export default async function TodayPage() {
           今日は何の日
         </h1>
         <p className="mt-3 text-base leading-8 text-foreground/80">
-          1968年に生まれた学年から見た、今日という日の出来事です。
+          1968年前後に生まれた学年から見た、今日という日の出来事です。
         </p>
       </header>
 
