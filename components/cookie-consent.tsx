@@ -55,6 +55,15 @@ export function CookieConsent() {
       if (gaId) {
         w[`ga-disable-${gaId}`] = true;
       }
+      // Meta ピクセル、同意の撤回を伝える
+      const fbq = w.fbq as ((...args: unknown[]) => void) | undefined;
+      if (typeof fbq === "function") {
+        try {
+          fbq("consent", "revoke");
+        } catch {
+          /* ignore */
+        }
+      }
       // Clarity: stop
       const clarity = w.clarity as
         | ((cmd: string, ...args: unknown[]) => void)

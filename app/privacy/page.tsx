@@ -173,6 +173,9 @@ export default function PrivacyPage() {
           <li>
             <span className="font-medium">Google Analytics 4（米国）</span>、アクセス解析（IP 匿名化を有効化）
           </li>
+          <li>
+            <span className="font-medium">Meta Platforms, Inc.（米国）</span>、広告の効果測定および広告配信の最適化（Meta ピクセル）
+          </li>
         </ul>
         <p className="mt-2">
           上記の委託先は外国にある第三者にあたるため、個人情報保護法第28条に基づき、必要な情報を以下のとおり提供します。各国における個人情報保護に関する制度等の詳細は、個人情報保護委員会のウェブサイト（
@@ -320,6 +323,9 @@ export default function PrivacyPage() {
           <li>
             <span className="font-medium">Microsoft Clarity</span> および{" "}
             <span className="font-medium">Google Analytics 4</span> を、サイト改善のためのアクセス解析に使用しています。これらのツールは、ページ閲覧、クリック位置、スクロール深度、操作録画（Clarity のみ）等を収集します。IP アドレスは匿名化されており、個人を特定する目的では利用しません。
+          </li>
+          <li>
+            <span className="font-medium">Meta ピクセル</span> を、広告の効果測定および広告配信の最適化に使用しています。広告経由での来訪や閲覧したページを記録し、Meta（Facebook・Instagram）での広告配信に利用します。氏名や生年月日などの登録情報を Meta へ送ることはありません。クッキーの利用を拒否された場合、Meta ピクセルへの送信は停止します。
           </li>
           <li>
             Clarity の詳細は{" "}
