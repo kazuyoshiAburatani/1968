@@ -9,6 +9,7 @@ import {
 } from "@/app/polls/actions";
 import { PhotoPicker } from "@/components/photo-picker";
 import { PhotoView } from "@/components/photo-view";
+import { SeatInvite } from "@/components/seat-invite";
 import { pollImageUrl, postImageUrl } from "@/lib/media";
 import { pollIcon } from "@/lib/poll-icon";
 import {
@@ -66,12 +67,27 @@ type Props = {
   eyebrow?: string;
   /** 席がある人か。写真を添えられるのはこの人だけ */
   canAttachPhoto?: boolean;
+  /**
+   * 答えたあとに、席をつくる誘いを出すか。
+   *
+   * ゲストのときだけ true にする。ホームのように二択が縦に何枚も並ぶ画面では、
+   * 先頭の 1 枚だけ true にすること。同じ誘いが 3 つ続くと、
+   * 静かに置いたつもりでも催促に見える。
+   */
+  showSeatInvite?: boolean;
+  /** いま席をつくると創設メンバーになるか。サーバ側で判定して渡す */
+  foundingOpen?: boolean;
+  /** 席をつくったあとに戻ってくる場所 */
+  returnPath?: string;
 };
 
 export function PollCard({
   poll,
   eyebrow = "今日の二択",
   canAttachPhoto = false,
+  showSeatInvite = false,
+  foundingOpen = false,
+  returnPath,
 }: Props) {
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -392,6 +408,20 @@ export function PollCard({
                 書き直すと、前のものと入れ替わります。
               </p>
             </div>
+          )}
+
+          {/* 席をつくる誘いは、一言の欄のすぐ下に置く。
+              みんなの一言の一覧より下に置くと、一覧が伸びた分だけ
+              画面の外へ流れていく。実際、二択ひとつに一言が 20 件を超えた時点で、
+              ページ末尾に置いてあった案内は誰の目にも入らなくなっていた。
+              いちばん温まっているのは、答えた直後・書いた直後のこの位置。 */}
+          {showSeatInvite && (
+            <SeatInvite
+              next={returnPath ?? `/polls/${poll.id}`}
+              foundingOpen={foundingOpen}
+              wrote={hasMine}
+              className="mt-4"
+            />
           )}
 
           {comments.length > 0 && (

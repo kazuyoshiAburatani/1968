@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { peekVoterKey } from "@/lib/voter-key";
 import { loadPolls } from "@/lib/polls-server";
 import { PollCard } from "@/components/polls/poll-card";
+import { isFoundingWindow } from "@/lib/launch";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -56,8 +57,19 @@ export default async function PollDetailPage({ params }: Props) {
         </Link>
       </p>
 
-      <PollCard poll={poll} eyebrow="二択" canAttachPhoto={user !== null} />
+      <PollCard
+        poll={poll}
+        eyebrow="二択"
+        canAttachPhoto={user !== null}
+        // 広告はこのページに着地する。答えたその場で誘えないと、
+        // 一覧の下まで下がらない人には席の話が一度も届かない
+        showSeatInvite={user === null}
+        foundingOpen={isFoundingWindow()}
+        returnPath={`/polls/${poll.id}`}
+      />
 
+      {/* まだ答えていない人向け。答えた人にはカードの中で誘っているので、
+          ここは「読むだけでも構わない」と伝えるだけの静かな置き方にする */}
       {!user && (
         <div className="rounded-2xl border border-border/60 bg-muted/40 p-6 text-center">
           <p className="text-base leading-8">
@@ -66,7 +78,7 @@ export default async function PollDetailPage({ params }: Props) {
             書いてみたくなったら、そのとき席をつくれば大丈夫です。
           </p>
           <Link
-            href="/join"
+            href={`/join?next=${encodeURIComponent(`/polls/${poll.id}`)}`}
             className="mt-4 inline-flex items-center justify-center min-h-[52px] px-8 rounded-full bg-primary text-white text-base font-bold no-underline hover:opacity-90"
           >
             30秒で席をつくる

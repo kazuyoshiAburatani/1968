@@ -11,7 +11,7 @@ import { SpreadCards } from "@/components/home/spread-cards";
 import { StoryRail } from "@/components/home/story-rail";
 import { FeaturedLetters } from "@/components/home/featured-letters";
 import { SectionSkeleton } from "@/components/home/section-skeleton";
-import { LAUNCH_LABEL, isBeforeLaunch } from "@/lib/launch";
+import { LAUNCH_LABEL, isBeforeLaunch, isFoundingWindow } from "@/lib/launch";
 import { feedEyebrow } from "@/lib/day-label";
 
 type Props = {
@@ -61,6 +61,9 @@ export default async function HomePage({ searchParams }: Props) {
   const voterKey = await peekVoterKey();
   const polls = await loadPolls(supabase, { limit: 3, voterKey });
   const beforeLaunch = isBeforeLaunch();
+  // new Date() を本体で直に呼ぶと React Compiler の lint に叱られるので、
+  // 判定は lib/launch.ts の関数に閉じ込めてある
+  const foundingOpen = isFoundingWindow();
 
   return (
     <div className="mx-auto max-w-2xl px-4 sm:px-6 py-6 sm:py-8 space-y-10">
@@ -96,6 +99,10 @@ export default async function HomePage({ searchParams }: Props) {
               poll={p}
               eyebrow={feedEyebrow(p.published_at, "二択", i)}
               canAttachPhoto={user !== null}
+              // 誘いは先頭の 1 枚だけ。3 枚とも出すと、静かに置いたつもりでも催促に見える
+              showSeatInvite={user === null && i === 0}
+              foundingOpen={foundingOpen}
+              returnPath={`/#poll-${p.id}`}
             />
           ))}
         </div>
